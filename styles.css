@@ -795,6 +795,15 @@ button .ico { margin-right: 4px; }
 .sim-lab button:hover { background: rgba(240,166,60,.22); }
 .sim-hud-actions { display:flex; gap:7px; margin-top:10px; }
 .sim-hud-actions .btn-primary { flex:1; padding:9px 8px; font-size:10px; }
+.sim-hud-toggle { margin-left:auto; display:inline-flex; align-items:center; gap:5px; padding:4px 8px; border-radius:6px; border:1px solid rgba(53,208,192,.45); background: rgba(53,208,192,.08); color:var(--teal); cursor:pointer; font:700 8.5px var(--font-display); letter-spacing:.12em; }
+.sim-hud-toggle:hover { background: rgba(53,208,192,.22); color:#c9fff6; }
+.sim-hud-toggle .ico { width:12px; height:12px; }
+.sim-hud-pill { position:absolute; z-index:18; top:86px; right:88px; display:inline-flex; align-items:center; gap:7px; padding:8px 12px; border-radius:999px; border:1px solid rgba(53,208,192,.55); background: rgba(8,4,6,.88); color:var(--teal); cursor:pointer; backdrop-filter: blur(8px); box-shadow: var(--shadow); font:700 10px var(--font-display); letter-spacing:.1em; }
+.sim-hud-pill:hover { background: rgba(53,208,192,.16); }
+.sim-hud-pill .ico { width:13px; height:13px; }
+.sim-hud-pill span { color:#fff; letter-spacing:.05em; }
+.sim-hud-pill .sim-pill-trials { color:var(--muted); }
+.sim-hud-pill .sim-pill-show { color:var(--teal); }
 .roster-card .detail-link { border-color: rgba(53,208,192,.55); color:#0a6b62; }
 .roster-card .sim-link { border-color: rgba(194,24,58,.45); color: var(--blood); }
 
@@ -826,6 +835,7 @@ button .ico { margin-right: 4px; }
   .char-playbook { grid-template-columns: 1fr; }
   .sim-setup { grid-template-columns: 1fr; }
   .sim-hud { right: 84px; width: 218px; }
+  .sim-hud-pill { right: 84px; }
 }
 @media (max-width: 760px) {
   .guide-hero { flex-direction: column; align-items: stretch; }
@@ -838,6 +848,7 @@ button .ico { margin-right: 4px; }
   .sim-chars { grid-template-columns: 1fr 1fr; }
   .sim-row-opts { grid-template-columns: 1fr; }
   .sim-hud { top: auto; bottom: 235px; right: 80px; width: 205px; padding: 8px; }
+  .sim-hud-pill { top: auto; bottom: 235px; right: 80px; }
   .sim-stats b { font-size: 14px; }
 }
 .enemy-sim_colossus { width: clamp(250px, 30vw, 430px); }
