@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Cell Warriors — Combat Prototype</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main id="app">
+      <header class="hud">
+        <div class="hud-top">
+          <div class="turn">TURN <b id="turn">1</b></div>
+          <div class="atp" id="atp"></div>
+          <button id="restart" class="ghost" title="Restart">↻</button>
+        </div>
+
+        <div class="meter infection">
+          <div class="meter-label"><span>INFECTION</span><b id="infection-val">60%</b></div>
+          <div class="meter-track"><div class="meter-fill" id="infection-fill"></div></div>
+        </div>
+
+        <div class="meter fever-meter">
+          <div class="meter-label"><span>INFLAMMATION</span><b id="fever-val">0 / 8</b></div>
+          <div class="meter-track">
+            <div class="meter-fill" id="fever-fill"></div>
+            <div class="fever-tick"></div>
+          </div>
+        </div>
+      </header>
+
+      <section class="board">
+        <div class="zone enemy-zone">
+          <div class="zone-label">PATHOGENS <span id="core-hp" class="core-hp">INFECTION SITE 45</span></div>
+          <div class="slots" id="enemy-slots"></div>
+        </div>
+
+        <div class="zone player-zone">
+          <div class="zone-label">YOUR CELLS</div>
+          <div class="slots" id="player-slots"></div>
+        </div>
+      </section>
+
+      <section class="hand-wrap">
+        <div class="hand-head">
+          <span id="deck-count" class="muted">deck 0</span>
+          <span class="muted" id="antibodies"></span>
+        </div>
+        <div class="hand" id="hand"></div>
+      </section>
+
+      <footer class="footer">
+        <div class="log" id="log"></div>
+        <div class="actions">
+          <div class="preview" id="preview"></div>
+          <button id="end-turn" class="primary">END TURN</button>
+        </div>
+      </footer>
+
+      <div class="overlay hidden" id="overlay">
+        <div class="overlay-card">
+          <h1 id="overlay-title">—</h1>
+          <p id="overlay-sub">—</p>
+          <button class="primary" id="overlay-btn">PLAY AGAIN</button>
+        </div>
+      </div>
+    </main>
+    <script type="module" src="./src/ui.js"></script>
+  </body>
+</html>
