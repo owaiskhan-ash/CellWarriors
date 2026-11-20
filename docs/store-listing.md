@@ -55,7 +55,8 @@ Anime key art. Six body regions. One host. Hold the line.
 
 **What's new (≤500 chars, v1)**
 ```
-First release. Six regions of adventure, 40 cards, one fever mechanic that will
+First release. Six regions of adventure, six combatants, one lean 5-card kit
+each, one fever mechanic that will
 ruin your best-laid plan.
 ```
 

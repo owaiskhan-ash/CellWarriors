@@ -414,14 +414,14 @@ export function sfxMajor(kind, { owner = null, cardId = '' } = {}) {
   sfxMajor('rare', { owner });
   if (cardId === 'm_bash') { // Aegis Slam shield-gong
     [220, 331, 497, 664].forEach((f) => tone(f, 0.55, { type: 'sine', gain: 0.07, delay: 0.3, exact: true }));
-  } else if (cardId === 'k_execute' || cardId === 'g_cleave') { // cleave + stone crack
+  } else if (cardId === 'k_last' || cardId === 'g_devour') { // finisher cleave + stone crack
     noiseBurst(0.22, { gain: 0.13, highpass: 500, delay: 0.3 });
     noiseBurst(0.08, { gain: 0.1, highpass: 260, delay: 0.42 });
     tone(90, 0.4, { type: 'sawtooth', gain: 0.12, slideTo: 38, delay: 0.3 });
-  } else if (cardId === 'b_nexus') { // Resonance Singularity sub wobble
+  } else if (cardId === 'b_burst') { // Cytokine Storm sub wobble
     [0, 1, 2].forEach((i) => tone(56, 0.22, { type: 'square', gain: 0.1, slideTo: 94, delay: 0.3 + i * 0.13 }));
     tone(1180, 0.4, { type: 'sine', gain: 0.07, slideTo: 590, delay: 0.34 });
-  } else if (cardId === 's_apex' || owner === 'sable') { // ledger stamp + amber choir
+  } else if (cardId === 's_titer' || owner === 'sable') { // ledger stamp + amber choir
     sfx('stamp');
     [392, 494, 587].forEach((f, i) => tone(f, 0.34, { type: 'triangle', gain: 0.06, delay: 0.3 + i * 0.05, exact: true }));
   } else if (owner === 'yuna') { // poison detonation bubbles into a low boom

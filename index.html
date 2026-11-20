@@ -136,7 +136,7 @@
           <div class="map-meta">
             <span class="meta-chip" title="Sands of Time"><svg class="ico"><use href="#i-sands"/></svg><b id="map-sands">3</b></span>
             <span class="meta-chip gold" title="Run Currency"><svg class="ico"><use href="#i-cell"/></svg><b id="map-cells">0</b></span>
-            <button class="btn-ghost tiny" id="btn-map-deck">DECK (<span id="map-deck-n">21</span>)</button>
+            <button class="btn-ghost tiny" id="btn-map-deck">DECK (<span id="map-deck-n">15</span>)</button>
             <button class="btn-ghost tiny" id="btn-map-quit">EXIT</button>
           </div>
         </header>
@@ -413,7 +413,7 @@
           <div>
             <span class="czn-id">START HERE · THE ONE EVERYONE ASKS ABOUT</span>
             <h2>What does FURY do?</h2>
-            <p><b>Fury is stored damage.</b> By itself it does nothing. Cards that <b>consume Fury</b> (Kaito’s Last Shift: +12 damage per stack, then Fury resets to 0) or <b>scale with Fury</b> (Apex Cleaver: +8 per stack, keeps the stacks) turn it into real numbers. Build it with cheap Attacks, Stress gains and Counter hits — then spend it into a Weakness / Mark / Crit for the screenshot hit.</p>
+            <p><b>Fury is stored damage.</b> By itself it does nothing. Cards that <b>consume Fury</b> turn it into real numbers — Kaito’s Last Shift deals +8 per stack, then Fury resets to 0 (and +6 more with a guaranteed Crit if it spends your last AP). Build it with Cytokine Jab, Adrenal Brace and War Cry, then spend it into a Weakness or a Mark for the screenshot hit.</p>
           </div>
           <button class="btn-primary" id="btn-guide-sim-kaito">TRY IT ON KAITO IN SIMULATION</button>
         </div>
@@ -428,7 +428,7 @@
           <button class="btn-ghost tiny" id="btn-char-back"><svg class="ico"><use href="#i-back"/></svg></button>
           <div class="head-left">
             <h1 id="char-title">CHARACTER DETAILS</h1>
-            <span class="head-sub">Full card pool, Ego skills, how to play them — then test it solo in Simulation.</span>
+            <span class="head-sub">Every card in the 5-card kit, Ego skills, how to play them — then test it solo in Simulation.</span>
             <span class="czn-id">DETAILS // COMBATANT·FILE</span>
           </div>
           <button class="btn-ghost tiny" id="btn-char-guide"><svg class="ico"><use href="#i-book"/></svg> GUIDE</button>
@@ -462,9 +462,8 @@
           <div class="sim-col">
             <div class="shop-label light">2 · LOADOUT</div>
             <div class="sim-opts" id="sim-loadout">
-              <button data-val="starter"><b>STARTER DECK</b><span>The 7 cards they bring to a real run.</span></button>
-              <button data-val="arsenal" class="active"><b>FULL ARSENAL</b><span>Starter + all 4 rare build-around cards. Best for learning.</span></button>
-              <button data-val="upgraded"><b>FULL ARSENAL +</b><span>Everything upgraded. See the ceiling.</span></button>
+              <button data-val="starter" class="active"><b>STARTER KIT</b><span>The 5 cards they bring to a real run.</span></button>
+              <button data-val="upgraded"><b>UPGRADED KIT</b><span>The same 5 cards, upgraded. See the ceiling.</span></button>
             </div>
             <div class="shop-label light">3 · TRAINING COLOSSUS</div>
             <div class="sim-opts" id="sim-behaviour">

@@ -11,48 +11,32 @@ lines), thick black outlines, flat two-tone cel shading, no text/watermark.
 Output: `images/cards/<card-id>.jpg`, then add the id to `CARD_ART` in
 `src/ui.js`. Generator limit: 10 images per turn — batch by character.
 
-## Done (48/80)
-- [x] Kaito complete (15): k_jab, k_brace, k_rush, k_first, k_last, k_up,
-  k_flurry, k_berserk, k_reap, k_execute, k_rally, k_feint, k_supply,
-  tok_cut, breakdown_kaito
-- [x] Momo complete (13): m_strike, m_guard, m_patch, m_stand, m_triage,
-  m_up, m_bash, m_bastion, m_aegis, m_reflect, m_formation, m_splint,
-  breakdown_momo
-- [x] Bibi (1): b_up (Cross-talk)
-- [x] Goro (10): g_strike, g_guard, g_cleave, g_devour, g_hymn, g_up,
-  g_catalyst, g_purge, g_symbiosis, g_feast_up
-- [x] Sable (9/10): s_annotate, s_margin, s_index, s_second, s_titer, s_up,
-  s_apex, s_century, breakdown_sable
-- [ ] s_recall — blocked once; re-prompt without "strike/execute" wording
-  (uses Sable's full-bleed portrait fallback until then)
+## Current set — the lean 5-card kits (30 cards, all covered)
 
-Fallback fix: cards without dedicated art now use the owner's full-bleed
-action art (`.card-art-fallback`, slightly darkened) instead of the
-transparent cutout — no card renders a floating cutout anymore.
+Every combatant runs a fixed 5-card kit (1 Basic Attack · 2 Skills · 1 Heavy ·
+1 one-use Buff Upgrade). All **30** kit cards now have dedicated art mapped in
+`CARD_ART` (`src/ui.js`), plus every Breakdown pull card.
 
-Recheck notes (2026-11-20): all Kaito/Momo art verified on-model — locked hair,
-costume, props and vessel backgrounds match the bible. Minor tolerated
-deviations: some blades render a small guard, `k_first` has a tiny sleeve
-glyph, `k_reap` has an inset border, and a few images render the dark lower
-UI third as a hard panel (hidden under the card text overlay in-game).
+- [x] Kaito (5): k_jab, k_brace, k_rally, k_last, k_up · breakdown_kaito
+- [x] Momo (5): m_strike, m_guard, m_splint, m_bash, m_up · breakdown_momo
+- [x] Goro (5): g_strike, g_guard, g_broth, g_devour, g_up
+- [x] Bibi (5): b_ping, b_fuzz, b_flare, b_burst, b_up
+- [x] Yuna (5): y_sting, y_mist, y_antidote, y_epidemic, y_culture
+- [x] Sable (5): s_annotate, s_margin, s_second, s_titer, s_up · breakdown_sable
 
-## Pending — Goro / Macrophage (3)
-g_tonic, g_broth, breakdown_goro.
-Locked: 198cm hulking, shaved grey stubble, heavy long white coat, brown
-cross-straps, 120cm chipped cleaver on shoulder, calm half-lidded eyes.
+### Follow-ups if a batch gets re-run
+- `b_flare` and `y_sting` / `y_epidemic` still use the older 660 px legacy
+  files (`images/card-b2.jpg`, `images/card-y1..y2.jpg`) — on-model but a
+  generation behind the new 896 px cards.
+- `breakdown_goro`, `breakdown_bibi`, `breakdown_yuna` have no art and use the
+  owner's full-bleed action art. Tokens (`tok_cut`, `tok_spark`, `tok_spore`)
+  and curses (`curse_doubt`, `curse_fever`) are no longer spawned by any kit
+  card — skip them until a future card pass asks for them.
 
-## Pending — Bibi / Mast Cell (13)
-b_ping, b_fuzz, b_flare, b_hist, b_over, b_cascade, b_prism, b_swarm,
-b_nexus, b_static, b_veil, tok_spark (tiny violet neuro-spark creature of light),
-breakdown_bibi.
-Locked: pink bob, left side shaved, amber eyes, white coat with PINK seam glow,
-vials of pink histamine, gas mask at throat. Never a blade, never calm.
+Fallback behaviour: any card without an entry falls back to the owner's
+full-bleed action art, so nothing renders a floating cutout.
 
-## Pending — Yuna / Eosinophil (14)
-y_sting, y_dose, y_mist, y_incubate, y_antidote, y_hatch, y_culture,
-y_epidemic, y_necrosis, y_predator, y_virulence, tok_spore (tiny green spore
-mite), breakdown_yuna. Poison = glowing green; antidote/heal = soft green-gold.
-
-## Pending — Curses (2, no character)
-curse_doubt (grey fog question-mark-free doubt wisp), curse_fever (red fever
-wisp over a vessel wall). Abstract, dark, readable at card size.
+Recheck notes (2026-11-20): the five new cards (g_broth, b_fuzz, b_burst,
+y_culture, y_antidote) plus the two replacements (b_ping, y_mist) were verified
+on-model — locked hair, costume, props and vessel backgrounds match the bible,
+and each one reserves the darker lower third for the card text overlay.

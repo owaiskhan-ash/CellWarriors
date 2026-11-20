@@ -17,462 +17,228 @@ export const CLASSES = {
   mnemonist:  { name: 'Mnemonist',  desc: 'Percent scaling: damage as a % of enemy Max/Missing HP, Shield as % of her Max HP, heals as % of missing HP. Weak vs trash, melts bosses.' },
 };
 
+// Every combatant runs the same fixed skeleton: 5 cards, 1 copy each.
+export const STARTER_DECK_SIZE = 5;
+export const DECK_RULE = '1 Basic Attack · 2 Skills · 1 Heavy (2-3 AP) · 1 one-use Buff Upgrade';
+
 export const ROLES = { striker: 'Fury DPS', vanguard: 'Shield / Counter', controller: 'Catalyst / Heal', psionic: 'Amplify / Swarm', alchemist: 'Poison DoT', mnemonist: '%HP Scaling' };
 
 // ---------------------------------------------------------------------------
-// Cards: 10+ per character. Design rule (all combatants): exactly ONE Basic
-// Attack per character (flagged `basic: true`, 1 copy in the starter deck);
-// every other starter card is a Synergy / Effect card (skills & upgrades).
-// Signature direct-attack finishers live in the build-around (draft) pool.
+// Cards — LEAN KIT. Every combatant carries a fixed, hand-tuned kit of FIVE
+// cards, 1 copy of each, in this exact order (deck order matters: the engine
+// draws with pop(), so slot 0 is the LAST card drawn — see drawPile seeding):
+//
+//   slot 0 · BASIC ATTACK   1 AP · cheap, always useful, no debuffs.
+//                            4 damage + 1 small, simple rider.
+//   slot 1 · SKILL (light)  1 AP · a small, instant-support effect.
+//   slot 2 · SKILL (core)   1 AP · the character's simple signature tool.
+//   slot 3 · HEAVY          2-3 AP · the big damage / shield / heal / HP /
+//                            DoT / DPS payoff. Still one clean line of text.
+//   slot 4 · BUFF UPGRADE   1 AP · permanent, ONE USE per battle (Exhaust),
+//                            always [Initiation] so it opens in the first hand.
+//
+// Simplify-first rules: no multi-stage combos, no debuff stacking, no
+// percentages of percentages. One rider per card at most.
 // ---------------------------------------------------------------------------
 export const CARDS = {
-  // === KAITO / Striker / Passion (Fury, Multi-Hit, Stress-to-Power, Crit) ===
+  // === KAITO / Striker / Passion — Fury: hit often, then spend it ===
   k_jab: {
     name: 'Cytokine Jab', owner: 'kaito', type: 'attack', cost: 1, attr: 'passion', basic: true,
-    dmg: 8, fury: 1,
-    text: 'Deal 8 damage. Gain +1 Fury.',
-    up: { dmg: 11, fury: 2, text: 'Deal 11 damage. Gain +2 Fury.' },
+    dmg: 5, fury: 1,
+    text: 'Deal 5 damage. Gain +1 Fury.',
+    up: { dmg: 7, fury: 2, text: 'Deal 7 damage. Gain +2 Fury.' },
   },
   k_brace: {
     name: 'Adrenal Brace', owner: 'kaito', type: 'skill', cost: 1, attr: 'passion',
-    shield: 7, fury: 2, stressStr: { at: 30, str: 1 },
-    text: 'Gain 7 Shield and +2 Fury. If Stress ≥ 30, gain +1 Strength.',
-    up: { shield: 11, fury: 3, stressStr: { at: 25, str: 2 }, text: 'Gain 11 Shield and +3 Fury. If Stress ≥ 25, gain +2 Strength.' },
+    shield: 5, fury: 2,
+    text: 'Gain 5 Shield and +2 Fury.',
+    up: { shield: 8, fury: 3, text: 'Gain 8 Shield and +3 Fury.' },
   },
-  k_rush: {
-    name: 'Blade Rush', owner: 'kaito', type: 'attack', cost: 1, attr: 'passion',
-    dmg: 5, hits: 2, combo: 4, bleed: 2, tags: ['Combo'],
-    text: 'Deal 5 twice and apply 2 Bleed. Combo (Attack): +4 dmg/hit.',
-    up: { dmg: 6, combo: 6, bleed: 3, text: 'Deal 6 twice and apply 3 Bleed. Combo (Attack): +6 dmg/hit.' },
-  },
-  k_first: {
-    name: 'First In', owner: 'kaito', type: 'skill', cost: 1, attr: 'passion',
-    shield: 5, buffAtk: 3, retainGrowAtk: 2, tags: ['Retain', 'Lead'],
-    text: 'Gain 5 Shield and +3 Attack this turn. Retain: +2 bonus Attack each turn held. Lead.',
-    up: { shield: 8, buffAtk: 4, retainGrowAtk: 3, text: 'Gain 8 Shield and +4 Attack this turn. Retain: +3 bonus Attack each turn held. Lead.' },
+  k_rally: {
+    name: 'War Cry', owner: 'kaito', type: 'skill', cost: 1, attr: 'passion',
+    teamBuffAtk: 3, fury: 1,
+    text: 'All allies gain +3 Attack this turn. Gain +1 Fury.',
+    up: { teamBuffAtk: 5, fury: 2, text: 'All allies gain +5 Attack this turn. Gain +2 Fury.' },
   },
   k_last: {
     name: 'Last Shift', owner: 'kaito', type: 'attack', cost: 2, attr: 'passion',
-    dmg: 18, selfStress: 12, consumeFury: 12, finale: 8, finaleCrit: true, tags: ['Finale'],
-    text: 'Deal 18 damage (+12 per Fury consumed). Finale: Guaranteed Crit (×1.75). Gain 12 Stress.',
-    up: { dmg: 24, consumeFury: 16, finale: 10, selfStress: 8, text: 'Deal 24 damage (+16 per Fury consumed). Finale: Guaranteed Crit. Gain 8 Stress.' },
+    dmg: 12, consumeFury: 8, tags: ['Finale'], finaleCrit: true, finale: 6,
+    text: 'Deal 12 damage, +8 per Fury (Fury is consumed). Finale (last AP): +6 damage and a guaranteed Crit.',
+    up: { dmg: 16, consumeFury: 11, finale: 8, text: 'Deal 16 damage, +11 per Fury (consumed). Finale: +8 and a guaranteed Crit.' },
   },
   k_up: {
     name: 'Overclock', owner: 'kaito', type: 'upgrade', cost: 1, attr: 'passion',
-    maxAp: 1, onAtkFury: 1, tags: ['Initiation', 'Unique'],
-    text: 'Permanent: +1 AP each turn. Whenever an Attack is played, Kaito gains +1 Fury.',
-    up: { maxAp: 1, draw: 1, onAtkFury: 1, tags: ['Initiation', 'Unique'], text: 'Permanent: +1 AP, +1 card each turn, and +1 Fury per Attack.' },
-  },
-  // --- Kaito Build-Around Cards ---
-  k_flurry: {
-    name: 'Neutrophil Flurry', owner: 'kaito', type: 'attack', cost: 2, attr: 'passion', rare: true,
-    dmg: 4, hits: 4, tags: ['Multi-Hit'],
-    text: 'Deal 4 damage 4 times. Scales 100% per hit with Strength and Bleed.',
-    up: { dmg: 5, hits: 5, text: 'Deal 5 damage 5 times. Scales 100% per hit with Strength and Bleed.' },
-  },
-  k_berserk: {
-    name: 'Fever Surge', owner: 'kaito', type: 'skill', cost: 1, attr: 'passion', rare: true,
-    selfStress: 12, str: 3, fury: 3, critNext: true, tags: ['Haste'],
-    text: 'Gain 12 Stress, +3 Strength, +3 Fury, and Guaranteed Crit on next Attack. Haste.',
-    up: { selfStress: 10, str: 4, fury: 4, critNext: true, tags: ['Haste'], text: 'Gain 10 Stress, +4 Strength, +4 Fury, and Guaranteed Crit on next Attack. Haste.' },
-  },
-  k_reap: {
-    name: 'Hemorrhage Cut', owner: 'kaito', type: 'attack', cost: 1, attr: 'passion', rare: true,
-    dmg: 10, bleed: 3, detonateBleed: 1, chainMult: 1.5, tags: ['Chain'],
-    text: 'Deal 10 damage, +3 Bleed, and trigger Bleed once. Chain (Teammate): ×1.5 dmg and +1 AP.',
-    up: { dmg: 14, bleed: 4, detonateBleed: 2, chainMult: 1.6, text: 'Deal 14 damage, +4 Bleed, trigger Bleed twice. Chain: ×1.6 dmg and +1 AP.' },
-  },
-  k_execute: {
-    name: 'Apex Cleaver', owner: 'kaito', type: 'attack', cost: 3, attr: 'passion', rare: true,
-    dmg: 28, scaleFury: 8, stressBonusAt: { at: 50, mult: 1.5 }, retainDiscount: 1, retainGrowDmg: 8, tags: ['Retain'],
-    text: 'Deal 28 (+8/Fury, +50% if Stress ≥ 50). Retain: -1 AP & +8 dmg each turn held.',
-    up: { dmg: 36, scaleFury: 10, stressBonusAt: { at: 40, mult: 1.5 }, retainDiscount: 1, retainGrowDmg: 12, text: 'Deal 36 (+10/Fury, +50% if Stress ≥ 40). Retain: -1 AP & +12 dmg each turn.' },
+    maxAp: 1, onAtkFury: 1, tags: ['Initiation', 'Unique', 'Exhaust'],
+    text: 'Permanent: +1 AP each turn. Every Attack you play also grants +1 Fury. One use per battle.',
+    up: { maxAp: 1, draw: 1, onAtkFury: 1, text: 'Permanent: +1 AP, +1 card each turn, and +1 Fury per Attack. One use per battle.' },
   },
 
-  // === MOMO / Vanguard / Order (Barricade Shield Retain, Counter, Aegis Slam) ===
+  // === MOMO / Vanguard / Order — Shield that holds, then Stonewall ===
   m_strike: {
     name: 'Order Strike', owner: 'momo', type: 'attack', cost: 1, attr: 'order', basic: true,
-    dmg: 7, shieldHalfDmg: true,
-    text: 'Deal 7 damage. Gain Shield equal to half damage dealt.',
-    up: { dmg: 10, shieldHalfDmg: true, text: 'Deal 10 damage. Gain Shield equal to half damage dealt.' },
+    dmg: 5, shield: 4,
+    text: 'Deal 5 damage and gain 4 Shield.',
+    up: { dmg: 7, shield: 6, text: 'Deal 7 damage and gain 6 Shield.' },
   },
   m_guard: {
     name: 'Guard Stance', owner: 'momo', type: 'skill', cost: 1, attr: 'order',
-    shield: 9, counter: 3,
-    text: 'Gain 9 Shield and +3 Counter (retaliate when struck).',
-    up: { shield: 13, counter: 5, text: 'Gain 13 Shield and +5 Counter.' },
-  },
-  m_patch: {
-    name: 'Patch Up', owner: 'momo', type: 'skill', cost: 1, attr: 'order',
-    teamShield: 5, chainTeamCounter: 2, tags: ['Celestial', 'Chain'],
-    text: 'All allies gain 5 Shield. Celestial: auto-fires on 2+ AP cards. Chain: +2 Counter all.',
-    up: { teamShield: 8, chainTeamCounter: 3, tags: ['Celestial', 'Chain'], text: 'All allies gain 8 Shield. Celestial. Chain: +3 Counter all.' },
-  },
-  m_stand: {
-    name: 'Stand Firm', owner: 'momo', type: 'skill', cost: 1, attr: 'order',
-    shield: 10, taunt: 1, fortitude: 1, barricade: 1, tags: ['Fortitude'],
-    text: 'Gain 10 Shield, Taunt, -20% dmg taken, and keep 50% Shield at end of turn.',
-    up: { shield: 14, fortitude: 2, barricade: 2, text: 'Gain 14 Shield, Taunt, -20% dmg taken (2T), and keep 100% Shield this turn.' },
-  },
-  m_triage: {
-    name: 'Triage', owner: 'momo', type: 'skill', cost: 1, attr: 'order',
-    heal: 8, stressHeal: 12, highStressStr: { at: 40, str: 2 },
-    text: 'Heal 8 HP, clear 12 Stress. If target had ≥ 40 Stress, grant +2 Strength.',
-    up: { heal: 12, stressHeal: 20, highStressStr: { at: 30, str: 3 }, text: 'Heal 12 HP, clear 20 Stress. If ≥ 30 Stress, grant +3 Strength.' },
-  },
-  m_up: {
-    name: 'Field Protocol', owner: 'momo', type: 'upgrade', cost: 1, attr: 'order',
-    turnShield: 4, teamBarricade: 1, tags: ['Initiation', 'Unique'],
-    text: 'Permanent: all allies gain 4 Shield each turn and retain 50% Shield across turns.',
-    up: { turnShield: 7, teamBarricade: 1, tags: ['Initiation', 'Unique'], text: 'Permanent: all allies gain 7 Shield each turn and retain 50% Shield across turns.' },
-  },
-  // --- Momo Build-Around Cards ---
-  m_bash: {
-    name: 'Aegis Slam', owner: 'momo', type: 'attack', cost: 2, attr: 'order', rare: true,
-    dmg: 4, shieldDmgPct: 1.0, vuln: 2, tags: ['Shield-Slam'],
-    text: 'Deal 4 + 100% of total Team Shield as damage. Apply 2T Vulnerable (+35% dmg taken).',
-    up: { dmg: 8, shieldDmgPct: 1.35, vuln: 3, text: 'Deal 8 + 135% of total Team Shield. Apply 3T Vulnerable (+35% dmg taken).' },
-  },
-  m_bastion: {
-    name: 'Thrombus Fortress', owner: 'momo', type: 'skill', cost: 2, attr: 'order', rare: true,
-    teamShield: 14, teamCounter: 5, barricade: 2,
-    text: 'All allies gain 14 Shield, +5 Counter, and keep 100% of Shield this turn.',
-    up: { teamShield: 20, teamCounter: 8, barricade: 2, text: 'All allies gain 20 Shield, +8 Counter, and keep 100% of Shield this turn.' },
-  },
-  m_aegis: {
-    name: 'Platelet Deploy', owner: 'momo', type: 'skill', cost: 0, attr: 'order', rare: true,
-    teamShield: 6, spawnTokens: { id: 'tok_cut', count: 2 }, tags: ['Haste', 'Exhaust'],
-    text: 'All allies gain 6 Shield. Add 2 Micro-Cuts (0 AP) to hand. Haste. Exhaust.',
-    up: { teamShield: 9, spawnTokens: { id: 'tok_cut', count: 2 }, draw: 1, tags: ['Haste', 'Exhaust'], text: 'All allies gain 9 Shield. Add 2 Micro-Cuts + Draw 1. Haste. Exhaust.' },
-  },
-  m_reflect: {
-    name: 'Spiked Scaffold', owner: 'momo', type: 'upgrade', cost: 1, attr: 'order', rare: true,
-    onShieldCounter: 1, onShieldThorns: 3, tags: ['Unique'],
-    text: 'Permanent: whenever an ally gains Shield, grant +1 Counter and deal 3 damage.',
-    up: { onShieldCounter: 2, onShieldThorns: 5, tags: ['Unique'], text: 'Permanent: whenever an ally gains Shield, grant +2 Counter and deal 5 damage.' },
-  },
-
-  // === GORO / Controller / Justice (Toxin/Bleed Catalyst, Overheal->Str, Retrieve) ===
-  g_strike: {
-    name: 'Scalpel', owner: 'goro', type: 'attack', cost: 1, attr: 'justice', basic: true,
-    dmg: 7, toxin: 3,
-    text: 'Deal 7 damage and apply 3 Toxin.',
-    up: { dmg: 10, toxin: 5, text: 'Deal 10 damage and apply 5 Toxin.' },
-  },
-  g_guard: {
-    name: 'Clot', owner: 'goro', type: 'skill', cost: 1, attr: 'justice',
-    shield: 8, teamStressHeal: 8,
-    text: 'Gain 8 Shield and clear 8 Stress from the squad.',
-    up: { shield: 12, teamStressHeal: 14, text: 'Gain 12 Shield and clear 14 Stress from the squad.' },
-  },
-  g_cleave: {
-    name: 'Cleave', owner: 'goro', type: 'attack', cost: 2, attr: 'justice',
-    dmg: 10, aoe: true, bleed: 4, vuln: 2,
-    text: 'Deal 10 AoE damage. Apply 4 Bleed and 2T Vulnerable (+35% dmg taken) to all.',
-    up: { dmg: 14, bleed: 6, vuln: 3, text: 'Deal 14 AoE damage. Apply 6 Bleed and 3T Vulnerable to all.' },
-  },
-  g_devour: {
-    name: 'Devour', owner: 'goro', type: 'skill', cost: 2, attr: 'justice',
-    teamHeal: 8, teamStressHeal: 14, purifyStr: 2,
-    text: 'Heal all allies 8 HP, clear 14 Stress. Purify: if ally hits full HP, grant +2 Strength.',
-    up: { teamHeal: 12, teamStressHeal: 20, purifyStr: 3, text: 'Heal all allies 12 HP, clear 20 Stress. Purify: +3 Strength if at full HP.' },
-  },
-  g_hymn: {
-    name: 'Lullaby', owner: 'goro', type: 'skill', cost: 1, attr: 'justice',
-    weakenAll: 2, retrieve: 1, retrieveDiscount: 1, tags: ['Retrieve'],
-    text: 'All enemies -35% dmg (2T). Retrieve highest-Attack card from Graveyard at -1 AP.',
-    up: { weakenAll: 3, retrieve: 1, retrieveDiscount: 2, text: 'All enemies -35% dmg (3T). Retrieve highest-Attack card at -2 AP.' },
-  },
-  g_up: {
-    name: 'The Wall', owner: 'goro', type: 'upgrade', cost: 1, attr: 'justice',
-    blockBonus: 3, onHealFury: 2, tags: ['Initiation', 'Unique'],
-    text: 'Permanent: all Shields +3, and healing grants +2 Fury to the team.',
-    up: { blockBonus: 5, onHealFury: 3, tags: ['Initiation', 'Unique'], text: 'Permanent: all Shields +5, and healing grants +3 Fury to the team.' },
-  },
-  // --- Goro Build-Around Cards ---
-  g_catalyst: {
-    name: 'Enzyme Catalyst', owner: 'goro', type: 'skill', cost: 1, attr: 'justice', rare: true,
-    doubleStatus: true, tags: ['Haste'],
-    text: 'Double all Bleed and Toxin stacks on the target enemy. Haste.',
-    up: { doubleStatus: true, doubleStatusAoe: true, tags: ['Haste'], text: 'Double all Bleed and Toxin stacks on ALL enemies. Haste.' },
-  },
-  g_purge: {
-    name: 'Lysis Detonation', owner: 'goro', type: 'attack', cost: 1, attr: 'justice', rare: true,
-    dmg: 8, detonateAll: 1, healPctStatus: 0.3, tags: ['Detonate'],
-    text: 'Deal 8 damage. Immediately trigger all Bleed & Toxin on target and heal team 30% of it.',
-    up: { dmg: 12, detonateAll: 2, healPctStatus: 0.35, text: 'Deal 12 damage. Trigger all Bleed & Toxin TWICE and heal team 35% of it.' },
-  },
-  g_symbiosis: {
-    name: 'Symbiotic Pulse', owner: 'goro', type: 'skill', cost: 1, attr: 'justice', rare: true,
-    teamStressHeal: 18, resonance: 2, chainAp: 1, chainTeamStr: 2, tags: ['Chain'],
-    text: 'Clear 18 Stress, +2 Resonance. Chain (Teammate): +1 AP and +2 Strength to all allies.',
-    up: { teamStressHeal: 24, resonance: 3, chainAp: 1, chainTeamStr: 3, tags: ['Chain'], text: 'Clear 24 Stress, +3 Resonance. Chain: +1 AP and +3 Strength to all allies.' },
-  },
-  g_feast_up: {
-    name: 'Phagocytosis', owner: 'goro', type: 'upgrade', cost: 1, attr: 'justice', rare: true,
-    onStatusTickHeal: 1, onStatusTickRes: 1, tags: ['Unique'],
-    text: 'Permanent: whenever Toxin or Bleed deals damage, allies heal 1 HP and gain +1 Resonance.',
-    up: { onStatusTickHeal: 2, onStatusTickRes: 1, onStatusTickFury: 1, tags: ['Unique'], text: 'Permanent: on Bleed/Toxin damage, heal 2, +1 Fury, +1 Resonance.' },
-  },
-
-  // === BIBI / Psionic / Void (Mark, Exhaust Scaling, Token Swarm, Echo) ===
-  b_ping: {
-    name: 'Signal Ping', owner: 'bibi', type: 'attack', cost: 1, attr: 'void', basic: true,
-    dmg: 6, spawnTokens: { id: 'tok_spark', count: 1 },
-    text: 'Deal 6 damage. Add a 0-AP Neuro-Spark to hand.',
-    up: { dmg: 9, spawnTokens: { id: 'tok_spark', count: 2 }, text: 'Deal 9 damage. Add 2 Neuro-Sparks (0 AP) to hand.' },
-  },
-  b_fuzz: {
-    name: 'Fuzz', owner: 'bibi', type: 'skill', cost: 1, attr: 'void',
-    shield: 8, draw: 1,
-    text: 'Gain 8 Shield and Draw 1 card.',
-    up: { shield: 12, draw: 1, resonance: 1, text: 'Gain 12 Shield, Draw 1 card, and +1 Resonance.' },
-  },
-  b_flare: {
-    name: 'Flare', owner: 'bibi', type: 'attack', cost: 2, attr: 'void',
-    dmg: 8, aoe: true, mark: 2, vuln: 2, tags: ['Mark'],
-    text: 'Deal 8 AoE. Apply 2T Mark (+50% dmg) and 2T Vulnerable (+35% dmg) to all enemies.',
-    up: { dmg: 12, mark: 3, vuln: 3, text: 'Deal 12 AoE. Apply 3T Mark (+50%) and 3T Vulnerable (+35%) to all.' },
-  },
-  b_hist: {
-    name: 'Histamine', owner: 'bibi', type: 'skill', cost: 1, attr: 'void',
-    teamStr: 2, teamBuffAtk: 4,
-    text: 'All allies gain +2 permanent Strength and +4 Attack this turn.',
-    up: { teamStr: 3, teamBuffAtk: 6, text: 'All allies gain +3 permanent Strength and +6 Attack this turn.' },
-  },
-  b_over: {
-    name: 'Overdrive', owner: 'bibi', type: 'skill', cost: 0, attr: 'void',
-    apGain: 1, resonance: 2, spawnTokens: { id: 'tok_spark', count: 1 }, tags: ['Exhaust', 'Haste'],
-    text: 'Gain +1 AP, +2 Resonance, and 1 Neuro-Spark. Does not tick counters. Exhaust.',
-    up: { apGain: 2, resonance: 3, spawnTokens: { id: 'tok_spark', count: 2 }, tags: ['Exhaust', 'Haste'], text: 'Gain +2 AP, +3 Resonance, and 2 Neuro-Sparks. Haste. Exhaust.' },
-  },
-  b_up: {
-    name: 'Cross-talk', owner: 'bibi', type: 'upgrade', cost: 1, attr: 'void',
-    extraDraw: 1, onExhaustDmg: 6, onExhaustEp: 1, tags: ['Initiation', 'Unique'],
-    text: 'Permanent: draw +1/turn. Exhausting a card deals 6 AoE and grants +1 EP.',
-    up: { extraDraw: 1, firstAp: 1, onExhaustDmg: 9, onExhaustEp: 1, tags: ['Initiation', 'Unique'], text: 'Permanent: draw +1/turn, +1 AP T1, and Exhaust deals 9 AoE + 1 EP.' },
-  },
-  // --- Bibi Build-Around Cards ---
-  b_cascade: {
-    name: 'Void Cascade', owner: 'bibi', type: 'attack', cost: 2, attr: 'void', rare: true,
-    dmg: 8, aoe: true, scaleExhaust: 5, scaleTurnPlays: 3, tags: ['Exhaust-Scale'],
-    text: 'Deal 8 AoE (+5 per card Exhausted this fight, +3 per card played this turn).',
-    up: { dmg: 12, scaleExhaust: 7, scaleTurnPlays: 5, text: 'Deal 12 AoE (+7 per Exhausted card, +5 per card played this turn).' },
-  },
-  b_prism: {
-    name: 'Signal Prism', owner: 'bibi', type: 'skill', cost: 1, attr: 'void', rare: true,
-    echoNext: 1, resonance: 2, tags: ['Haste', 'Echo'],
-    text: 'Your next Attack card this turn fires TWICE. Gain +2 Resonance. Haste.',
-    up: { echoNext: 1, echoBonus: 0.4, resonance: 3, tags: ['Haste', 'Echo'], text: 'Your next Attack fires TWICE with +40% bonus dmg. +3 Resonance. Haste.' },
-  },
-  b_swarm: {
-    name: 'Degranulate', owner: 'bibi', type: 'skill', cost: 1, attr: 'void', rare: true,
-    spawnTokens: { id: 'tok_spark', count: 3 }, tokenToxin: 2,
-    text: 'Add 3 Neuro-Sparks (0 AP) to hand and apply 2 Toxin to target.',
-    up: { spawnTokens: { id: 'tok_spark', count: 4 }, tokenToxin: 4, text: 'Add 4 Neuro-Sparks (0 AP) to hand and apply 4 Toxin to target.' },
-  },
-  b_nexus: {
-    name: 'Resonance Singularity', owner: 'bibi', type: 'attack', cost: 2, attr: 'void', rare: true,
-    dmg: 14, scaleResonance: 10, draw: 2, forceBurst: true, tags: ['Resonance'],
-    text: 'Deal 14 (+10 per Resonance stack) and Draw 2. Always triggers Resonance Burst (+60% dmg).',
-    up: { dmg: 20, scaleResonance: 14, draw: 2, forceBurst: true, text: 'Deal 20 (+14 per Resonance stack) and Draw 2. Triggers Resonance Burst.' },
-  },
-
-  // === Synergy / Effect cards (starter-deck effects for the original four) ===
-  k_rally: {
-    name: 'War Cry', owner: 'kaito', type: 'skill', cost: 1, attr: 'passion',
-    teamBuffAtk: 4, fury: 2, tags: ['Synergy'],
-    text: 'All allies +4 Attack this turn. Kaito gains +2 Fury. Play before attacking.',
-    up: { teamBuffAtk: 6, fury: 3, text: 'All allies +6 Attack this turn. Kaito gains +3 Fury.' },
-  },
-  k_feint: {
-    name: 'Feint Step', owner: 'kaito', type: 'skill', cost: 1, attr: 'passion',
-    shield: 6, draw: 1, fury: 1, tags: ['Synergy'],
-    text: 'Gain 6 Shield, +1 Fury, and Draw 1 card.',
-    up: { shield: 9, draw: 1, fury: 2, text: 'Gain 9 Shield, +2 Fury, and Draw 1 card.' },
-  },
-  k_supply: {
-    name: 'Combat Stims', owner: 'kaito', type: 'skill', cost: 0, attr: 'passion',
-    spawnTokens: { id: 'tok_cut', count: 1 }, fury: 1, tags: ['Synergy', 'Haste', 'Exhaust'],
-    text: 'Add a 0-AP Micro-Cut to hand and gain +1 Fury. Haste. Exhaust.',
-    up: { spawnTokens: { id: 'tok_cut', count: 2 }, fury: 2, tags: ['Synergy', 'Haste', 'Exhaust'], text: 'Add 2 Micro-Cuts to hand and gain +2 Fury. Haste. Exhaust.' },
-  },
-  m_formation: {
-    name: 'Formation', owner: 'momo', type: 'skill', cost: 1, attr: 'order',
-    teamShield: 6, teamCounter: 2, tags: ['Synergy'],
-    text: 'All allies gain 6 Shield and +2 Counter.',
-    up: { teamShield: 9, teamCounter: 3, text: 'All allies gain 9 Shield and +3 Counter.' },
+    shield: 8, counter: 3,
+    text: 'Gain 8 Shield and +3 Counter (retaliate when struck).',
+    up: { shield: 12, counter: 5, text: 'Gain 12 Shield and +5 Counter.' },
   },
   m_splint: {
     name: 'Field Splint', owner: 'momo', type: 'skill', cost: 1, attr: 'order',
-    heal: 6, shield: 6, stressHeal: 8, tags: ['Synergy'],
-    text: 'Heal 6 HP, gain 6 Shield, and clear 8 Stress.',
-    up: { heal: 10, shield: 9, stressHeal: 12, text: 'Heal 10 HP, gain 9 Shield, and clear 12 Stress.' },
+    heal: 6, stressHeal: 10,
+    text: 'Heal 6 HP and clear 10 Stress.',
+    up: { heal: 9, stressHeal: 16, text: 'Heal 9 HP and clear 16 Stress.' },
   },
-  g_tonic: {
-    name: 'Toxic Tonic', owner: 'goro', type: 'skill', cost: 1, attr: 'justice',
-    toxin: 4, teamStressHeal: 6, tags: ['Synergy'],
-    text: 'Apply 4 Toxin to the target and clear 6 Stress from the squad.',
-    up: { toxin: 6, teamStressHeal: 10, text: 'Apply 6 Toxin to the target and clear 10 Stress from the squad.' },
+  m_bash: {
+    name: 'Aegis Slam', owner: 'momo', type: 'attack', cost: 2, attr: 'order',
+    dmg: 6, shieldDmgPct: 1.0,
+    text: 'Deal 6 damage, +100% of your Shield.',
+    up: { dmg: 10, shieldDmgPct: 1.35, text: 'Deal 10 damage, +135% of your Shield.' },
+  },
+  m_up: {
+    name: 'Field Protocol', owner: 'momo', type: 'upgrade', cost: 1, attr: 'order',
+    turnShield: 3, tags: ['Initiation', 'Unique', 'Exhaust'],
+    text: 'Permanent: all allies gain 3 Shield at the start of every turn. One use per battle.',
+    up: { turnShield: 5, text: 'Permanent: all allies gain 5 Shield at the start of every turn. One use per battle.' },
+  },
+
+  // === GORO / Controller / Justice — carry the squad, one big swallow ===
+  g_strike: {
+    name: 'Scalpel', owner: 'goro', type: 'attack', cost: 1, attr: 'justice', basic: true,
+    dmg: 6, toxin: 2,
+    text: 'Deal 6 damage and apply 2 Toxin.',
+    up: { dmg: 9, toxin: 3, text: 'Deal 9 damage and apply 3 Toxin.' },
+  },
+  g_guard: {
+    name: 'Clot', owner: 'goro', type: 'skill', cost: 1, attr: 'justice',
+    shield: 7, teamStressHeal: 6,
+    text: 'Gain 7 Shield and clear 6 Stress from the squad.',
+    up: { shield: 10, teamStressHeal: 10, text: 'Gain 10 Shield and clear 10 Stress from the squad.' },
   },
   g_broth: {
     name: 'Marrow Broth', owner: 'goro', type: 'skill', cost: 1, attr: 'justice',
-    teamHeal: 5, shield: 7, tags: ['Synergy'],
-    text: 'Heal all allies 5 HP. Goro gains 7 Shield.',
-    up: { teamHeal: 8, shield: 11, text: 'Heal all allies 8 HP. Goro gains 11 Shield.' },
+    teamHeal: 5,
+    text: 'Heal all allies 5 HP.',
+    up: { teamHeal: 8, text: 'Heal all allies 8 HP.' },
   },
-  b_static: {
-    name: 'Static Bloom', owner: 'bibi', type: 'skill', cost: 1, attr: 'void',
-    resonance: 2, draw: 1, spawnTokens: { id: 'tok_spark', count: 1 }, tags: ['Synergy'],
-    text: 'Gain +2 Resonance, Draw 1, and add a 0-AP Neuro-Spark to hand.',
-    up: { resonance: 3, draw: 1, spawnTokens: { id: 'tok_spark', count: 2 }, tags: ['Synergy'], text: 'Gain +3 Resonance, Draw 1, and add 2 Neuro-Sparks.' },
+  g_devour: {
+    name: 'Devour', owner: 'goro', type: 'attack', cost: 2, attr: 'justice',
+    dmg: 10, toxin: 4, selfHealPctDmg: 0.5,
+    text: 'Deal 10 damage, apply 4 Toxin and heal yourself for half the damage dealt.',
+    up: { dmg: 14, toxin: 6, selfHealPctDmg: 0.5, text: 'Deal 14 damage, apply 6 Toxin and heal half the damage dealt.' },
   },
-  b_veil: {
-    name: 'Signal Veil', owner: 'bibi', type: 'skill', cost: 1, attr: 'void',
-    teamShield: 5, teamBuffAtk: 3, tags: ['Synergy'],
-    text: 'All allies gain 5 Shield and +3 Attack this turn.',
-    up: { teamShield: 8, teamBuffAtk: 5, text: 'All allies gain 8 Shield and +5 Attack this turn.' },
+  g_up: {
+    name: 'The Wall', owner: 'goro', type: 'upgrade', cost: 1, attr: 'justice',
+    blockBonus: 3, tags: ['Initiation', 'Unique', 'Exhaust'],
+    text: 'Permanent: every Shield you gain is +3 bigger. One use per battle.',
+    up: { blockBonus: 5, text: 'Permanent: every Shield you gain is +5 bigger. One use per battle.' },
   },
 
-  // === Yuna / Alchemist / Instinct (POISON Damage-over-Time) ===
-  // Poison rule: stacks collect on the enemy. When you End Turn, each enemy
-  // takes stacks x (3 + Potency) damage, then Poison -1. Her attacks also
-  // scale off the target's Poison (dmgPerPoison), so stacking feeds both.
+  // === BIBI / Psionic / Void — Mark the target, then unload ===
+  b_ping: {
+    name: 'Signal Ping', owner: 'bibi', type: 'attack', cost: 1, attr: 'void', basic: true,
+    dmg: 5, resonance: 1,
+    text: 'Deal 5 damage. Gain +1 Resonance.',
+    up: { dmg: 7, resonance: 2, text: 'Deal 7 damage. Gain +2 Resonance.' },
+  },
+  b_fuzz: {
+    name: 'Fuzz', owner: 'bibi', type: 'skill', cost: 1, attr: 'void',
+    shield: 6, draw: 1,
+    text: 'Gain 6 Shield and draw 1 card.',
+    up: { shield: 9, draw: 1, text: 'Gain 9 Shield and draw 1 card.' },
+  },
+  b_flare: {
+    name: 'Flare', owner: 'bibi', type: 'skill', cost: 1, attr: 'void',
+    mark: 2,
+    text: 'Mark all enemies for 2 of their actions (+50% damage taken).',
+    up: { mark: 3, text: 'Mark all enemies for 3 of their actions (+50% damage taken).' },
+  },
+  b_burst: {
+    name: 'Cytokine Storm', owner: 'bibi', type: 'attack', cost: 3, attr: 'void',
+    dmg: 8, aoe: true, scaleResonance: 4,
+    text: 'Deal 8 damage to all enemies, +4 per Resonance.',
+    up: { dmg: 12, scaleResonance: 6, text: 'Deal 12 damage to all enemies, +6 per Resonance.' },
+  },
+  b_up: {
+    name: 'Cross-talk', owner: 'bibi', type: 'upgrade', cost: 1, attr: 'void',
+    extraDraw: 1, firstAp: 1, tags: ['Initiation', 'Unique', 'Exhaust'],
+    text: 'Permanent: draw +1 card each turn and +1 AP on turn 1. One use per battle.',
+    up: { extraDraw: 1, firstAp: 2, text: 'Permanent: draw +1 card each turn and +2 AP on turn 1. One use per battle.' },
+  },
+
+  // === YUNA / Alchemist / Instinct — Poison: stack it, let End Turn collect ===
   y_sting: {
     name: 'Venom Sting', owner: 'yuna', type: 'attack', cost: 1, attr: 'instinct', basic: true,
-    dmg: 6, poison: 2, dmgPerPoison: 1,
-    text: 'BASIC ATTACK — Deal 6 damage (+1 per Poison on the target) and apply 2 Poison. Poison ticks for 3 per stack at End Turn — the bigger the stack, the harder this hits.',
-    up: { dmg: 9, poison: 3, dmgPerPoison: 2, text: 'BASIC ATTACK — Deal 9 damage (+2 per Poison on the target) and apply 3 Poison.' },
-  },
-  y_dose: {
-    name: 'Creeping Dose', owner: 'yuna', type: 'skill', cost: 1, attr: 'instinct',
-    poison: 4, tags: ['Poison'],
-    text: 'Apply 4 Poison. Every stack deals 3 damage at End Turn: ticks 12, then 9, then 6…',
-    up: { poison: 5, text: 'Apply 5 Poison: ticks 15, then 12, then 9… at each End Turn.' },
-  },
-  y_mist: {
-    name: 'Spore Mist', owner: 'yuna', type: 'skill', cost: 1, attr: 'instinct',
-    poisonAll: 2, tags: ['Poison'],
-    text: 'Apply 2 Poison to ALL enemies (ticks 6 each at End Turn).',
-    up: { poisonAll: 3, text: 'Apply 3 Poison to ALL enemies (ticks 9 each at End Turn).' },
-  },
-  y_incubate: {
-    name: 'Incubate', owner: 'yuna', type: 'skill', cost: 1, attr: 'instinct',
-    doublePoison: true, draw: 1, tags: ['Poison'],
-    text: 'Double the target’s Poison stacks (gains at most +6 stacks, 20 max) — its End-Turn tick grows with it — then Draw 1 card.',
-    up: { doublePoison: true, draw: 1, resonance: 1, tags: ['Poison'], text: 'Double the target’s Poison, +1 Resonance, and Draw 1.' },
+    dmg: 4, poison: 3,
+    text: 'Deal 4 damage and apply 3 Poison.',
+    up: { dmg: 6, poison: 5, text: 'Deal 6 damage and apply 5 Poison.' },
   },
   y_antidote: {
     name: 'Sweet Antidote', owner: 'yuna', type: 'skill', cost: 1, attr: 'instinct',
-    shield: 8, heal: 5, stressHeal: 10, tags: ['Synergy'],
-    text: 'Gain 8 Shield, heal 5 HP, and clear 10 Stress. She poisons enemies, not friends.',
-    up: { shield: 12, heal: 8, stressHeal: 16, text: 'Gain 12 Shield, heal 8 HP, and clear 16 Stress.' },
+    heal: 6, shield: 5,
+    text: 'Heal 6 HP and gain 5 Shield.',
+    up: { heal: 9, shield: 8, text: 'Heal 9 HP and gain 8 Shield.' },
   },
-  y_hatch: {
-    name: 'Hatchery', owner: 'yuna', type: 'skill', cost: 0, attr: 'instinct',
-    spawnTokens: { id: 'tok_spore', count: 2 }, tags: ['Poison', 'Haste', 'Exhaust'],
-    text: 'Add 2 free Spore Mites (0 AP, +Poison) to hand. Haste. Exhaust.',
-    up: { spawnTokens: { id: 'tok_spore', count: 3 }, tags: ['Poison', 'Haste', 'Exhaust'], text: 'Add 3 free Spore Mites to hand. Haste. Exhaust.' },
+  y_mist: {
+    name: 'Spore Mist', owner: 'yuna', type: 'skill', cost: 1, attr: 'instinct',
+    poisonAll: 3,
+    text: 'Apply 3 Poison to all enemies.',
+    up: { poisonAll: 5, text: 'Apply 5 Poison to all enemies.' },
+  },
+  y_epidemic: {
+    name: 'Epidemic Bloom', owner: 'yuna', type: 'skill', cost: 2, attr: 'instinct',
+    poisonAll: 7,
+    text: 'Apply 7 Poison to all enemies. That is a 21-damage tick on each at End Turn.',
+    up: { poisonAll: 10, text: 'Apply 10 Poison to all enemies. That is a 30-damage tick on each at End Turn.' },
   },
   y_culture: {
     name: 'Living Culture', owner: 'yuna', type: 'upgrade', cost: 1, attr: 'instinct',
-    poisonPotency: 1, onPoisonTickRes: 1, tags: ['Initiation', 'Unique'],
-    text: 'Permanent: every Poison stack deals +1 more damage per tick (4/stack instead of 3), and every Poison tick grants +1 Resonance. Scales with every stack you stack.',
-    up: { poisonPotency: 2, onPoisonTickRes: 1, onPoisonTickHeal: 1, tags: ['Initiation', 'Unique'], text: 'Permanent: Poison stacks deal +2 more per tick (5/stack), +1 Resonance per tick, and Yuna heals 1 per tick.' },
-  },
-  // --- Yuna Build-Around Cards ---
-  y_epidemic: {
-    name: 'Epidemic Bloom', owner: 'yuna', type: 'skill', cost: 2, attr: 'instinct', rare: true,
-    poisonAll: 5, vulnAll: 1, tags: ['Poison'],
-    text: 'Apply 5 Poison (ticks 15) and 1T Vulnerable (+35% taken) to ALL enemies.',
-    up: { poisonAll: 6, vulnAll: 2, tags: ['Poison'], text: 'Apply 6 Poison (ticks 18) and 2T Vulnerable to ALL enemies.' },
-  },
-  y_necrosis: {
-    name: 'Necrotic Feast', owner: 'yuna', type: 'skill', cost: 2, attr: 'instinct', rare: true,
-    detonatePoison: true, tags: ['Poison', 'Detonate'],
-    text: 'Detonate Poison: target immediately takes its full End-Turn tick — Poison stacks x 3 (more with Potency) — stacks are consumed, and your team heals 1 HP per stack.',
-    up: { detonatePoison: true, tags: ['Poison', 'Detonate'], text: 'Detonate Poison for stacks x 3+ damage, heal 1 per stack, and Draw 1.', draw: 1 },
-  },
-  y_predator: {
-    name: 'Apex Parasite', owner: 'yuna', type: 'skill', cost: 3, attr: 'instinct', rare: true,
-    poison: 8, triggerPoisonTick: 1, tags: ['Poison'],
-    text: 'Apply 8 Poison, then immediately trigger one Poison tick (stacks x 3 damage NOW, Poison -1).',
-    up: { poison: 10, triggerPoisonTick: 1, tags: ['Poison'], text: 'Apply 10 Poison, then immediately trigger one Poison tick (stacks x 3 NOW).' },
-  },
-  y_virulence: {
-    name: 'Virulence Engine', owner: 'yuna', type: 'upgrade', cost: 1, attr: 'instinct', rare: true,
-    poisonPotency: 1, onPoisonTickFury: 1, tags: ['Unique'],
-    text: 'Permanent: every Poison stack deals +1 more damage per tick (stacks with Living Culture — up to 5+/stack), and every Poison tick grants Kaito/the team +1 Fury (lead combatant if no Kaito).',
-    up: { poisonPotency: 2, onPoisonTickFury: 1, onPoisonTickRes: 1, tags: ['Unique'], text: 'Permanent: Poison stacks deal +2 more per tick, +1 Fury and +1 Resonance per tick.' },
+    poisonPotency: 1, tags: ['Initiation', 'Unique', 'Exhaust'],
+    text: 'Permanent: every Poison stack deals +1 damage per tick (4 per stack instead of 3). One use per battle.',
+    up: { poisonPotency: 2, text: 'Permanent: every Poison stack deals +2 damage per tick (5 per stack). One use per battle.' },
   },
 
-  // === SABLE / Mnemonist / Justice (PERCENT scaling) ===
-  // Every number on her kit is a percentage: attacks add % of the target's
-  // Max HP (steady) or % of its missing HP (execute), her Shield is a % of
-  // HER Max HP, and her heals restore a % of missing HP. Flat vs trash,
-  // enormous vs bosses — the bigger the HP pool, the harder she hits.
+  // === SABLE / Mnemonist / Justice — percentages: flat vs trash, huge vs bosses ===
   s_annotate: {
     name: 'Annotate', owner: 'sable', type: 'attack', cost: 1, attr: 'justice', basic: true,
-    dmg: 6, pctMaxHp: 0.03,
-    text: 'BASIC ATTACK — Deal 6 damage + 3% of the target’s Max HP. The bigger the enemy, the harder this hits.',
-    up: { dmg: 8, pctMaxHp: 0.04, text: 'BASIC ATTACK — Deal 8 damage + 4% of the target’s Max HP.' },
-  },
-  s_recall: {
-    name: 'Recall Strike', owner: 'sable', type: 'attack', cost: 1, attr: 'justice',
-    dmg: 5, pctMissingHp: 0.12,
-    text: 'Deal 5 damage + 12% of the target’s MISSING HP. An execute: worthless on a fresh enemy, lethal on a wounded one.',
-    up: { dmg: 7, pctMissingHp: 0.16, text: 'Deal 7 damage + 16% of the target’s missing HP.' },
+    dmg: 5, pctMaxHp: 0.03,
+    text: 'Deal 5 damage, +3% of the target’s Max HP.',
+    up: { dmg: 7, pctMaxHp: 0.04, text: 'Deal 7 damage, +4% of the target’s Max HP.' },
   },
   s_margin: {
     name: 'Margin Note', owner: 'sable', type: 'skill', cost: 1, attr: 'justice',
-    shieldPctMax: 0.14, stressHeal: 8,
-    text: 'Gain Shield equal to 14% of Sable’s Max HP and clear 8 Stress.',
-    up: { shieldPctMax: 0.20, stressHeal: 12, text: 'Gain Shield equal to 20% of Sable’s Max HP and clear 12 Stress.' },
-  },
-  s_index: {
-    name: 'Index Card', owner: 'sable', type: 'skill', cost: 1, attr: 'justice',
-    resonance: 2, draw: 1,
-    text: 'Gain +2 Resonance and Draw 1 card. She has already filed this moment.',
-    up: { resonance: 3, draw: 1, text: 'Gain +3 Resonance and Draw 1 card.' },
+    shield: 6, draw: 1,
+    text: 'Gain 6 Shield and draw 1 card.',
+    up: { shield: 9, draw: 1, text: 'Gain 9 Shield and draw 1 card.' },
   },
   s_second: {
     name: 'Second Reading', owner: 'sable', type: 'skill', cost: 1, attr: 'justice',
-    healPctMissing: 0.30, stressHeal: 10,
-    text: 'Heal 30% of Sable’s MISSING HP and clear 10 Stress. The closer to death, the bigger the heal.',
-    up: { healPctMissing: 0.45, stressHeal: 16, text: 'Heal 45% of Sable’s missing HP and clear 16 Stress.' },
+    healPctMissing: 0.3, stressHeal: 8,
+    text: 'Heal 30% of your missing HP and clear 8 Stress.',
+    up: { healPctMissing: 0.45, stressHeal: 12, text: 'Heal 45% of your missing HP and clear 12 Stress.' },
   },
   s_titer: {
     name: 'Titer Lance', owner: 'sable', type: 'attack', cost: 2, attr: 'justice',
-    dmg: 8, pctMaxHp: 0.05, mark: 2,
-    text: 'Deal 8 damage + 5% of the target’s Max HP and apply 2T Mark (+50% dmg taken).',
-    up: { dmg: 11, pctMaxHp: 0.07, mark: 3, text: 'Deal 11 damage + 7% of Max HP and apply 3T Mark.' },
+    dmg: 8, pctMaxHp: 0.07, mark: 2,
+    text: 'Deal 8 damage, +7% of the target’s Max HP, and Mark it for 2 of its actions (+50% damage taken).',
+    up: { dmg: 12, pctMaxHp: 0.09, mark: 3, text: 'Deal 12 damage, +9% of the target’s Max HP, and Mark it for 3 actions.' },
   },
   s_up: {
     name: 'Living Index', owner: 'sable', type: 'upgrade', cost: 1, attr: 'justice',
-    pctBoost: 0.02, tags: ['Initiation', 'Unique'],
-    text: 'Permanent: all of Sable’s % HP damage effects gain +2% (e.g. Annotate deals +5% of Max HP).',
-    up: { pctBoost: 0.03, extraDraw: 1, tags: ['Initiation', 'Unique'], text: 'Permanent: % HP damage +3%, and draw +1 card each turn.' },
-  },
-  // --- Sable Build-Around Cards (tight legendary pool: 2 rares) ---
-  s_apex: {
-    name: 'Apex Entry', owner: 'sable', type: 'attack', cost: 3, attr: 'justice', rare: true,
-    dmg: 10, pctMaxHp: 0.10, pctMissingHp: 0.10,
-    text: 'Deal 10 damage + 10% of the target’s Max HP + 10% of its missing HP. A boss execution written in advance.',
-    up: { dmg: 14, pctMaxHp: 0.13, pctMissingHp: 0.13, text: 'Deal 14 damage + 13% of Max HP + 13% of missing HP.' },
-  },
-  s_century: {
-    name: 'Century Recall', owner: 'sable', type: 'skill', cost: 2, attr: 'justice', rare: true,
-    healPctMissing: 0.45, teamStressHeal: 18, resonance: 2,
-    text: 'Heal 45% of Sable’s missing HP, clear 18 Stress from the squad, and gain +2 Resonance.',
-    up: { healPctMissing: 0.60, teamStressHeal: 26, resonance: 3, text: 'Heal 60% of missing HP, clear 26 team Stress, +3 Resonance.' },
+    pctBoost: 0.02, tags: ['Initiation', 'Unique', 'Exhaust'],
+    text: 'Permanent: every % HP effect on Sable’s cards gains +2%. One use per battle.',
+    up: { pctBoost: 0.03, text: 'Permanent: every % HP effect gains +3%. One use per battle.' },
   },
 
-  // === Generated Tokens ===
+  // === Generated Tokens (only the Breakdown pull cards are generated now) ===
   tok_cut: {
     name: 'Micro-Cut', owner: 'kaito', type: 'attack', cost: 0, attr: 'passion', token: true,
-    dmg: 5, bleed: 1, tags: ['Exhaust', 'Haste'],
-    text: 'Deal 5 damage and +1 Bleed. Haste. Exhaust.',
-    up: { dmg: 8, bleed: 2, text: 'Deal 8 damage and +2 Bleed. Haste. Exhaust.' },
+    dmg: 4, tags: ['Exhaust', 'Haste'],
+    text: 'Deal 4 damage. Haste. Exhaust.',
+    up: { dmg: 6, text: 'Deal 6 damage. Haste. Exhaust.' },
   },
   tok_spark: {
     name: 'Neuro-Spark', owner: 'bibi', type: 'attack', cost: 0, attr: 'void', token: true,
@@ -482,9 +248,9 @@ export const CARDS = {
   },
   tok_spore: {
     name: 'Spore Mite', owner: 'yuna', type: 'attack', cost: 0, attr: 'instinct', token: true,
-    dmg: 3, poison: 1, dmgPerPoison: 1, tags: ['Poison', 'Exhaust', 'Haste'],
-    text: 'Deal 3 damage (+1 per Poison on the target) and apply 1 Poison. Haste. Exhaust.',
-    up: { dmg: 4, poison: 2, dmgPerPoison: 2, text: 'Deal 4 damage (+2 per Poison on the target) and apply 2 Poison. Haste. Exhaust.' },
+    dmg: 3, poison: 2, tags: ['Exhaust', 'Haste'],
+    text: 'Deal 3 damage and apply 2 Poison. Haste. Exhaust.',
+    up: { dmg: 4, poison: 3, text: 'Deal 4 damage and apply 3 Poison. Haste. Exhaust.' },
   },
 
   // === Status / Curse ===
@@ -497,7 +263,6 @@ export const CARDS = {
   curse_doubt:     { name: 'Doubt', owner: 'enemy', type: 'curse', cost: 0, text: 'Unplayable. Clogs your hand.', unplayable: true },
   curse_fever:     { name: 'Fever', owner: 'enemy', type: 'curse', cost: 0, text: 'Unplayable. Adds 6 Stress when drawn.', unplayable: true, onDrawStress: 6 },
 };
-
 // 3-Choice Epiphany Evolution Templates (CZN-style mid-combat branching)
 export const EPIPHANY_BRANCHES = [
   { id: 'brutal', name: 'BRUTAL', color: '#ff4d6d', desc: '+8 Damage/Shield & +3 Bleed or +2 Strength' },
@@ -511,42 +276,42 @@ export const CHARACTERS = {
     art: 'images/cut-kaito-cut.png', skin: '#ff4d6d', dob: '1987-03-19',
     hp: 88, blurb: 'First responder. Builds Fury from pressure and breaks bosses wide open.',
     leader: { name: 'Vanguard Point', desc: 'Leader: Kaito starts with +2 Strength & +2 Fury.' },
-    deck: ['k_jab', 'k_brace', 'k_first', 'k_rally', 'k_feint', 'k_supply', 'k_up'],
+    deck: ['k_jab', 'k_brace', 'k_rally', 'k_last', 'k_up'],
   },
   momo: {
     id: 'momo', name: 'Momo', full: 'Momo — Platelet', cls: 'vanguard', attr: 'order',
     art: 'images/cut-momo-cut.png', skin: '#4da3ff', dob: '1992-07-19',
     hp: 104, blurb: 'Barricade Shield, Counter spikes, and turns defense into Aegis Slams.',
     leader: { name: 'Iron Line', desc: 'Leader: All allies start with +5 Shield and +2 Counter.' },
-    deck: ['m_strike', 'm_guard', 'm_patch', 'm_stand', 'm_triage', 'm_formation', 'm_up'],
+    deck: ['m_strike', 'm_guard', 'm_splint', 'm_bash', 'm_up'],
   },
   goro: {
     id: 'goro', name: 'Goro', full: 'Goro — Macrophage', cls: 'controller', attr: 'justice',
     art: 'images/cut-goro-cut.png', skin: '#ffc94d', dob: '1984-11-03',
     hp: 110, blurb: 'Stacks Toxin & Bleed, purifies Stress into Strength, retrieves finishers.',
     leader: { name: 'Steady Pulse', desc: 'Leader: All allies gain +6 Max HP and +2 Resonance on Turn 1.' },
-    deck: ['g_strike', 'g_guard', 'g_devour', 'g_hymn', 'g_tonic', 'g_broth', 'g_up'],
+    deck: ['g_strike', 'g_guard', 'g_broth', 'g_devour', 'g_up'],
   },
   bibi: {
     id: 'bibi', name: 'Bibi', full: 'Bibi — Mast Cell', cls: 'psionic', attr: 'void',
     art: 'images/cut-bibi-cut.png', skin: '#b06bff', dob: '1998-03-15',
     hp: 84, blurb: 'Marks targets, spawns 0-AP Sparks, echoes Attacks, detonates Resonance.',
     leader: { name: 'Cytokine Surge', desc: 'Leader: Start every battle with +2 EP and +1 Resonance.' },
-    deck: ['b_ping', 'b_fuzz', 'b_hist', 'b_over', 'b_static', 'b_veil', 'b_up'],
+    deck: ['b_ping', 'b_fuzz', 'b_flare', 'b_burst', 'b_up'],
   },
   yuna: {
     id: 'yuna', name: 'Yuna', full: 'Yuna — Eosinophil', cls: 'alchemist', attr: 'instinct',
     art: 'images/cut-yuna-cut.png', skin: '#57e389', dob: '2001-08-22',
     hp: 92, blurb: 'Poison apothecary. Stacks Poison that melts enemies at End Turn, then incubates or detonates it.',
     leader: { name: 'Toxic Bloom', desc: 'Leader: Enemies start with 3 Poison — already a 9-damage tick at the first End Turn.' },
-    deck: ['y_sting', 'y_dose', 'y_mist', 'y_incubate', 'y_antidote', 'y_hatch', 'y_culture'],
+    deck: ['y_sting', 'y_antidote', 'y_mist', 'y_epidemic', 'y_culture'],
   },
   sable: {
     id: 'sable', name: 'Sable', full: 'Sable — Memory B', cls: 'mnemonist', attr: 'justice',
     art: 'images/char-memoryb.png', skin: '#F0A63C', dob: '1979-05-30',
     hp: 96, blurb: 'Percent scaling. Damage as % of enemy Max/Missing HP, Shield as % of her Max HP, heals as % of missing HP. Melts bosses.',
     leader: { name: 'Written Down', desc: 'Leader: Start with +1 EP and +1 Resonance — Sable has read this fight before.' },
-    deck: ['s_annotate', 's_recall', 's_margin', 's_index', 's_second', 's_titer', 's_up'],
+    deck: ['s_annotate', 's_margin', 's_second', 's_titer', 's_up'],
   },
 };
 
@@ -692,58 +457,58 @@ export const ENEMIES = {
 // ---------------------------------------------------------------------------
 export const CHARACTER_GUIDES = {
   kaito: {
-    difficulty: 'Easy to start · Hard to perfect', fantasy: 'A pressure fighter who turns pain, speed and repeated hits into one enormous Fury payoff.',
-    core: 'Fury is stored damage. It does almost nothing sitting there — cards that say “per Fury”, “consume Fury” or “scale with Fury” turn each stack into real damage.',
-    loop: ['Hit often with cheap Attacks to build Fury (Cytokine Jab, Overclock).', 'Let small Stress gains feed you — every Stress gain gives Kaito +1 Fury — but never drift to 100 Stress.', 'Spend the stack: Last Shift consumes all Fury, Apex Cleaver scales without consuming it.'],
-    combo: ['Turn 1: Overclock → Cytokine Jab ×2 (Fury starts flowing every Attack).', 'Blade Rush after any Attack for Combo + Bleed, which also triggers Bleed again on later hits.', 'Fever Surge when a finisher is in hand: +Strength, +Fury, guaranteed Crit.', 'Last: Last Shift as your final AP spend — Finale + guaranteed Crit + all Fury consumed.'],
-    tips: ['Multi-hit cards love Strength: each hit gets +Strength separately.', 'Retain Apex Cleaver: it gets cheaper and stronger every turn you hold it.', 'At Stress ≥ 50 Apex Cleaver gains +50% — dangerous, deliberate, very Kaito.'],
-    partners: 'Momo feeds him Counter-Fury through PHALANX and keeps him alive; Bibi Marks the target (+50%) before he spends Fury.',
-    simGoal: 'Reach 8 Fury, break the Colossus, then land a 60+ damage hit.',
+    difficulty: 'Easy', fantasy: 'A pressure fighter. Hit with cheap Attacks to bank Fury, then hand it all to one Last Shift.',
+    core: 'Fury is stored damage. Alone it does nothing — Last Shift converts every stack into +8 damage and then empties it. Build it with Cytokine Jab (+1), Adrenal Brace (+2) and Overclock (+1 per Attack).',
+    loop: ['Open with Overclock: +1 AP every turn and +1 Fury per Attack, for the whole fight.', 'Swing Cytokine Jab to build Fury while chipping the enemy down.', 'Spend the stack on Last Shift — ideally as your last AP, which adds Finale damage and a guaranteed Crit.'],
+    combo: ['Overclock → Cytokine Jab ×2 → Last Shift on the last AP.', 'War Cry first (+3 Attack to the whole squad), then Adrenal Brace before the enemy counter hits 0.', 'Adrenal Brace is your only defence — use it on the turn a big intent is landing.'],
+    tips: ['Fury has no cap, but your HP does. Do not skip Adrenal Brace to build one more stack.', 'Overclock is a one-use Upgrade: play it on turn 1, then it is gone for the rest of the battle.', 'Last Shift wants to be your final AP — check the Finale line on the card before you spend AP elsewhere.'],
+    partners: 'Momo keeps him alive; Bibi Marks the target so his Last Shift lands for 50% more.',
+    simGoal: 'Reach 8 Fury, then land a 60+ Last Shift with the Finale Crit.',
   },
   momo: {
-    difficulty: 'Easy', fantasy: 'A wall that hits back. Momo turns Shield — normally pure defence — into Counter damage and giant Aegis Slams.',
-    core: 'Shield blocks damage and therefore blocks Stress. Barricade lets Shield survive the turn change, so defence can be saved up and spent as offence.',
-    loop: ['Gain Shield every turn (Guard Stance, Stand Firm, Field Protocol).', 'Let enemies hit the wall: Counter retaliates even when Shield absorbs everything.', 'Cash the wall in with Aegis Slam: damage equal to 100% of total team Shield.'],
-    combo: ['Field Protocol early — free Shield every turn, forever.', 'Stand Firm to Taunt + keep 50–100% Shield, then Guard Stance to stack Counter.', 'Platelet Deploy for team Shield + free Micro-Cut attacks.', 'Aegis Slam only when the team Shield total is fat — check the card’s live number.'],
-    tips: ['Counter = Counter stacks + Strength, and it can hit Weakness, Mark and Vulnerable multipliers.', 'A fully blocked hit causes zero Stress. Shield is mental-health care.', 'Spiked Scaffold turns every Shield gain into Counter + thorns damage.'],
-    partners: 'Goro heals and purifies her Shield turns into Strength; Kaito spends the turns she buys him building Fury.',
-    simGoal: 'Hold 30+ Shield at once, deal Counter damage, then land a 50+ Aegis Slam.',
+    difficulty: 'Easy', fantasy: 'A wall that hits back. Shield everything, then turn the wall into one enormous Aegis Slam.',
+    core: 'Shield blocks damage and therefore blocks Stress. Counter punishes anything that hits her even when the Shield eats it, and Aegis Slam converts 100% of her remaining Shield into damage.',
+    loop: ['Guard Stance every turn you can: Shield plus Counter.', 'Field Splint keeps the team’s Stress down — Stress is a second health bar.', 'Cash the wall in with Aegis Slam once your Shield is fat.'],
+    combo: ['Field Protocol on turn 1: 3 Shield on the whole squad at the start of every turn, for the fight.', 'Guard Stance → let them hit the wall → Aegis Slam for Shield + 100%.', 'Field Splint on the ally who is closest to a Breakdown, not on whoever is lowest.'],
+    tips: ['A fully blocked hit causes zero Stress. Shield is mental-health care.', 'Counter = Counter stacks + Strength and it still fires through a fully blocked hit.', 'Aegis Slam only reads YOUR Shield — stack it before you spend it.'],
+    partners: 'Goro tops the squad up while she holds; Kaito spends the turns she buys him building Fury.',
+    simGoal: 'Hold 20+ Shield at once, take a Counter hit, then land a 40+ Aegis Slam.',
   },
   goro: {
-    difficulty: 'Medium', fantasy: 'A slow apocalypse. Goro stacks Bleed and Toxin, doubles them, detonates them, and heals his team with the result.',
-    core: 'Bleed triggers when the enemy is hit and when detonated. Toxin ticks hard whenever the enemy acts. Both ignore the normal “one hit” limit — they scale with patience.',
-    loop: ['Apply Bleed/Toxin with almost every card (Scalpel, Cleave).', 'Double the stacks with Enzyme Catalyst instead of hitting again.', 'Detonate with Lysis Detonation — and heal the team for 30% of the eruption.'],
-    combo: ['The Wall early: bigger Shields and healing that also grants Fury.', 'Cleave into a crowd for Bleed + Vulnerable (+35% taken) on everything.', 'Enzyme Catalyst on the fattest stack — doubling 12 is worth more than adding 3.', 'Lysis Detonation to cash out, heal, and often break Tenacity for free AP.'],
-    tips: ['Detonated status damage can break Tenacity and trigger Ravage — watch the amber bar.', 'Purify: healing someone to full grants Strength. Overhealing is a buff engine.', 'Retrieve (Lullaby) fishes your best Attack out of the Graveyard at a discount.'],
-    partners: 'Bibi adds CASCADE (+1 stack per application) and Mark; Momo keeps everyone alive while the statuses cook.',
-    simGoal: 'Build 12+ combined Bleed/Toxin on the Colossus, then detonate it.',
+    difficulty: 'Easy', fantasy: 'The gentle giant. He tanks, he heals the squad, and he eats whatever is left.',
+    core: 'Toxin ticks for its whole stack every time that enemy acts, so it punishes anything slow and angry. Devour cashes a big hit, applies more Toxin, and heals Goro for half the damage.',
+    loop: ['Scalpel to apply Toxin and chip away.', 'Marrow Broth whenever the squad is hurt — it heals everybody.', 'Devour to finish a wounded enemy and top yourself up.'],
+    combo: ['The Wall on turn 1: every Shield the squad gains is 3 bigger, for the whole fight.', 'Scalpel → Scalpel → Devour: 6 Toxin applied, then a heavy hit that heals him back.', 'Clot before a debuff turn: Shield for him, Stress cleared for everyone.'],
+    tips: ['Toxin damage ignores Shield — it is damage the enemy does to itself.', 'Devour heals from damage actually dealt, so use it on a healthy target, not a nearly-dead one.', 'Clot is a team Stress wipe — save it for the turn after a Fever curse.'],
+    partners: 'Yuna doubles down on damage over time; Momo covers the turns where his heals are on cooldown.',
+    simGoal: 'Stack 12+ Toxin on the Colossus, then land a 40+ Devour.',
   },
   bibi: {
-    difficulty: 'Hard', fantasy: 'A signal DJ. Bibi floods the hand with free Sparks, Marks one target for deletion, and bends Resonance into double-cast Attacks.',
-    core: 'Resonance is built by Skills and Sparks. At 5+, a heavy Attack Bursts for ×1.6. Prism Echo makes the next Attack fire twice — multipliers stack multiplicatively.',
-    loop: ['Play Skills and 0-AP Sparks to climb Resonance without spending the turn.', 'Mark + Vulnerable the target (Flare) before anyone spends anything big.', 'Prism → biggest Attack in hand. Then do it again next turn.'],
-    combo: ['Cross-talk early: +1 draw every turn and Exhausts that damage + grant EP.', 'Overdrive (0 AP) for AP, Resonance and a Spark — it does not tick enemy counters.', 'Signal Prism, then Resonance Singularity into a Marked target for a screen-shaking number.', 'Degranulate when the hand is thin: 3–4 free Sparks refill both hand and Resonance.'],
-    tips: ['Haste cards (0-AP Sparks, Overdrive) do not advance enemy action counters. Free is really free.', 'Void Cascade scales with every card you have Exhausted all fight — it is a late-game bomb.', 'Echo copies the whole Attack, including Weakness, Mark, Burst and Crit multipliers.'],
-    partners: 'Kaito is her favourite Echo target (EDGE synergy: +1 AP and Chain damage); Goro detonates what her Marks amplify.',
-    simGoal: 'Reach 8 Resonance, Mark the Colossus, and land a 60+ hit.',
+    difficulty: 'Easy', fantasy: 'A signal DJ. Mark the whole board, charge Resonance, then drop one loud Cytokine Storm.',
+    core: 'Mark makes everything take +50% damage — apply it before anyone spends anything big. Resonance builds from Skills and Signal Ping, and Cytokine Storm adds +4 damage per Resonance on every enemy.',
+    loop: ['Flare early: every enemy is Marked for 2 of its actions.', 'Play Skills and Signal Ping to stack Resonance — they tick the enemy clock, so watch the counters.', 'Cytokine Storm when Resonance is high and the board is Marked.'],
+    combo: ['Flare → Signal Ping ×2 (Resonance 4+) → Cytokine Storm into every Marked enemy.', 'Fuzz when your hand is thin: Shield plus a card.', 'Cross-talk on turn 1: +1 card every turn and +1 AP on the opening turn.'],
+    tips: ['Mark is a multiplier on EVERY attacker, so it is worth a whole card even with no damage on it.', 'Cytokine Storm is 3 AP: build the Resonance on earlier turns, not the same one.', 'Cross-talk is a one-use Upgrade — play it in the opening hand and forget it.'],
+    partners: 'Kaito’s Last Shift loves a Marked target; Yuna’s Poison ticks are amplified by her own Mark as well.',
+    simGoal: 'Reach 8 Resonance, Mark the Colossus, then land a 50+ Cytokine Storm.',
   },
   yuna: {
-    difficulty: 'Medium', fantasy: 'A poison apothecary who wins fights she has already stopped touching. The enemy melts at End Turn while she shields, draws and smiles.',
-    core: 'POISON is damage-over-time (DoT) that SCALES. Every stack deals 3 damage when you End Turn (then -1 stack, max 20 stacks): 10 Poison ticks 30, then 27, then 24… Her Potency upgrades (Living Culture, Virulence Engine) add +damage PER STACK, and Incubate grows the stack — so stacks x per-stack damage multiplies fast. Her attacks scale too: Venom Sting deals +1 damage per Poison already on the target (+2 upgraded), so the stack you built also makes her hit directly harder. Poison ignores Strength timing and Shield, and can kill before the enemy acts.',
-    loop: ['Apply Poison with almost every card: Venom Sting (her one Basic Attack), Creeping Dose, Spore Mist, free Spore Mites.', 'Grow the biggest stack with Incubate — a 12-stack becomes 18, a 72-damage tick with one Potency upgrade.', 'Sting the most-poisoned enemy: at 20 Poison her 1-AP Basic Attack hits for 26+ before multipliers (49+ upgraded). Then End Turn and collect the tick.'],
-    combo: ['Living Culture turn 1 — every stack now pays 4 per tick and every tick grants +1 Resonance.', 'Spore Mist into a crowd, Hatchery for free Mites, then Incubate the boss stack (up to +6).', 'Apex Parasite when you want it NOW: +8 Poison and an immediate stacks-x3 tick.', 'Necrotic Feast to cash a huge stack instantly (stacks x 3+) and heal the team per stack — or simply let it melt.'],
-    tips: ['Do the math before End Turn: stacks x 3 (or x4-5 with Potency) is printed on the green POISON icon under the enemy HP bar — a lethal tick kills before it acts again.', 'Long-press / right-click an enemy to inspect exactly how much its Poison will tick for.', 'Poison does not reduce Tenacity by itself. Pair her with a Weakness hitter when you need a Break, or let the tick finish a Ravaged target.'],
-    partners: 'Goro (CASCADE adds +1 per status application); Bibi Marks targets (x1.5) so her Poison-scaled Sting and your finishers hit harder while Poison cooks.',
-    simGoal: 'Stack 15+ Poison on the Colossus, watch a 45+ End-Turn tick, then land a huge Poison-scaled Venom Sting.',
+    difficulty: 'Easy', fantasy: 'A poison apothecary. She stops touching the enemy and lets End Turn finish the argument.',
+    core: 'POISON is damage over time that scales: at End Turn each enemy takes stacks x 3 damage, then loses 1 stack. Living Culture makes it stacks x 4 for the rest of the fight. Cap is 20 stacks.',
+    loop: ['Venom Sting and Spore Mist to stack Poison on everything.', 'Living Culture on turn 1: every stack now pays 4 instead of 3.', 'Epidemic Bloom for a 21+ damage tick on the whole board, then end the turn and collect.'],
+    combo: ['Living Culture → Venom Sting → Spore Mist → Epidemic Bloom → End Turn.', 'Sweet Antidote is her only defence: heal plus Shield on the turn she is targeted.', 'Against one fat enemy, Spore Mist is a wasted card — pour every stack into it instead.'],
+    tips: ['Poison ignores Shield and does not need Strength, so it is the most reliable damage in the game.', 'Count the tick before you End Turn: stacks x 3 (or x 4 with Living Culture) is the damage it is about to take.', 'Poison decays by 1 per End Turn, so a small stack is a waste — commit or skip.'],
+    partners: 'Goro’s Toxin stacks a second damage-over-time on the same target; Bibi’s Mark raises the Poison tick too.',
+    simGoal: 'Stack 15+ Poison on the Colossus, watch a 45+ End-Turn tick, and keep the stack alive.',
   },
   sable: {
-    difficulty: 'Medium', fantasy: 'A legendary archivist who does not hit harder — she hits by percentage. The bigger the enemy\'s HP pool, the more every one of her cards is worth.',
-    core: 'PERCENT SCALING. Annotate and Titer Lance add damage equal to a % of the target\'s MAX HP, so they are modest against a 34-HP Spore Node (6 + 1) and enormous against a 460-HP boss (6 + 14, before multipliers — and % damage still takes Weakness, Mark, Vulnerable, Burst and Crit multipliers on top). Recall Strike instead adds 12% of the target\'s MISSING HP: an execute that grows as the fight is won. Her defence scales too — Margin Note shields for 14% of HER Max HP, and Second Reading heals 30% of her MISSING HP, so she is hardest to kill exactly when she is closest to death.',
-    loop: ['Open with Living Index: every % effect gains +2% for the whole fight (Annotate becomes 5% of Max HP).', 'Annotate and Titer Lance the biggest HP pool on the field — % damage ignores how tanky the target feels to everyone else. Mark with Titer Lance first when you can.', 'Swap to Recall Strike as the target\'s HP falls: at 50% missing on a boss it adds more than Annotate ever will.', 'Use Second Reading late, never early: 30% of missing HP is a small heal at full HP and a resurrection at 20 HP.'],
-    combo: ['Living Index turn 1 — the +2% applies to every % card for the rest of the fight, including Apex Entry.', 'Titer Lance to Mark (+50%), then Apex Entry: 10 + 10% Max + 10% missing, all multiplied by the Mark.', 'At low HP: Margin Note (Shield = % of her Max HP) buys the turn, Second Reading converts a near-death Sable back to half health.', 'Century Recall when the whole squad is stressed and Sable is wounded — her biggest heal is also the team\'s reset button.'],
-    tips: ['Do the % maths on the card: the live preview number already includes the % bonus for the current target — bigger enemy, bigger number.', 'Percent damage still breaks Tenacity normally when it hits a Weakness (Sable is Justice ✧).', 'Against trash packs Sable is deliberately ordinary — bring a flat-damage partner for the small stuff and save her for the wall behind them.'],
-    partners: 'Bibi Marks and Echoes her % lances (multipliers stack on % damage); Momo\'s Barricade keeps her alive long enough for Second Reading to be enormous.',
-    simGoal: 'With Living Index up, land a 40+ hit on the Colossus from % scaling alone, then execute with Recall Strike.',
+    difficulty: 'Medium', fantasy: 'An archivist who does not hit harder — she hits by percentage. The bigger the enemy, the more every card is worth.',
+    core: 'PERCENT SCALING. Annotate and Titer Lance add a % of the target’s Max HP, so they are modest on a 34-HP Spore and enormous on a 400-HP boss. Second Reading heals a % of her MISSING HP — small at full health, huge near death.',
+    loop: ['Living Index on turn 1: every % effect gains +2% for the whole fight.', 'Annotate and Titer Lance the biggest HP pool on the field.', 'Second Reading late, never early — it converts a near-death Sable back to half health.'],
+    combo: ['Living Index → Titer Lance (Mark, +50%) → Annotate into the Mark.', 'Margin Note when the hand is thin: Shield plus a card.', 'Titer Lance Marks the target for the whole squad, not just for Sable.'],
+    tips: ['The live number on the card already includes the % bonus for your selected target — trust it.', 'Against small enemies she is deliberately ordinary: let a flat-damage partner clear the trash.', 'Second Reading is a % of MISSING HP, so playing it at full HP does almost nothing.'],
+    partners: 'Bibi’s Mark multiplies her % lances; Momo’s Shield keeps her alive long enough for Second Reading to matter.',
+    simGoal: 'With Living Index up, land a 40+ %HP hit on the Colossus.',
   },
 };
 

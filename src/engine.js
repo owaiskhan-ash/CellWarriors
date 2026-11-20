@@ -181,11 +181,16 @@ export function startBattle(opts, partyIds, seed) {
   if (has('adrenal') && characters[0]) characters[0].fury += 2;
   if (has('metronome') && config.sands == null) state.sands += 1;
 
+  // OPENER: every Initiation card (each character's one-use buff Upgrade)
+  // comes to the opening hand, so the fight always opens with the squad's
+  // full power online. The rest of the draw pile is reshuffled so the small
+  // 5-card-per-character kits are never clumped in a fixed order.
   const opening = [];
   state.drawPile = state.drawPile.filter((c) => {
     if ((c.tags || []).includes('Initiation')) { opening.push(c); return false; }
     return true;
   });
+  state.drawPile = shuffle(state.drawPile, rng);
 
   log(state, `${state.mission.name.toUpperCase()}${state.mission.place ? ' — ' + state.mission.place : ''}`, 'system');
   const w = enemies[0] ? attrOf(enemies[0].weakness).name : '—';
@@ -849,6 +854,11 @@ export function playCard(state, handIndex, targetUid = null) {
       });
     }
     if (card.shieldHalfDmg && actor && dealtFirstTarget > 0) addShield(state, actor, Math.max(4, Math.floor(dealtFirstTarget / 2)));
+    // Lifesteal rider (Goro's Devour): heal the attacker for a share of the
+    // damage the card actually dealt — simple, one line, no status stacks.
+    if (card.selfHealPctDmg && actor && dealtFirstTarget > 0) {
+      healCharacter(state, actor, Math.max(1, Math.round(dealtFirstTarget * card.selfHealPctDmg)), 0);
+    }
     if (isChain && card.chainMult) { state.ap += 1; log(state, '  Chain bonus: +1 AP!', 'combo'); }
   }
 
@@ -1030,7 +1040,7 @@ export function playCard(state, handIndex, targetUid = null) {
 
   if (card.type === 'upgrade') {
     exhaustCard(state, card);
-    log(state, `${card.name} stays active for the fight.`, 'upgrade');
+    log(state, `${card.name} stays active for the fight — one use per battle.`, 'upgrade');
   } else if ((card.tags || []).includes('Exhaust')) {
     exhaustCard(state, card);
   } else {

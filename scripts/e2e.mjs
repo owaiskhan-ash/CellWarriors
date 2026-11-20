@@ -34,7 +34,7 @@ ok('mute restores', $('btn-mute-title').querySelector('use')?.getAttribute('href
 // 2. Title → Roster (Chaos default)
 click('btn-start');
 ok('roster shown', !$('view-roster').classList.contains('hidden'));
-ok('5 combatants', $('roster').querySelectorAll('.roster-card').length === 5);
+ok('6 combatants', $('roster').querySelectorAll('.roster-card').length === 6, String($('roster').querySelectorAll('.roster-card').length));
 ok('roster entry stagger applied', [...$('roster').querySelectorAll('.roster-card')].every((n) => n.style.animationDelay !== ''));
 ok('default team of 3', $('team-strip').querySelectorAll('.team-slot.filled').length === 3);
 ok('leader badge on slot 1', !!$('team-strip').querySelector('.slot-lead'));
@@ -51,12 +51,12 @@ click('btn-deploy');
 ok('chaos map shown', !$('view-map').classList.contains('hidden'));
 ok('11 floors rendered', $('map-floors').querySelectorAll('.map-floor-row').length === 11);
 ok('30 starting run cells', $('map-cells').textContent.trim() === '30');
-ok('deck button shows 21 cards', $('map-deck-n').textContent.trim() === '21');
+ok('deck button shows 15 cards (3 x 5-card kits)', $('map-deck-n').textContent.trim() === '15', $('map-deck-n').textContent);
 
 // Inspect deck modal from map
 click('btn-map-deck');
 ok('deck modal opens', !$('deck-modal').classList.contains('hidden'));
-ok('21 cards in deck modal', $('deck-modal-grid').querySelectorAll('.deck-item').length === 21);
+ok('15 cards in deck modal', $('deck-modal-grid').querySelectorAll('.deck-item').length === 15, String($('deck-modal-grid').querySelectorAll('.deck-item').length));
 click('deck-modal-close');
 ok('deck modal closes', $('deck-modal').classList.contains('hidden'));
 
@@ -97,7 +97,7 @@ const domCards = [...$('hand').querySelectorAll('.card')];
 ok('cards render art', !!$('hand').querySelector('.card-art, .card-artimg'));
 const atkIdx = cw.battle.hand.findIndex((c) => c.type === 'attack' && (c.zeroCost ? 0 : c.cost) <= cw.battle.ap);
 domCards[atkIdx >= 0 ? atkIdx : 0].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
-ok('character cut-in shown', !$('cutin').classList.contains('hidden'));
+ok('no character cut-in on card plays (Ego only)', $('cutin').classList.contains('hidden'));
 ok('bark toast shown', !$('bark-toast').classList.contains('hidden'));
 ok('card played from UI', cw.battle.cardsPlayed > 0);
 ok('played card arc animation on stage', !!$('battle-stage').querySelector('.arc-card'));
@@ -139,7 +139,7 @@ ok('3 reward draft cards', $('reward-cards').querySelectorAll('.card').length ==
 // Draft first card -> returns to map with Floor 1 cleared & currency earned
 $('reward-cards').querySelector('.card').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
 ok('returned to map after draft', !$('view-map').classList.contains('hidden'));
-ok('deck grew to 22', cw.run.deck.length === 22, String(cw.run.deck.length));
+ok('deck grew to 16', cw.run.deck.length === 16, String(cw.run.deck.length));
 ok('run earned increased', cw.run.earned > 30, String(cw.run.earned));
 
 // Test Shop, Rest, Event, and Boss Rank screen via UI views
@@ -194,8 +194,10 @@ ok('later missions locked', $('mission-list').querySelectorAll('.mission-tile.lo
 
 $('mission-list').querySelector('.mission-tile').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
 ok('story shown', !$('view-story').classList.contains('hidden'));
+// Each beat needs two taps: the first finishes the typewriter, the second
+// advances the line. Drive advanceStory() until the battle view opens.
 let guard = 0;
-while ($('view-battle').classList.contains('hidden') && guard++ < 8) click('btn-story-next');
+while ($('view-battle').classList.contains('hidden') && guard++ < 40) cw.advanceStory();
 ok('story battle shown', !$('view-battle').classList.contains('hidden'));
 
 turns = 0;
@@ -239,53 +241,31 @@ const sandRes = cw.useSands(s2, 1);
 ok('sands rewind works', sandRes.ok && s2.hand.length === handBefore && s2.enemies[0].hp === hpBefore, JSON.stringify(sandRes));
 ok('sands charge spent', s2.sands === 2);
 
-// 6. CZN × Morimens Build-Ups, Synergies, Epiphany Modal, Over-Exalt, & Mega DMG
-const synState = cw.startBattle({
-  name: 'Synergy Lab',
-  place: 'Test Arena',
-  enemies: ['boss_bloom'],
-  party: ['kaito', 'momo', 'bibi'],
-  deck: ['k_berserk', 'b_flare', 'b_prism', 'k_last', 'm_bastion', 'm_bash', 'k_first', 'k_jab'],
-  seed: 777,
-});
-cw.beginRunBattle(
-  { floor: 10, lane: 0, type: 'boss' },
-  { key: 'boss_a', name: 'Chaos Bloom', place: 'Heart', enemies: ['boss_bloom'], scale: 1 }
-);
-const mb = cw.battle;
-// Inject an exact deterministic build-up hand to verify every combo system end-to-end
-mb.ap = 10;
-mb.ep = 7;
-mb.resonance = 5;
-mb.epiphany = 'kaito';
-mb.hand = [];
-const mk = (id) => {
-  const c = mb.drawPile.find((x) => x.id === id) || mb.discard.find((x) => x.id === id);
-  return c;
-};
-// Ensure a deterministic hand via startBattle with custom deck that draws all 7
+// 6. LEAN KIT SYSTEMS — Epiphany modal, Over-Exalt, Mark/Burst, DoT, shield slam
+// (every combatant is now a fixed 5-card kit, so these tests drive the real cards)
 const comboB = cw.startBattle({
-  name: 'Mega Combo',
+  name: 'Lean Kit Combo',
   place: 'Ventricle',
   enemies: ['boss_bloom'],
   party: ['kaito', 'goro', 'bibi'],
   deck: [
-    { id: 'k_berserk', upgraded: false },
-    { id: 'b_flare', upgraded: false },
-    { id: 'b_prism', upgraded: false },
-    { id: 'k_last', upgraded: false },
-    { id: 'g_catalyst', upgraded: false },
-    { id: 'g_purge', upgraded: false },
-    { id: 'k_first', upgraded: false },
+    { id: 'k_jab' }, { id: 'k_brace' }, { id: 'k_rally' }, { id: 'k_last' }, { id: 'k_up' },
+    { id: 'b_ping' }, { id: 'b_fuzz' }, { id: 'b_flare' }, { id: 'b_burst' }, { id: 'b_up' },
+    { id: 'g_strike' }, { id: 'g_guard' }, { id: 'g_broth' }, { id: 'g_devour' }, { id: 'g_up' },
   ],
   seed: 99,
 });
-// Sync UI onto comboB cleanly via __cw helpers
 Object.assign(cw.battle, comboB);
-cw.battle.ap = 10;
+cw.battle.ap = 12;
 cw.battle.ep = 7;
 cw.battle.resonance = 4;
 cw.battle.epiphany = 'kaito';
+cw.battle.hand = [
+  { ...comboB.hand.find((c) => c.id === 'b_flare') || cw.CARDS.b_flare, id: 'b_flare', defId: 'b_flare', owner: 'bibi', type: 'skill', cost: 1, attr: 'void', mark: 2, uid: 'h1' },
+  { ...cw.CARDS.k_jab, id: 'k_jab', defId: 'k_jab', owner: 'kaito', type: 'attack', cost: 1, attr: 'passion', dmg: 5, fury: 1, uid: 'h2' },
+  { ...cw.CARDS.k_last, id: 'k_last', defId: 'k_last', owner: 'kaito', type: 'attack', cost: 2, attr: 'passion', dmg: 12, consumeFury: 8, finale: 6, finaleCrit: true, uid: 'h3' },
+  { ...cw.CARDS.b_burst, id: 'b_burst', defId: 'b_burst', owner: 'bibi', type: 'attack', cost: 3, attr: 'void', dmg: 8, aoe: true, scaleResonance: 4, uid: 'h4' },
+];
 cw.renderBattle();
 ok('resonance gauge shown', $('res-num').textContent === '4');
 ok('over-exalt button visible at 7 EP', !$('btn-exalt').classList.contains('hidden'));
@@ -294,60 +274,60 @@ ok('over-exalt button visible at 7 EP', !$('btn-exalt').classList.contains('hidd
 click('btn-exalt');
 ok('over-exalt armed on Ego stack', !!$('ego-list').querySelector('.ego-btn.exalt'));
 
+// Opening hand always contains the one-use Buff Upgrades (Initiation)
+const openHand = comboB.hand.map((c) => c.id);
+ok('opening hand holds every Buff Upgrade (Initiation)', ['k_up', 'b_up', 'g_up'].every((id) => openHand.includes(id)), openHand.join(','));
+ok('opening hand has no duplicates beyond the kit', new Set(openHand).size === openHand.length, openHand.join(','));
+
 // Trigger 3-choice Epiphany modal by playing a Kaito card
-const kbIdx = cw.battle.hand.findIndex((c) => c.id === 'k_berserk');
-cw.playCard(cw.battle, kbIdx, cw.battle.enemies[0].uid);
+const epiIdx = cw.battle.hand.findIndex((c) => c.id === 'k_jab');
+cw.playCard(cw.battle, epiIdx, cw.battle.enemies[0].uid);
 cw.renderBattle();
 ok('3-choice epiphany modal opens', !$('epiphany-modal').classList.contains('hidden'));
 ok('epiphany shows 3 mutated branches', $('epi-choices').querySelectorAll('.epi-choice').length === 3);
 $('epi-choices').querySelector('.epi-choice').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
 ok('epiphany modal closes after pick', $('epiphany-modal').classList.contains('hidden'));
 
-// Execute Tag Chain + Mark/Vuln + Catalyst + Prism Echo + Resonance Burst + Fury Crit Mega Strike!
+// Mark → Fury finisher → Resonance Burst nuke, all off the lean kit
 const bfIdx = cw.battle.hand.findIndex((c) => c.id === 'b_flare');
-cw.playCard(cw.battle, bfIdx, cw.battle.enemies[0].uid); // Mark + Vuln + Chain (+1 Res -> 5!)
-const bpIdx = cw.battle.hand.findIndex((c) => c.id === 'b_prism');
-cw.playCard(cw.battle, bpIdx, cw.battle.enemies[0].uid); // Echo next attack x2!
+cw.playCard(cw.battle, bfIdx, cw.battle.enemies[0].uid); // Mark all enemies
 const klIdx = cw.battle.hand.findIndex((c) => c.id === 'k_last');
 const bossHpBefore = cw.battle.enemies[0].hp;
 cw.playCard(cw.battle, klIdx, cw.battle.enemies[0].uid);
+const burstIdx = cw.battle.hand.findIndex((c) => c.id === 'b_burst');
+cw.playCard(cw.battle, burstIdx, cw.battle.enemies[0].uid);
 const bossDmgDealt = bossHpBefore - cw.battle.enemies[0].hp;
-ok('mega damage combo exceeds 250 dmg', bossDmgDealt >= 250, `dealt ${bossDmgDealt}`);
+ok('Marked Last Shift + Cytokine Storm land a big turn', bossDmgDealt >= 40, `dealt ${bossDmgDealt}`);
 cw.renderBattle();
-ok('phase shift or mega banner triggered', cw.battle.stats.maxHit >= 150, `maxHit ${cw.battle.stats.maxHit}`);
+ok('biggest single hit tracked', cw.battle.stats.maxHit >= 20, `maxHit ${cw.battle.stats.maxHit}`);
 
-// Catalyst + Detonate + Retain Growth test on a fresh enemy
+// Devour: damage + Toxin + self-heal in one lean card
 const dotBattle = cw.startBattle({
-  name: 'Catalyst Test',
+  name: 'Devour Test',
   place: 'Vein',
   enemies: ['boss_prion'],
   party: ['kaito', 'goro', 'bibi'],
   deck: [
-    { id: 'g_cleave', upgraded: false },
-    { id: 'g_catalyst', upgraded: false },
-    { id: 'g_purge', upgraded: false },
-    { id: 'k_first', upgraded: false },
-    { id: 'g_strike', upgraded: false },
-    { id: 'b_ping', upgraded: false },
-    { id: 'k_jab', upgraded: false },
+    { id: 'g_strike' }, { id: 'g_guard' }, { id: 'g_broth' }, { id: 'g_devour' }, { id: 'g_up' },
+    { id: 'k_jab' }, { id: 'b_ping' }, { id: 'b_fuzz' }, { id: 'g_strike' }, { id: 'b_flare' },
   ],
   seed: 33,
 });
 dotBattle.ap = 6;
-const clvIdx = dotBattle.hand.findIndex((c) => c.id === 'g_cleave');
-cw.playCard(dotBattle, clvIdx, dotBattle.enemies[0].uid);
-const catIdx = dotBattle.hand.findIndex((c) => c.id === 'g_catalyst');
-const bleedBefore = dotBattle.enemies[0].bleed;
-cw.playCard(dotBattle, catIdx, dotBattle.enemies[0].uid);
-ok('catalyst doubles enemy bleed', dotBattle.enemies[0].bleed === bleedBefore * 2 && bleedBefore >= 4, `${bleedBefore} -> ${dotBattle.enemies[0].bleed}`);
-const prgIdx = dotBattle.hand.findIndex((c) => c.id === 'g_purge');
-const hpBeforePurge = dotBattle.enemies[0].hp;
-cw.playCard(dotBattle, prgIdx, dotBattle.enemies[0].uid);
-ok('detonate deals attack + status burst', hpBeforePurge - dotBattle.enemies[0].hp >= 20, String(hpBeforePurge - dotBattle.enemies[0].hp));
-const kfCard = dotBattle.hand.find((c) => c.id === 'k_first');
-const beforeRet = kfCard.retainedAtk || 0;
-cw.endTurn(dotBattle);
-ok('retain growth scales across turn', kfCard.retainedAtk > beforeRet, String(kfCard.retainedAtk));
+dotBattle.characters.find((c) => c.id === 'goro').hp = 40;
+const devIdx = dotBattle.hand.findIndex((c) => c.id === 'g_devour');
+const hpBeforeDevour = dotBattle.enemies[0].hp;
+const goroHpBefore = dotBattle.characters.find((c) => c.id === 'goro').hp;
+cw.playCard(dotBattle, devIdx, dotBattle.enemies[0].uid);
+ok('Devour deals its heavy damage', hpBeforeDevour - dotBattle.enemies[0].hp >= 10, String(hpBeforeDevour - dotBattle.enemies[0].hp));
+ok('Devour applies 4 Toxin', dotBattle.enemies[0].toxin >= 4, String(dotBattle.enemies[0].toxin));
+ok('Devour lifesteals half the damage dealt', dotBattle.characters.find((c) => c.id === 'goro').hp > goroHpBefore, `${goroHpBefore} -> ${dotBattle.characters.find((c) => c.id === 'goro').hp}`);
+const devCard = dotBattle.hand.find((c) => c.id === 'g_up');
+const toxinTurn = dotBattle.enemies[0].toxin;
+cw.playCard(dotBattle, dotBattle.hand.findIndex((c) => c.id === 'g_up'), dotBattle.enemies[0].uid);
+ok('Buff Upgrade (The Wall) is Initiation + Exhausted after one use', devCard && dotBattle.exhaust.some((c) => c.id === 'g_up'), 'exhaust pile: ' + dotBattle.exhaust.map((c) => c.id).join(','));
+ok('The Wall passive raised Shield gains (blockBonus)', dotBattle.characters.some((c) => (c.blockBonus || 0) > 0));
+ok('Toxin stacks survive for the next enemy action', dotBattle.enemies[0].toxin >= toxinTurn, String(dotBattle.enemies[0].toxin));
 
 // Over-Exalt 7-EP Ego firing test
 const exBattle = cw.startBattle({
@@ -361,34 +341,50 @@ exBattle.ep = 7;
 const exRes = cw.playEgo(exBattle, 0, { exalt: true });
 ok('over-exalt consumes 7 EP and flags exalt', exRes.ok && exRes.exalt === true && exBattle.ep === 0);
 
-// Shield Slam + Barricade Shield Retain test
+// Aegis Slam: heavy attack that converts Shield into damage
 const mBattle = cw.startBattle({
-  name: 'Bastion Test',
+  name: 'Aegis Test',
   place: 'Test',
   enemies: ['boss_bloom'],
   party: ['momo', 'kaito', 'goro'],
   deck: [
-    { id: 'm_bastion', upgraded: false },
-    { id: 'm_bash', upgraded: false },
-    { id: 'm_guard', upgraded: false },
-    { id: 'k_jab', upgraded: false },
-    { id: 'k_jab', upgraded: false },
-    { id: 'g_guard', upgraded: false },
-    { id: 'g_strike', upgraded: false },
+    { id: 'm_strike' }, { id: 'm_guard' }, { id: 'm_splint' }, { id: 'm_bash' }, { id: 'm_up' },
+    { id: 'k_jab' }, { id: 'k_brace' }, { id: 'k_rally' }, { id: 'k_last' }, { id: 'g_strike' },
   ],
   seed: 55,
 });
-mBattle.ap = 6;
-const bastIdx = mBattle.hand.findIndex((c) => c.id === 'm_bastion');
-cw.playCard(mBattle, bastIdx, mBattle.enemies[0].uid);
-const bashIdx = mBattle.hand.findIndex((c) => c.id === 'm_bash');
+mBattle.ap = 8;
+cw.playCard(mBattle, mBattle.hand.findIndex((c) => c.id === 'm_up'), mBattle.enemies[0].uid); // Field Protocol
+cw.playCard(mBattle, mBattle.hand.findIndex((c) => c.id === 'm_guard'), mBattle.enemies[0].uid); // 8 Shield + Counter
+const momoShield = mBattle.characters.find((c) => c.id === 'momo').shield;
 const bBefore = mBattle.enemies[0].hp;
-cw.playCard(mBattle, bashIdx, mBattle.enemies[0].uid);
+cw.playCard(mBattle, mBattle.hand.findIndex((c) => c.id === 'm_bash'), mBattle.enemies[0].uid);
 const slamDmg = bBefore - mBattle.enemies[0].hp;
-ok('momo aegis slam deals team-shield damage', slamDmg >= 45, `slamDmg ${slamDmg}`);
-const shieldBeforeEnd = mBattle.characters[0].shield;
-cw.endTurn(mBattle);
-ok('barricade retains shield across endTurn', shieldBeforeEnd > 0 && mBattle.characters[0].shield >= shieldBeforeEnd, `${shieldBeforeEnd} -> ${mBattle.characters[0].shield}`);
+ok('Guard Stance banks Shield', momoShield >= 10, String(momoShield));
+ok('momo aegis slam converts Shield into damage', slamDmg >= momoShield, `slam ${slamDmg} off ${momoShield} shield`);
+
+// Yuna's lean Poison kit: stack it, tick it at End Turn, Living Culture boosts it
+const poisonBattle = cw.startBattle({
+  name: 'Poison Kit Test',
+  place: 'Lab',
+  enemies: ['elite_wall'],
+  party: ['yuna'],
+  deck: [
+    { id: 'y_sting' }, { id: 'y_antidote' }, { id: 'y_mist' }, { id: 'y_epidemic' }, { id: 'y_culture' },
+    { id: 'y_sting' }, { id: 'y_mist' }, { id: 'y_sting' }, { id: 'y_antidote' }, { id: 'y_mist' },
+  ],
+  seed: 77,
+});
+poisonBattle.ap = 10;
+cw.playCard(poisonBattle, poisonBattle.hand.findIndex((c) => c.id === 'y_culture'), poisonBattle.enemies[0].uid);
+cw.playCard(poisonBattle, poisonBattle.hand.findIndex((c) => c.id === 'y_sting'), poisonBattle.enemies[0].uid);
+ok('Venom Sting applies 3 Poison', poisonBattle.enemies[0].poison >= 3, String(poisonBattle.enemies[0].poison));
+ok('Living Culture raises per-stack Poison damage to 4', cw.poisonPerStack(poisonBattle) === 4, String(cw.poisonPerStack(poisonBattle)));
+const stacksBefore = poisonBattle.enemies[0].poison;
+const hpBeforeTick = poisonBattle.enemies[0].hp;
+cw.endTurn(poisonBattle);
+ok('Poison ticks for stacks x per-stack at End Turn', hpBeforeTick - poisonBattle.enemies[0].hp >= stacksBefore * 4, `${stacksBefore} stacks dealt ${hpBeforeTick - poisonBattle.enemies[0].hp}`);
+ok('Poison decays by 1 after ticking', poisonBattle.enemies[0].hp <= 0 || poisonBattle.enemies[0].poison === stacksBefore - 1, String(poisonBattle.enemies[0].poison));
 
 // Guide / Character Details / Simulation Chamber
 click('btn-open-guide');
@@ -402,12 +398,12 @@ $('guide-search').value = '';
 $('guide-search').dispatchEvent(new window.Event('input', { bubbles: true }));
 cw.openCharacter('kaito', 'roster');
 ok('character details open', !$('view-character').classList.contains('hidden'));
-ok('character details show all Kaito cards', $('char-main').querySelectorAll('[data-char-card]').length >= 10, String($('char-main').querySelectorAll('[data-char-card]').length));
+ok('character details show the full 5-card Kaito kit', $('char-main').querySelectorAll('[data-char-card]').length === 5, String($('char-main').querySelectorAll('[data-char-card]').length));
 ok('character details show both Egos', $('char-main').querySelectorAll('.char-ego').length === 2);
 ok('character details explain core mechanic', /stored damage/i.test($('char-main').textContent));
 cw.openSim('kaito');
 ok('simulation setup opens', !$('view-sim').classList.contains('hidden'));
-ok('simulation offers 5 solo combatants', $('sim-chars').querySelectorAll('.sim-char').length === 5);
+ok('simulation offers 6 solo combatants', $('sim-chars').querySelectorAll('.sim-char').length === 6, String($('sim-chars').querySelectorAll('.sim-char').length));
 click('btn-sim-start');
 ok('simulation battle opens', !$('view-battle').classList.contains('hidden'));
 ok('simulation is solo', cw.battle.characters.length === 1, String(cw.battle.characters.length));
@@ -427,42 +423,49 @@ cw.endSimTest(true);
 ok('simulation report shows', !$('overlay').classList.contains('hidden'));
 ok('simulation report returns to setup', true);
 
-// Yuna Poison DoT + 1 Basic Attack rule + enemy status inspect
-ok('every character has exactly 1 Basic Attack in starter deck', Object.values(cw.CHARACTERS).every((ch) => {
-  const basics = ch.deck.filter((id) => cw.CARDS[id] && cw.CARDS[id].basic);
-  const attacks = ch.deck.filter((id) => cw.CARDS[id] && cw.CARDS[id].type === 'attack');
-  return basics.length === 1 && attacks.length === 1 && ch.deck.length === 7;
-}), Object.values(cw.CHARACTERS).map((ch) => ch.id + ':' + ch.deck.filter((id) => cw.CARDS[id].type === 'attack').length).join(','));
+// LEAN KIT RULE (5 cards) + Yuna Poison DoT + enemy status inspect
+const kitProblems = Object.values(cw.CHARACTERS).filter((ch) => {
+  const deck = ch.deck;
+  const cards = deck.map((id) => cw.CARDS[id]).filter(Boolean);
+  const basics = cards.filter((c) => c.basic);
+  const upgrades = cards.filter((c) => c.type === 'upgrade');
+  const heavies = cards.filter((c) => c.type !== 'upgrade' && !c.basic && (c.cost || 0) >= 2);
+  const skills = cards.filter((c) => c.type === 'skill' && (c.cost || 0) < 2);
+  return !(deck.length === 5
+    && cards.length === 5
+    && basics.length === 1
+    && upgrades.length === 1
+    && heavies.length === 1
+    && skills.length === 2);
+});
+ok('every character runs the 5-card kit (1 Basic · 2 Skills · 1 Heavy · 1 Buff)', kitProblems.length === 0,
+  Object.values(cw.CHARACTERS).map((ch) => `${ch.id}:${ch.deck.length}`).join(','));
+ok('every Buff Upgrade is one-use (Exhaust) and opens in hand (Initiation)', Object.values(cw.CHARACTERS).every((ch) => {
+  const upg = ch.deck.map((id) => cw.CARDS[id]).find((c) => c.type === 'upgrade');
+  return upg && (upg.tags || []).includes('Exhaust') && (upg.tags || []).includes('Initiation');
+}), Object.values(cw.CHARACTERS).map((ch) => ch.id + ':' + (ch.deck.map((id) => cw.CARDS[id]).find((c) => c.type === 'upgrade') || {}).name).join(','));
 ok('Yuna exists as Instinct Alchemist', !!cw.CHARACTERS.yuna && cw.CHARACTERS.yuna.attr === 'instinct' && cw.CHARACTERS.yuna.cls === 'alchemist');
 cw.openCharacter('yuna', 'roster');
 ok('Yuna details show BASIC ATTACK label', /BASIC ATTACK/.test($('char-main').textContent));
 ok('Yuna details show Poison mechanic', /Damage over Time|POISON/i.test($('char-main').textContent));
-const poisonBattle = cw.startBattle({ name: 'Poison Test', place: 'Lab', enemies: ['strep'], party: ['yuna'], deck: [{ id: 'y_dose' }, { id: 'y_sting' }, { id: 'y_antidote' }, { id: 'y_hatch' }, { id: 'y_mist' }, { id: 'y_incubate' }, { id: 'y_culture' }], seed: 77 });
-poisonBattle.ap = 10;
-const doseIdx = poisonBattle.hand.findIndex((c) => c.id === 'y_dose');
-cw.playCard(poisonBattle, doseIdx, poisonBattle.enemies[0].uid);
-ok('Creeping Dose applies Poison stacks', poisonBattle.enemies[0].poison >= 5, String(poisonBattle.enemies[0].poison));
-const hpBeforeTick = poisonBattle.enemies[0].hp;
-const stacksBeforeTick = poisonBattle.enemies[0].poison;
-cw.endTurn(poisonBattle);
-ok('Poison ticks at End Turn for stack damage', hpBeforeTick - poisonBattle.enemies[0].hp >= stacksBeforeTick, `${hpBeforeTick} -> ${poisonBattle.enemies[0].hp}`);
-ok('Poison tick SCALES: stacks x 3 per stack (not 1 per stack)', hpBeforeTick - poisonBattle.enemies[0].hp >= stacksBeforeTick * 3, `${stacksBeforeTick} stacks dealt ${hpBeforeTick - poisonBattle.enemies[0].hp}`);
-ok('Poison decays by 1 after ticking', poisonBattle.enemies[0].hp <= 0 || poisonBattle.enemies[0].poison === stacksBeforeTick - 1, String(poisonBattle.enemies[0].poison));
-// Her attacks scale off Poison: Venom Sting preview must grow with target Poison
+// Poison forecast on the card previews (lean kit: no hidden scaling riders)
 {
-  const e = poisonBattle.enemies[0];
-  e.hp = e.maxHp; e.poison = 0;
-  const stingCard = poisonBattle.hand.find((c) => c.id === 'y_sting') || { id: 'y_sting', owner: 'yuna', type: 'attack', dmg: 6, poison: 2, dmgPerPoison: 1, cost: 1, attr: 'instinct' };
-  const clean = cw.previewCard(poisonBattle, stingCard, e.uid);
+  const poisonCheck = cw.startBattle({
+    name: 'Poison Preview', place: 'Lab', enemies: ['strep'], party: ['yuna'],
+    deck: [{ id: 'y_sting' }, { id: 'y_mist' }, { id: 'y_antidote' }, { id: 'y_epidemic' }, { id: 'y_culture' }],
+    seed: 78,
+  });
+  const e = poisonCheck.enemies[0];
+  const sting = cw.previewCard(poisonCheck, { ...cw.CARDS.y_sting, defId: 'y_sting', uid: 'x1' }, e.uid);
+  ok('Venom Sting preview shows its flat damage', sting.dmg === 4, String(sting.dmg));
+  ok('Venom Sting preview forecasts the End-Turn Poison tick', sting.poisonNextTick >= 3 * 3, String(sting.poisonNextTick));
   e.poison = 15;
-  const scaled = cw.previewCard(poisonBattle, stingCard, e.uid);
-  ok('Venom Sting scales +1 per Poison stack (grows with the stack)', scaled.dmg - clean.dmg >= 15, `clean ${clean.dmg} vs poisoned ${scaled.dmg}`);
-  ok('preview forecasts scaled tick (stacks x per-stack)', scaled.poisonNextTick >= (15 + 2) * 3, String(scaled.poisonNextTick));
-  e.poison = 0;
+  const big = cw.previewCard(poisonCheck, { ...cw.CARDS.y_mist, defId: 'y_mist', uid: 'x2' }, e.uid);
+  ok('Poison forecast grows with the existing stack', big.poisonNextTick >= (15 + 3) * 3, String(big.poisonNextTick));
 }
 // Enemy status icons + long-press inspect (in a fresh sim battle so DOM is live)
 cw.beginSimBattle('yuna');
-ok('simulation now offers 5 solo combatants', document.querySelectorAll('.sim-char').length === 0 || true);
+ok('simulation now offers 6 solo combatants', document.querySelectorAll('.sim-char').length === 0 || true);
 const statusEnemy = cw.battle.enemies[0];
 statusEnemy.poison = 9; statusEnemy.mark = 2; statusEnemy.vuln = 2; statusEnemy.bleed = 4;
 cw.renderBattle();
@@ -487,7 +490,7 @@ cw.showView('roster');
 document.querySelector('[data-rfilter="alchemist"]').click();
 ok('roster class filter shows only Alchemists', [...$('roster').querySelectorAll('.roster-card')].filter((n) => n.style.display !== 'none').length === 1);
 document.querySelector('[data-rfilter="all"]').click();
-ok('roster filter resets', [...$('roster').querySelectorAll('.roster-card')].filter((n) => n.style.display !== 'none').length === 5);
+ok('roster filter resets', [...$('roster').querySelectorAll('.roster-card')].filter((n) => n.style.display !== 'none').length === 6);
 cw.showView('title');
 click('btn-open-settings-title');
 ok('settings modal opens', !$('settings-modal').classList.contains('hidden'));
@@ -515,6 +518,22 @@ ok('autoplay toggle on', cw.autoplayOn === true && $('btn-autoplay').classList.c
 }
 cw.setAutoplay(false);
 ok('autoplay toggle off', cw.autoplayOn === false);
+
+// Card-set migration: an old save keeps its meta progress but drops a run
+// that still references pre-lean-kit card ids.
+{
+  const { loadProgress } = await import(`${ROOT}/src/progress.js?t=${Date.now()}`);
+  window.localStorage.setItem('cellwarriors.save.v5', JSON.stringify({
+    version: 5, cells: 777, cleared: ['m01'], missionRanks: { m01: 'A' },
+    team: ['kaito', 'momo', 'goro'], chars: { kaito: { xp: 250, awaken: [true, false, false], skillLv: 2 } },
+    run: { seed: 1, deck: [{ id: 'k_rush' }] },
+  }));
+  const migrated = loadProgress();
+  ok('old card-set save keeps meta progress', migrated.cells === 777 && migrated.cleared.includes('m01') && migrated.chars.kaito.xp === 250, JSON.stringify({ cells: migrated.cells, xp: migrated.chars.kaito.xp }));
+  ok('old card-set save drops the stale run', migrated.run === null);
+  ok('loaded save is stamped with the current card set', migrated.cardSet === 2, String(migrated.cardSet));
+  window.localStorage.removeItem('cellwarriors.save.v5');
+}
 
 console.log(errors.length ? 'JS ERRORS: ' + errors.join(' | ') : 'no JS errors');
 if (errors.length) process.exitCode = 1;

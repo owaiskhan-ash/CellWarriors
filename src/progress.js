@@ -1,5 +1,10 @@
 // Save v5 — meta progression (cells, XP, awakening, skill levels), saved team, and active run.
+// v5 also carries the card-set version: bumping CARD_SET_VERSION discards an
+// in-progress run (its deck still holds the old card ids) while keeping every
+// meta unlock — cells, XP, awakening, skill levels, cleared missions.
 import { MISSIONS, CHARACTERS } from './data.js';
+
+export const CARD_SET_VERSION = 2; // 2 = the lean 5-card kits
 
 const KEY = 'cellwarriors.save.v5';
 const OLD = ['cellwarriors.save.v4', 'cellwarriors.save.v3'];
@@ -13,7 +18,7 @@ export function defaultProgress() {
   const chars = {};
   Object.keys(CHARACTERS).forEach((id) => { chars[id] = emptyChar(); });
   return {
-    version: 5, cells: 0, cleared: [], missionRanks: {},
+    version: 5, cardSet: CARD_SET_VERSION, cells: 0, cleared: [], missionRanks: {},
     team: [...DEFAULT_TEAM], chars,
     run: null, runs: 0, best: null, chaosCleared: false,
   };
@@ -28,20 +33,21 @@ export function loadProgress() {
     }
     const p = JSON.parse(raw);
     if (!p || p.version !== 5) return defaultProgress();
-    const def = defaultProgress();
     const team = Array.isArray(p.team) ? p.team.filter((id) => CHARACTERS[id]).slice(0, 3) : [...DEFAULT_TEAM];
     const chars = {};
     Object.keys(CHARACTERS).forEach((id) => {
       chars[id] = { ...emptyChar(), ...((p.chars && p.chars[id]) || {}) };
     });
+    const staleRun = (p.cardSet || 1) !== CARD_SET_VERSION;
     return {
       version: 5,
+      cardSet: CARD_SET_VERSION,
       cells: p.cells || 0,
       cleared: Array.isArray(p.cleared) ? p.cleared : [],
       missionRanks: (p.missionRanks && typeof p.missionRanks === 'object') ? p.missionRanks : {},
       team: team.length === 3 ? team : [...DEFAULT_TEAM],
       chars,
-      run: p.run || null,
+      run: staleRun ? null : (p.run || null),
       runs: p.runs || 0,
       best: p.best || null,
       chaosCleared: !!p.chaosCleared,

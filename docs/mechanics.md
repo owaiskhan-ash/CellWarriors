@@ -75,13 +75,39 @@ Three hourglasses per fight:
 | 2 | Redraw the Ego Skill order |
 | 3 | Rewind the whole turn |
 
+## The 5-card kit (current balance pass)
+
+Every combatant brings a **fixed kit of five cards, one copy of each** — no
+build-around pools. A full team of three therefore shuffles a 15-card deck.
+
+| Slot | Type | Cost | Job |
+| --- | --- | --- | --- |
+| 0 | **Basic Attack** | 1 AP | cheap, always useful, one small rider |
+| 1 | **Skill (light)** | 1 AP | instant support: heal, Shield, draw, Mark |
+| 2 | **Skill (core)** | 1 AP | the character's simple signature tool |
+| 3 | **Heavy** | 2–3 AP | the big damage / Shield / heal / HP / DoT / DPS payoff |
+| 4 | **Buff Upgrade** | 1 AP | permanent buff, **Exhaust — one use per battle**, always `Initiation` |
+
+Upgrades are Initiation, so each character's one-use buff always lands in the
+opening hand. Rule of thumb for new cards: **one rider per card, no multi-stage
+combos**. Add complexity only when the lean kit stops being enough.
+
+| Character | Basic | Skills | Heavy | Buff Upgrade |
+| --- | --- | --- | --- | --- |
+| Kaito | Cytokine Jab | Adrenal Brace · War Cry | Last Shift | Overclock |
+| Momo | Order Strike | Guard Stance · Field Splint | Aegis Slam | Field Protocol |
+| Goro | Scalpel | Clot · Marrow Broth | Devour | The Wall |
+| Bibi | Signal Ping | Fuzz · Flare | Cytokine Storm | Cross-talk |
+| Yuna | Venom Sting | Sweet Antidote · Spore Mist | Epidemic Bloom | Living Culture |
+| Sable | Annotate | Margin Note · Second Reading | Titer Lance | Living Index |
+
 ## Card types
 
 | Type | Frame | Behaviour |
 | --- | --- | --- |
 | Attack | crimson | damage, sometimes multi-hit or AoE |
 | Skill | teal | shield, heal, buff, AP |
-| Upgrade | gold | leaves the deck for the rest of the fight; permanent effect |
+| Upgrade | gold | leaves the deck for the rest of the fight; permanent effect (our kits also mark them Exhaust, so they are one-use) |
 | Status | grey | Breakdown cards — play to recover |
 | Curse | violet | unplayable, clogs the hand |
 
