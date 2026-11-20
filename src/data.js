@@ -109,3 +109,92 @@ export const SPAWNS = {
   11: 'biofilm',
   12: 'strep',
 };
+
+// ---------------------------------------------------------------------------
+// EXPANSION SET — locked at start, bought with stem cells in the Stem Cell Lab.
+// These add the mechanics the starting deck doesn't teach: core-bypass, AoE,
+// permanent buffs, armour hate.
+// ---------------------------------------------------------------------------
+
+Object.assign(CARDS, {
+  nkCell: {
+    id: 'nkCell', type: 'cell', name: 'NK Cell', cost: 3, rarity: 'epic',
+    atk: 2, hp: 3, bypassCore: true,
+    text: 'Strikes the infection site directly, ignoring pathogens on the field.',
+  },
+  eosinophil: {
+    id: 'eosinophil', type: 'cell', name: 'Eosinophil', cost: 3, rarity: 'rare',
+    atk: 2, hp: 4, armourBonus: 2,
+    text: '+2 dmg against armoured pathogens.',
+  },
+  memoryB: {
+    id: 'memoryB', type: 'cell', name: 'Memory B', cost: 5, rarity: 'legendary',
+    atk: 4, hp: 8, onPlay: 'memoryB',
+    text: 'On play: Infection -8%. Remembers this body.',
+  },
+  complement: {
+    id: 'complement', type: 'cytokine', name: 'Complement', cost: 2, rarity: 'rare', inflam: 1,
+    text: 'Deal 2 dmg to every pathogen on the field. +1 Inflammation.',
+  },
+  il2: {
+    id: 'il2', type: 'cytokine', name: 'IL-2', cost: 2, rarity: 'rare',
+    text: 'All your cells permanently gain +1 ATK and heal 1 HP.',
+  },
+  adrenaline: {
+    id: 'adrenaline', type: 'cytokine', name: 'Adrenaline', cost: 1, rarity: 'common',
+    text: '+2 ATP this turn. The host is panicking.',
+  },
+});
+
+export const UNLOCKABLE = {
+  eosinophil: { cost: 60, faction: 'Myeloid' },
+  complement: { cost: 80, faction: 'Humoral' },
+  adrenaline: { cost: 60, faction: 'Endocrine' },
+  il2: { cost: 90, faction: 'Lymphoid' },
+  nkCell: { cost: 120, faction: 'Lymphoid' },
+  memoryB: { cost: 200, faction: 'Humoral' },
+};
+
+// ---------------------------------------------------------------------------
+// ADVENTURE — six regions, unlocked in order. Each one is one fight with its
+// own clock, spawn rate and wave. Rewards are stem cells.
+// ---------------------------------------------------------------------------
+
+export const REGIONS = [
+  {
+    id: 'throat', name: 'Throat', organ: 'Tonsils', threat: 1,
+    desc: 'It always starts here. A scratch, a swallow that hurts.',
+    coreHp: 30, infection: 55, infectionGain: 2, spawnEvery: 2,
+    wave: ['strep', 'toxin'], reward: 40,
+  },
+  {
+    id: 'lungs', name: 'Lungs', organ: 'Alveoli', threat: 2,
+    desc: 'Every breath brings more of it in.',
+    coreHp: 38, infection: 58, infectionGain: 3, spawnEvery: 2,
+    wave: ['toxin', 'strep'], reward: 55,
+  },
+  {
+    id: 'gut', name: 'Gut', organ: 'Intestinal wall', threat: 3,
+    desc: 'Forty trillion residents, and something is building a wall.',
+    coreHp: 44, infection: 60, infectionGain: 3, spawnEvery: 2,
+    wave: ['biofilm', 'toxin'], reward: 70,
+  },
+  {
+    id: 'wound', name: 'Skin Wound', organ: 'Cut site', threat: 4,
+    desc: 'An open door. They are already inside.',
+    coreHp: 40, infection: 64, infectionGain: 4, spawnEvery: 1,
+    wave: ['strep', 'strep', 'strep'], reward: 85,
+  },
+  {
+    id: 'blood', name: 'Bloodstream', organ: 'Whole system', threat: 5,
+    desc: 'If it reaches the blood, it reaches everywhere.',
+    coreHp: 46, infection: 64, infectionGain: 3, spawnEvery: 1,
+    wave: ['strep', 'toxin', 'biofilm'], reward: 105,
+  },
+  {
+    id: 'meninges', name: 'Meninges', organ: 'Blood-brain barrier', threat: 6,
+    desc: 'The last wall. Behind it, everything he is.',
+    coreHp: 56, infection: 66, infectionGain: 3, spawnEvery: 1,
+    wave: ['biofilm', 'toxin', 'strep'], reward: 150,
+  },
+];

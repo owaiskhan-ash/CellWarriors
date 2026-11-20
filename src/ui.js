@@ -1,9 +1,21 @@
-import { CARDS, START } from './data.js';
+import { CARDS, START, REGIONS, UNLOCKABLE } from './data.js';
 import { createGame, endTurn, playCard, atkOf, previewEndTurn } from './engine.js';
+import {
+  loadProgress, saveProgress, resetProgress, regionUnlocked, buildDeck, totalCleared,
+} from './progress.js';
 
 const $ = (id) => document.getElementById(id);
-let state = createGame();
-let lastLogLength = 0;
+
+let progress = loadProgress();
+let game = null;
+let region = null;
+let settled = false;
+let lastWin = null;
+
+const VIEWS = ['menu', 'map', 'lab', 'battle'];
+function showView(name) {
+  for (const v of VIEWS) $('view-' + v).classList.toggle('hidden', v !== name);
+}
 
 function el(tag, cls, html) {
   const node = document.createElement(tag);
@@ -12,28 +24,130 @@ function el(tag, cls, html) {
   return node;
 }
 
+/* ---------------------------------------------------------------- menu */
+
+function renderMenu() {
+  $('menu-stem').textContent = progress.stem;
+  $('menu-cleared').textContent = totalCleared(progress);
+}
+
+/* ----------------------------------------------------------------- map */
+
+function renderMap() {
+  $('map-stem').textContent = progress.stem;
+  const list = $('region-list');
+  list.innerHTML = '';
+
+  REGIONS.forEach((r, i) => {
+    const unlocked = regionUnlocked(progress, i);
+    const cleared = progress.cleared.includes(r.id);
+    const btn = el('button', `region${unlocked ? '' : ' locked'}${cleared ? ' cleared' : ''}`);
+    btn.innerHTML = `
+      <div class="region-top">
+        <span class="region-name">${r.name}</span>
+        <span class="threat">${'▮'.repeat(r.threat)}${'▯'.repeat(6 - r.threat)}</span>
+      </div>
+      <div class="region-organ">${r.organ}</div>
+      <p class="region-desc">${r.desc}</p>
+      <div class="region-foot">
+        <span>${unlocked ? (cleared ? 'replay · ◈ ' + Math.round(r.reward * 0.25) : 'first clear · ◈ ' + r.reward) : 'locked'}</span>
+        <span>site ${r.coreHp}</span>
+      </div>`;
+    btn.addEventListener('click', () => {
+      if (!unlocked) return;
+      startRegion(r.id);
+    });
+    list.appendChild(btn);
+  });
+}
+
+/* ----------------------------------------------------------------- lab */
+
+function renderLab() {
+  $('lab-stem').textContent = progress.stem;
+  const list = $('lab-list');
+  list.innerHTML = '';
+
+  const ids = Object.keys(UNLOCKABLE).sort((a, b) => UNLOCKABLE[a].cost - UNLOCKABLE[b].cost);
+
+  for (const id of ids) {
+    const card = CARDS[id];
+    const meta = UNLOCKABLE[id];
+    const owned = progress.unlocked.includes(id);
+    const affordable = progress.stem >= meta.cost;
+
+    const item = el('div', 'lab-item');
+    item.dataset.rarity = card.rarity;
+    item.innerHTML = `
+      <div class="lab-row">
+        <div>
+          <div class="lab-name">${card.name}</div>
+          <div class="region-organ">${meta.faction} · ${card.rarity}</div>
+        </div>
+        <button class="buy${owned ? ' owned' : ''}" ${owned || !affordable ? 'disabled' : ''}>
+          ${owned ? 'OWNED' : '◈ ' + meta.cost}
+        </button>
+      </div>
+      <div class="lab-text">${card.text}</div>
+      ${owned ? '' : `<div class="lab-text" style="color:#6a4f57">adds one copy of ${card.name} to your deck</div>`}`;
+    list.appendChild(item);
+
+    if (!owned) {
+      item.querySelector('.buy').addEventListener('click', () => {
+        if (progress.stem < meta.cost) return;
+        progress.stem -= meta.cost;
+        progress.unlocked.push(id);
+        saveProgress(progress);
+        renderLab();
+      });
+    }
+  }
+}
+
+/* --------------------------------------------------------------- battle */
+
+function startRegion(id) {
+  region = REGIONS.find((r) => r.id === id) || REGIONS[0];
+  progress.lastRegion = region.id;
+  saveProgress(progress);
+  settled = false;
+  lastWin = null;
+
+  game = createGame({
+    deck: buildDeck(progress),
+    coreHp: region.coreHp,
+    infection: region.infection,
+    infectionGain: region.infectionGain,
+    spawnEvery: region.spawnEvery,
+    wave: region.wave,
+  });
+
+  $('overlay').classList.add('hidden');
+  showView('battle');
+  renderBattle();
+}
+
 function renderHud() {
-  $('turn').textContent = state.turn;
+  $('turn').textContent = game.turn;
 
   const atp = $('atp');
   atp.innerHTML = '';
-  for (let i = 0; i < state.maxAtp; i++) {
-    atp.appendChild(el('span', `pip${i < state.atp ? ' on' : ''}`));
+  for (let i = 0; i < game.maxAtp; i++) {
+    atp.appendChild(el('span', `pip${i < game.atp ? ' on' : ''}`));
   }
 
-  $('infection-val').textContent = `${Math.round(state.infection)}%`;
-  $('infection-fill').style.width = `${Math.max(0, Math.min(100, state.infection))}%`;
-
-  $('fever-val').textContent = `${state.inflammation} / ${state.fever}`;
-  $('core-hp').textContent = `INFECTION SITE ${Math.max(0, state.enemy.coreHp)}`;
-  $('fever-fill').style.width = `${Math.min(100, (state.inflammation / state.fever) * 100)}%`;
+  $('infection-val').textContent = `${Math.round(game.infection)}%`;
+  $('infection-fill').style.width = `${Math.max(0, Math.min(100, game.infection))}%`;
+  $('fever-val').textContent = `${game.inflammation} / ${game.fever}`;
+  $('fever-fill').style.width = `${Math.min(100, (game.inflammation / game.fever) * 100)}%`;
+  $('core-hp').textContent = `INFECTION SITE ${Math.max(0, game.enemy.coreHp)}`;
 }
 
 function renderEnemy() {
   const wrap = $('enemy-slots');
   wrap.innerHTML = '';
   for (let i = 0; i < START.slots; i++) {
-    const unit = state.enemy.units[i];
+    const unit = game.enemy.units[i];
     if (!unit) {
       wrap.appendChild(el('div', 'slot empty', '<span class="muted">—</span>'));
       continue;
@@ -43,13 +157,12 @@ function renderEnemy() {
       <div>
         <div class="unit-name">${unit.name}</div>
         <div class="unit-stats">
-          <span class="atk">⚔ ${Math.max(0, unit.atk - (state.enemy.weaken > 0 ? 2 : 0))}</span>
+          <span class="atk">⚔ ${Math.max(0, unit.atk - (game.enemy.weaken > 0 ? 2 : 0))}</span>
           <span class="hp">♥ ${Math.max(0, unit.hp)}</span>
         </div>
       </div>
       <div class="spread">SPREAD +${unit.spread}%</div>
-      <div class="hpbar"><i style="width:${(Math.max(0, unit.hp) / unit.maxHp) * 100}%"></i></div>
-    `;
+      <div class="hpbar"><i style="width:${Math.max(0, unit.hp) / unit.maxHp * 100}%"></i></div>`;
     wrap.appendChild(node);
   }
 }
@@ -58,7 +171,7 @@ function renderPlayer() {
   const wrap = $('player-slots');
   wrap.innerHTML = '';
   for (let i = 0; i < START.slots; i++) {
-    const cell = state.player.cells[i];
+    const cell = game.player.cells[i];
     if (!cell) {
       wrap.appendChild(el('div', 'slot empty', '<span class="muted">empty tissue</span>'));
       continue;
@@ -68,12 +181,11 @@ function renderPlayer() {
       <div>
         <div class="unit-name">${cell.name}</div>
         <div class="unit-stats">
-          <span class="atk">⚔ ${atkOf(state, cell)}</span>
+          <span class="atk">⚔ ${atkOf(game, cell)}</span>
           <span class="hp">♥ ${Math.max(0, cell.hp)}</span>
         </div>
       </div>
-      <div class="hpbar"><i style="width:${(Math.max(0, cell.hp) / cell.maxHp) * 100}%"></i></div>
-    `;
+      <div class="hpbar"><i style="width:${Math.max(0, cell.hp) / cell.maxHp * 100}%"></i></div>`;
     wrap.appendChild(node);
   }
 }
@@ -81,9 +193,9 @@ function renderPlayer() {
 function renderHand() {
   const hand = $('hand');
   hand.innerHTML = '';
-  state.hand.forEach((id, index) => {
+  game.hand.forEach((id, index) => {
     const card = CARDS[id];
-    const affordable = card.cost <= state.atp && !state.result;
+    const affordable = card.cost <= game.atp && !game.result;
     const node = el('div', `card type-${card.type}${affordable ? '' : ' unaffordable'}`);
     node.dataset.rarity = card.rarity || 'common';
     node.innerHTML = `
@@ -95,56 +207,84 @@ function renderHand() {
       ${card.type === 'cell'
         ? `<div class="card-stats"><span class="atk">⚔ ${card.atk}</span><span class="hp">♥ ${card.hp}</span></div>`
         : ''}
-      <div class="card-text">${card.text}</div>
-    `;
+      <div class="card-text">${card.text}</div>`;
     node.addEventListener('click', () => {
-      const res = playCard(state, index);
+      const res = playCard(game, index);
       if (!res.ok) return flash(res.error);
-      render();
+      renderBattle();
     });
     hand.appendChild(node);
   });
+
+  $('deck-count').textContent = `deck ${game.deck.length} · discard ${game.discard.length}`;
+  $('antibodies').textContent = game.player.antibodies ? `antibodies ${game.player.antibodies}` : '';
 }
 
 function renderLog() {
   const box = $('log');
   box.innerHTML = '';
-  state.log.slice(-4).forEach((entry) => {
+  for (const entry of game.log.slice(-4)) {
     box.appendChild(el('div', entry.kind, entry.text));
-  });
-  if (state.log.length !== lastLogLength) {
-    lastLogLength = state.log.length;
   }
 }
 
 function renderPreview() {
-  const p = previewEndTurn(state);
   const box = $('preview');
-  if (state.result) {
+  if (game.result) {
     box.innerHTML = '';
     return;
   }
+  const p = previewEndTurn(game);
   const feverWarn = p.feverAtEnd
     ? '<span class="danger">FEVER fires at end of turn.</span>'
-    : `${state.fever - state.inflammation} Inflammation until fever.`;
+    : `${game.fever - game.inflammation} Inflammation until fever.`;
   box.innerHTML = `End turn → you hit for <b>${p.myDamage}</b>, pathogens spread <b>+${p.theirSpread}%</b> (site ${p.coreHp}).<br>${feverWarn}`;
+}
+
+function settle() {
+  if (!game || !game.result || settled) return;
+  settled = true;
+  const first = !progress.cleared.includes(region.id);
+
+  if (game.result === 'win') {
+    const gain = first ? region.reward : Math.round(region.reward * 0.25);
+    if (first) progress.cleared.push(region.id);
+    progress.stem += gain;
+    saveProgress(progress);
+    lastWin = { gain, first };
+  } else {
+    lastWin = null;
+  }
 }
 
 function renderOverlay() {
   const overlay = $('overlay');
-  if (!state.result) {
+  if (!game || !game.result) {
     overlay.classList.add('hidden');
     return;
   }
+  settle();
   overlay.classList.remove('hidden');
-  $('overlay-title').textContent = state.result === 'win' ? 'BODY HELD' : 'HOST LOST';
-  $('overlay-sub').textContent =
-    state.result === 'win'
-      ? `Infection cleared on turn ${state.turn}. Antibodies ${state.player.antibodies}.`
-      : `Infection hit 100% on turn ${state.turn}. Rebuild the deck and try again.`;
+
+  const won = game.result === 'win';
+  $('overlay-title').textContent = won ? 'BODY HELD' : 'HOST LOST';
+  $('overlay-sub').textContent = won
+    ? `${region.name} cleared on turn ${game.turn}. ${region.organ}.`
+    : `Infection hit 100% on turn ${game.turn}. ${region.name} is still yours to take.`;
+
+  const rewardBox = $('overlay-reward');
+  if (won && lastWin) {
+    rewardBox.classList.remove('hidden');
+    rewardBox.innerHTML = `+${lastWin.gain} STEM CELLS${lastWin.first ? ' · FIRST CLEAR' : ' · REPLAY'}`;
+  } else {
+    rewardBox.classList.add('hidden');
+  }
+
+  $('overlay-btn').textContent = won ? 'BACK TO MAP' : 'GIVE UP';
+  $('overlay-retry').classList.toggle('hidden', won);
 }
 
-function render() {
+function renderBattle() {
   renderHud();
   renderEnemy();
   renderPlayer();
@@ -156,29 +296,57 @@ function render() {
 
 function flash(message) {
   if (!message) return;
-  const box = $('log');
-  box.appendChild(el('div', 'bad', message));
+  $('log').appendChild(el('div', 'bad', message));
 }
 
-$('end-turn').addEventListener('click', () => {
-  endTurn(state);
-  render();
-  if (state.log.some((l) => l.kind === 'fever')) {
-    document.getElementById('app').classList.add('fevering');
-    setTimeout(() => document.getElementById('app').classList.remove('fevering'), 600);
-  }
+/* --------------------------------------------------------------- events */
+
+$('btn-continue').addEventListener('click', () => {
+  renderMap();
+  showView('map');
+});
+$('btn-map-back').addEventListener('click', () => {
+  renderMenu();
+  showView('menu');
+});
+$('btn-lab-menu').addEventListener('click', () => {
+  renderLab();
+  showView('lab');
+});
+$('btn-lab').addEventListener('click', () => {
+  renderLab();
+  showView('lab');
+});
+$('btn-lab-back').addEventListener('click', () => {
+  renderMap();
+  showView('map');
+});
+$('btn-reset').addEventListener('click', () => {
+  progress = resetProgress();
+  renderMenu();
 });
 
-$('restart').addEventListener('click', () => {
-  state = createGame();
-  lastLogLength = 0;
-  render();
+$('end-turn').addEventListener('click', () => {
+  endTurn(game);
+  renderBattle();
+  if (game.log.some((l) => l.kind === 'fever')) {
+    $('app').classList.add('fevering');
+    setTimeout(() => $('app').classList.remove('fevering'), 600);
+  }
+});
+$('restart').addEventListener('click', () => startRegion(region.id));
+$('btn-quit').addEventListener('click', () => {
+  renderMap();
+  showView('map');
 });
 
 $('overlay-btn').addEventListener('click', () => {
-  state = createGame();
-  lastLogLength = 0;
-  render();
+  renderMap();
+  showView('map');
 });
+$('overlay-retry').addEventListener('click', () => startRegion(region.id));
 
-render();
+/* ---------------------------------------------------------------- boot */
+
+renderMenu();
+showView('menu');

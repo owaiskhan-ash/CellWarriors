@@ -33,7 +33,7 @@ function draw(s, n) {
   }
 }
 
-export function createGame() {
+export function createGame(cfg = {}) {
   const s = {
     turn: 1,
     phase: 'play', // play | enemy | over
@@ -42,13 +42,23 @@ export function createGame() {
     maxAtp: START.atp,
     inflammation: 0,
     fever: START.fever,
-    infection: START.infection,
-    deck: shuffle([...DECK_LIST]),
+    infection: cfg.infection ?? START.infection,
+    deck: shuffle([...(cfg.deck || DECK_LIST)]),
     hand: [],
     discard: [],
     spawnCount: 0,
     player: { cells: [], antibodies: 0, tempAtk: 0, opsonin: false },
-    enemy: { units: [], weaken: 0, coreHp: START.coreHp, coreMax: START.coreHp },
+    enemy: {
+      units: [],
+      weaken: 0,
+      coreHp: cfg.coreHp ?? START.coreHp,
+      coreMax: cfg.coreHp ?? START.coreHp,
+    },
+    cfg: {
+      infectionGain: cfg.infectionGain ?? 3,
+      spawnEvery: cfg.spawnEvery ?? 1,
+      wave: cfg.wave || WAVE,
+    },
     log: [],
   };
   draw(s, START.handSize);
@@ -81,6 +91,21 @@ function applyCytokine(s, card) {
       break;
     case 'antipyretic':
       log(s, 'Antipyretic. Fever pressure drops.', 'good');
+      break;
+    case 'complement':
+      for (const u of s.enemy.units) u.hp -= 2;
+      log(s, 'Complement cascade. 2 dmg to every pathogen.', 'good');
+      break;
+    case 'il2':
+      for (const c of s.player.cells) {
+        c.atk += 1;
+        c.hp = Math.min(c.maxHp, c.hp + 1);
+      }
+      log(s, 'IL-2. Every cell grows stronger.', 'good');
+      break;
+    case 'adrenaline':
+      s.atp += 2;
+      log(s, 'Adrenaline. +2 ATP this turn.', 'good');
       break;
   }
 }
@@ -115,6 +140,10 @@ export function playCard(s, handIndex) {
       draw(s, 1);
       log(s, 'Dendritic presents antigen: Infection -4%, draw 1.', 'good');
     }
+    if (card.onPlay === 'memoryB') {
+      s.infection -= 8;
+      log(s, 'Memory B recognises the enemy on sight: Infection -8%.', 'good');
+    }
   } else {
     s.discard.push(id);
     applyCytokine(s, card);
@@ -122,6 +151,7 @@ export function playCard(s, handIndex) {
 
   if (card.inflam) addInflammation(s, card.inflam);
 
+  cleanupDead(s);
   s.infection = clamp(s.infection, 0, 100);
   checkResult(s);
   return { ok: true };
@@ -172,7 +202,8 @@ function cleanupDead(s) {
 function spawnForTurn(s) {
   if (s.enemy.units.length >= START.slots) return;
   if (s.turn < 2) return;
-  const id = WAVE[s.spawnCount++ % WAVE.length];
+  if (s.turn % s.cfg.spawnEvery !== 0) return;
+  const id = s.cfg.wave[s.spawnCount++ % s.cfg.wave.length];
   const e = ENEMIES[id];
   s.enemy.units.push({ ...e, hp: e.hp, maxHp: e.hp, uid: `e${Math.random().toString(36).slice(2, 7)}` });
   log(s, `${e.name} appears.`, 'warn');
@@ -229,9 +260,10 @@ export function endTurn(s) {
       s.player.opsonin = false;
       log(s, 'Opsonised hit lands at double damage.', 'good');
     }
-    if (targets.length) {
+    if (targets.length && !cell.bypassCore) {
       const target = targets.reduce((a, b) => (a.hp <= b.hp ? a : b));
-      damageEnemy(s, target, dmg, cell);
+      const bonus = cell.armourBonus && target.armor ? cell.armourBonus : 0;
+      damageEnemy(s, target, dmg + bonus, cell);
       if (cell.inflamOnAttack) addInflammation(s, cell.inflamOnAttack);
     } else if (s.enemy.coreHp > 0) {
       s.enemy.coreHp -= dmg;
@@ -244,7 +276,7 @@ export function endTurn(s) {
 
   // 2. pathogens arrive and act
   spawnForTurn(s);
-  s.infection += 3; // the host deteriorates on its own
+  s.infection += s.cfg.infectionGain; // the host deteriorates on its own
   for (const unit of s.enemy.units) {
     if (unit.hp <= 0) continue;
     s.infection += unit.spread;
