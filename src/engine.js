@@ -645,6 +645,13 @@ function recover(state, ch) {
   pushFx(state, { kind: 'recover', id: ch.id, name: ch.name });
   state.characters.forEach((c) => { if (c.hp > 0) c.hp = Math.min(c.maxHp - (c.lockedHp || 0), c.hp + Math.ceil(ch.maxHp / 2)); });
   log(state, `${ch.name} recovers! Stress 0, +2 Strength, Ego cost 0.`, 'recover');
+  // The character is whole again — any Breakdown cards still sitting in the
+  // piles (converted during the breakdown, or re-dealt from the discard)
+  // become normal cards again so they don't keep playing after recovery.
+  const restore = (c) => (c.breakdown ? { ...makeCard(c.origin || `breakdown_${ch.id}`), uid: c.uid } : c);
+  state.hand = state.hand.map(restore);
+  state.drawPile = state.drawPile.map(restore);
+  state.discard = state.discard.map(restore);
 }
 
 function healCharacter(state, ch, amount, stressHeal = 0) {
@@ -752,13 +759,13 @@ export function playCard(state, handIndex, targetUid = null) {
 
   if (card.breakdown) {
     const ch = state.characters.find((c) => c.id === card.owner);
+    state.discard.push(card);
     if (ch && ch.broken) {
       ch.recovery += 1;
       const need = RECOVERY_PLAYS[Math.min(ch.breakdownCount - 1, RECOVERY_PLAYS.length - 1)];
       log(state, `${ch.name} recovery ${ch.recovery}/${need}`, 'info');
       if (ch.recovery >= need) recover(state, ch);
     }
-    state.discard.push(card);
     advanceCounters(state, 1);
     checkResult(state);
     return { ok: true, card };
