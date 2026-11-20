@@ -1,5 +1,13 @@
 # Cell Warriors v1.0.2 — the phone battle screen, fixed
 
+## 📱 Download
+
+**[⬇ CellWarriors-1.0.2.apk](https://github.com/owaiskhan-ash/CellWarriors/blob/main/releases/CellWarriors-1.0.2.apk?raw=true)** — 14 MB, Android 7.0+
+**[sha256](https://github.com/owaiskhan-ash/CellWarriors/blob/main/releases/CellWarriors-1.0.2.apk.sha256?raw=true)** — `75f39e6af81397abee73950ddc1a1de52daa2678841ea2358176893f2a219006`
+
+On a phone, tap the **⤓ Download raw file** icon. If the page saves as `.html`,
+the download was the web page, not the app.
+
 **This release is about one thing: the battle screen on a phone held sideways
 now shows the whole fight.** Enemies, their intent badges, the break banner, the
 objective line, your hand and the END TURN button are all on screen at once, on
