@@ -45,6 +45,13 @@ let passes = 0;
 const fail = (vp, msg) => { fails++; console.log(`FAIL  [${vp}] ${msg}`); };
 const pass = (msg) => { passes++; if (process.env.VERBOSE) console.log(`PASS  ${msg}`); };
 
+const area = (a, b) => {
+  if (!a || !b) return 0;
+  const dx = Math.min(a.r, b.r) - Math.max(a.x, b.x);
+  const dy = Math.min(a.b, b.b) - Math.max(a.y, b.y);
+  return dx > 2 && dy > 2 ? dx * dy : 0;
+};
+
 const exe = await chromium.executablePath();
 const browser = await pc.launch({
   args: [...chromium.args, '--allow-file-access-from-files'],
@@ -85,6 +92,9 @@ const MEASURE = () => {
     hand: box('.hand'),
     topStack: box('.top-stack'),
     objective: box('.objective-bar'),
+    bossBar: box('#boss-bar'),
+    simPill: box('#sim-hud-pill'),
+    simHud: box('#sim-hud'),
     timeline: box('.action-timeline'),
     weak: box('.weak-banner'),
     endTurn: box('#end-turn'),
@@ -112,7 +122,16 @@ const MEASURE = () => {
     enemyArt: many('.enemy-art img'),
     cardTexts: many('.hand .card .card-text'),
     cardInfo: many('.hand .card .card-info'),
+    cardNames: many('.hand .card .card-name'),
   };
+  /* How much of each card's NAME does the next card paint over? Names are one
+     ellipsised line, so a covered strip is tolerable — a covered name is not. */
+  r.nameCovered = r.cardNames.map((n, i) => {
+    const next = r.cards[i + 1];
+    if (!next) return { i, frac: 0 };
+    const covered = Math.max(0, Math.min(n.r, next.r) - Math.max(n.x, next.x));
+    return { i, frac: n.w ? covered / n.w : 0, text: (n.el.textContent || '').trim().slice(0, 28) };
+  }).filter((n) => n.frac > 0.34);
   /* specific collision report */
   r.collisions = [];
   const named = {
@@ -127,6 +146,10 @@ const MEASURE = () => {
     ['objective', 'timeline'], ['timeline', 'endTurn'], ['timeline', 'grave'],
     /* the objective text vs everything else at the top of the arena */
     ['objective', 'weak'], ['objective', 'title'], ['timeline', 'objective'],
+    /* the objective band and the SIMULATION pill share one row */
+    ['objective', 'simPill'], ['simPill', 'hudPills'], ['simPill', 'objective'],
+    ['simPill', 'endTurn'], ['simPill', 'grave'], ['simPill', 'sands'],
+    ['bossBar', 'weak'], ['bossBar', 'objective'],
     ['endTurn', 'sands'], ['endTurn', 'grave'], ['endTurn', 'auto'],
     ['apRow', 'hand'], ['tips', 'hand'],
     ['turnPlate', 'resBox'], ['resBox', 'pileBox'], ['pileBox', 'railEp'],
@@ -219,12 +242,6 @@ const freeze = () => page.addStyleTag({ content: `
   pass(`${tag} enemies above the hand`);
 
   // 4. END TURN must be fully on screen and not under the hand
-  const area = (a, b) => {
-    if (!a || !b) return 0;
-    const dx = Math.min(a.r, b.r) - Math.max(a.x, b.x);
-    const dy = Math.min(a.b, b.b) - Math.max(a.y, b.y);
-    return dx > 2 && dy > 2 ? dx * dy : 0;
-  };
   if (m.endTurn) {
     if (m.endTurn.b > m.viewport.h - 1) fail(tag, `END TURN is below the fold (${Math.round(m.endTurn.b)})`);
     if (m.endTurn.w < 44 || m.endTurn.h < 44) fail(tag, `END TURN target is ${Math.round(m.endTurn.w)}x${Math.round(m.endTurn.h)} (<44px)`);
@@ -250,6 +267,63 @@ const freeze = () => page.addStyleTag({ content: `
   if (SHOT_DIR) {
     fs.mkdirSync(SHOT_DIR, { recursive: true });
     await page.screenshot({ path: path.join(SHOT_DIR, `battle-${vp.w}x${vp.h}.png`) });
+  }
+  await page.close();
+}
+
+/* =========================================================================
+   SIMULATION BATTLES
+   The sim chamber adds a pill, a stats sheet and a boss plate to the same
+   182px stage. All three used to overlap: the panel covered the entire right
+   rail (END TURN, grave, AUTO), and the boss bar sat on the BREAK banner.
+   ========================================================================= */
+for (const vp of VIEWPORTS.filter((v) => v.h <= 560)) {
+  const page = await browser.newPage();
+  await page.setViewport({ width: vp.w, height: vp.h, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(String(e)));
+  await page.goto(`file://${REPO}/index.html`, { waitUntil: 'networkidle0' });
+  await page.evaluate(() => document.fonts && document.fonts.ready);
+  await page.evaluate(async () => {
+    const el = document.getElementById('tt-dismiss');
+    if (el && !document.getElementById('touch-tut').classList.contains('hidden')) el.click();
+    window.__cw.openSim('sable');
+    window.__cw.beginSimBattle('sable');
+  });
+  await new Promise((r) => setTimeout(r, 1200));
+  await page.addStyleTag({ content: `*,*::before,*::after{animation:none!important;transition:none!important;transform:none!important}` });
+  await new Promise((r) => setTimeout(r, 140));
+  const m = await page.evaluate(MEASURE);
+  const tag = `sim ${vp.name} ${vp.w}x${vp.h}`;
+  if (errors.length) fail(tag, `JS errors: ${errors.slice(0, 2).join(' | ')}`);
+
+  for (const c of m.collisions) fail(tag, `${c.a} overlaps ${c.b} by ${c.area}px²`);
+  pass(`${tag} no collisions`);
+
+  if (m.bossBar) fail(tag, 'the duplicate boss HP bar is drawn on a phone');
+  pass(`${tag} single HP readout`);
+
+  if (!m.simPill) fail(tag, 'SIMULATION pill is missing');
+  else {
+    const bandBottom = m.weak ? m.weak.y : m.stage.y + 20;
+    if (m.simPill.b > bandBottom) fail(tag, `SIM pill (bottom ${Math.round(m.simPill.b)}) is not in the top band`);
+    if (m.simPill.w < 44 || m.simPill.h < 18) fail(tag, `SIM pill is ${Math.round(m.simPill.w)}x${Math.round(m.simPill.h)}`);
+  }
+  pass(`${tag} SIM pill in the objective band`);
+
+  if (m.simHud) fail(tag, 'the sim stats sheet is open by default (it covers the rail)');
+  pass(`${tag} stats sheet starts closed`);
+
+  if (!m.endTurn || m.endTurn.b > m.viewport.h - 1) fail(tag, 'END TURN is not on screen');
+  else if (area(m.endTurn, m.simHud) > 4) fail(tag, 'END TURN is covered by the sim panel');
+  pass(`${tag} END TURN reachable`);
+
+  for (const n of m.nameCovered) fail(tag, `card ${n.i} name "${n.text}" is ${Math.round(n.frac * 100)}% covered`);
+  pass(`${tag} card names visible`);
+
+  if (SHOT_DIR) {
+    fs.mkdirSync(SHOT_DIR, { recursive: true });
+    await page.screenshot({ path: path.join(SHOT_DIR, `sim-${vp.w}x${vp.h}.png`) });
   }
   await page.close();
 }

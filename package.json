@@ -1,6 +1,6 @@
 {
   "name": "cell-warriors",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "type": "module",
   "description": "Cell Warriors \u2014 a tactical card RPG inside a human body.",
@@ -11,13 +11,14 @@
     "test:phone": "node scripts/phone-check.mjs",
     "test:apk": "node scripts/apk-sim.mjs",
     "test:run": "node scripts/full-run.mjs",
-    "test": "node scripts/e2e.mjs && node scripts/phone-check.mjs && node scripts/full-run.mjs && bash scripts/browser-test.sh scripts/battle-fit.mjs && bash scripts/browser-test.sh scripts/screen-fit.mjs",
+    "test": "node scripts/e2e.mjs && node scripts/phone-check.mjs && node scripts/full-run.mjs && bash scripts/browser-test.sh scripts/battle-fit.mjs && bash scripts/browser-test.sh scripts/screen-fit.mjs && bash scripts/browser-test.sh scripts/audio-check.mjs",
     "apk": "bash android/build.sh",
     "apk:tools": "bash android/fetch-tools.sh",
     "preview": "python3 scripts/layout-preview.py",
     "test:battle": "bash scripts/browser-test.sh scripts/battle-fit.mjs",
     "test:screens": "bash scripts/browser-test.sh scripts/screen-fit.mjs",
-    "test:ui": "bash scripts/browser-test.sh scripts/battle-fit.mjs && bash scripts/browser-test.sh scripts/screen-fit.mjs"
+    "test:ui": "bash scripts/browser-test.sh scripts/battle-fit.mjs && bash scripts/browser-test.sh scripts/screen-fit.mjs",
+    "test:audio": "bash scripts/browser-test.sh scripts/audio-check.mjs"
   },
   "devDependencies": {
     "@sparticuz/chromium": "^131.0.1",

@@ -50,14 +50,14 @@ export const BARK_LINES = {
   },
 };
 
+/* Recorded clips are only used for an Ego activation — one per battle, and it
+   should sound like a performance. Card plays are synthesised per card
+   (see cardVoice) because a single "attack" clip per character made every one
+   of that character's cards sound identical. */
 export const VOICE_CLIPS = {
-  'kaito:attack': 'audio/kaito-atk.mp3',
   'kaito:ego': 'audio/kaito-ego.mp3',
-  'momo:attack': 'audio/momo-atk.mp3',
   'momo:ego': 'audio/momo-ego.mp3',
-  'goro:attack': 'audio/goro-atk.mp3',
   'goro:ego': 'audio/goro-ego.mp3',
-  'bibi:attack': 'audio/bibi-atk.mp3',
   'bibi:ego': 'audio/bibi-ego.mp3',
 };
 
@@ -74,15 +74,83 @@ function ac() {
   try { ctx = new Ctor(); } catch { ctx = null; }
   // Master bus: every tone/noise routes through one gain so major moments can
   // DUCK everything else for a beat — the cheapest cinematic trick there is.
+  // After it sits a soft compressor (a 4-hit flurry should land as one punch,
+  // not as four clipped snaps) and a synthetic room, because dry Web Audio
+  // bleeps are exactly what "cheap" sounds like.
   if (ctx && ctx.createGain && !ctx._master) {
     try {
       const master = ctx.createGain();
-      master.gain.value = 0.92;
-      master.connect(ctx.destination);
+      master.gain.value = 0.9;
+      let head = master;
+      if (ctx.createDynamicsCompressor) {
+        const comp = ctx.createDynamicsCompressor();
+        comp.threshold.value = -14;
+        comp.knee.value = 24;
+        comp.ratio.value = 4;
+        comp.attack.value = 0.004;
+        comp.release.value = 0.18;
+        master.connect(comp);
+        head = comp;
+      }
+      head.connect(ctx.destination);
       ctx._master = master;
+
+      if (ctx.createConvolver && ctx.createBuffer) {
+        const conv = ctx.createConvolver();
+        conv.buffer = makeIR(ctx);
+        const damp = ctx.createBiquadFilter();
+        damp.type = 'lowpass';
+        damp.frequency.value = 3600;
+        const wet = ctx.createGain();
+        wet.gain.value = 0.5;
+        const send = ctx.createGain();
+        send.gain.value = 1;
+        send.connect(conv).connect(damp).connect(wet).connect(master);
+        ctx._send = send;
+      }
     } catch { /* fall back to direct destination */ }
   }
   return ctx;
+}
+
+/* 1.4s of decaying stereo noise = a small concrete room. Cheap, and it is the
+   single biggest difference between "beep" and "impact". */
+function makeIR(c) {
+  const len = Math.max(1, Math.floor(c.sampleRate * 1.4));
+  const buf = c.createBuffer(2, len, c.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = buf.getChannelData(ch);
+    for (let i = 0; i < len; i++) {
+      const t = i / len;
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 3.2) * 0.8;
+    }
+  }
+  return buf;
+}
+
+/* Route a finished voice to the dry bus, optionally panned and optionally into
+   the reverb send. StereoPannerNode is missing on very old WebViews - degrade
+   to mono rather than throw. */
+function output(c, node, { pan = 0, send = 0 } = {}) {
+  let tail = node;
+  if (pan && c.createStereoPanner) {
+    try {
+      const p = c.createStereoPanner();
+      p.pan.value = Math.max(-1, Math.min(1, pan));
+      tail.connect(p);
+      tail = p;
+    } catch { /* mono */ }
+  }
+  tail.connect(out(c));
+  if (send > 0 && c._send) {
+    try {
+      const g = c.createGain();
+      g.gain.value = send;
+      tail.connect(g);
+      g.connect(c._send);
+    } catch { /* no room */ }
+  }
+  return tail;
 }
 
 function out(c) { return (c && c._master) || c.destination; }
@@ -100,12 +168,18 @@ export function duckMix(depth = 0.3, hold = 0.22) {
   } catch { /* ignore */ }
 }
 
+/* Headroom. The synthesis below is deliberately mixed conservatively (a chip
+   hit peaks around 0.02 of full scale, which on a phone speaker is inaudible
+   next to any other app). Everything gets one constant lift here, and the
+   compressor on the master bus keeps stacked hits from clipping. */
+const BUS_GAIN = 2.4;
+
 // Tiny random detune so the same sound never plays identically twice.
 const vary = (f, amt = 0.05) => f * (1 + (Math.random() * 2 - 1) * amt);
 // Log-scaled loudness: a 200-damage hit is weightier, not 10x louder.
 const dmgGain = (amt, base = 0.05, cap = 0.1) => base + Math.min(cap, Math.log10(Math.max(1, amt)) * 0.032);
 
-function tone(freq, dur, { type = 'triangle', gain = 0.09, slideTo = null, delay = 0, exact = false } = {}) {
+function tone(freq, dur, { type = 'triangle', gain = 0.09, slideTo = null, delay = 0, exact = false, pan = 0, send = 0, attack = 0.012, detune = 0 } = {}) {
   const c = ac();
   if (!c) return;
   const now = c.currentTime + delay;
@@ -114,32 +188,47 @@ function tone(freq, dur, { type = 'triangle', gain = 0.09, slideTo = null, delay
   const f = exact ? freq : vary(freq, 0.035);
   osc.type = type;
   osc.frequency.setValueAtTime(f, now);
+  if (detune) osc.detune.setValueAtTime(detune, now);
   if (slideTo) osc.frequency.exponentialRampToValueAtTime(Math.max(30, exact ? slideTo : vary(slideTo, 0.035)), now + dur);
   g.gain.setValueAtTime(0.0001, now);
-  g.gain.linearRampToValueAtTime(gain * sfxVolume, now + 0.012);
+  g.gain.linearRampToValueAtTime(gain * sfxVolume * BUS_GAIN, now + Math.max(0.002, attack));
   g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
-  osc.connect(g).connect(out(c));
+  osc.connect(g);
+  output(c, g, { pan, send });
   osc.start(now);
   osc.stop(now + dur + 0.02);
 }
 
-function noiseBurst(dur, { gain = 0.08, highpass = 600, delay = 0 } = {}) {
+/* Filtered noise with a real attack shape. `highpass` is kept for the existing
+   call sites; `band` turns the same generator into a fricative/whoosh. */
+function noiseBurst(dur, { gain = 0.08, highpass = 600, delay = 0, band = null, q = 1.2, pan = 0, send = 0, attack = 0.002, curve = 1 } = {}) {
   const c = ac();
   if (!c || !c.createBuffer) return;
   const len = Math.max(1, Math.floor(c.sampleRate * dur));
   const buf = c.createBuffer(1, len, c.sampleRate);
   const data = buf.getChannelData(0);
-  for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+  for (let i = 0; i < len; i++) {
+    const t = i / len;
+    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, curve);
+  }
   const src = c.createBufferSource();
   src.buffer = buf;
   const filt = c.createBiquadFilter();
-  filt.type = 'highpass';
-  filt.frequency.value = highpass;
+  if (band) {
+    filt.type = 'bandpass';
+    filt.frequency.value = band;
+    filt.Q.value = q;
+  } else {
+    filt.type = 'highpass';
+    filt.frequency.value = highpass;
+  }
   const g = c.createGain();
   const now = c.currentTime + delay;
-  g.gain.setValueAtTime(gain * sfxVolume, now);
+  g.gain.setValueAtTime(0.0001, now);
+  g.gain.linearRampToValueAtTime(gain * sfxVolume * BUS_GAIN, now + Math.max(0.001, attack));
   g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
-  src.connect(filt).connect(g).connect(out(c));
+  src.connect(filt).connect(g);
+  output(c, g, { pan, send });
   src.start(now);
 }
 
@@ -172,15 +261,20 @@ export function sfx(kind, opts = {}) {
       tone(392, 0.18, { type: 'sine', gain: 0.04, delay: 0.03 });
       break;
     case 'click':
-      tone(520, 0.05, { type: 'sine', gain: 0.05, slideTo: 660 });
+      // A UI tick is two layers: a short pitched blip for the ear, a 6ms noise
+      // transient for the "tap" — one sine on its own sounds like a mosquito.
+      tone(880, 0.04, { type: 'sine', gain: 0.05, slideTo: 1180, attack: 0.002, send: 0.06 });
+      noiseBurst(0.012, { gain: 0.05, band: 2600, q: 0.9, send: 0.04 });
       break;
     case 'draw':
-      noiseBurst(0.08, { gain: 0.05, highpass: 1400 });
-      tone(420, 0.06, { type: 'sine', gain: 0.03, slideTo: 580 });
+      // card leaving the deck: a paper swish that opens then closes
+      noiseBurst(0.11, { gain: 0.07, band: 1900, q: 0.7, send: 0.1, curve: 1.6 });
+      tone(430, 0.07, { type: 'sine', gain: 0.03, slideTo: 620, send: 0.08 });
       break;
     case 'slash':
-      noiseBurst(0.14, { gain: 0.12, highpass: 900 });
-      tone(290, 0.15, { type: 'sawtooth', gain: 0.08, slideTo: 85 });
+      noiseBurst(0.15, { gain: 0.13, band: 1650, q: 0.6, send: 0.16, curve: 1.3 });
+      tone(300, 0.17, { type: 'sawtooth', gain: 0.085, slideTo: 78, send: 0.12 });
+      tone(120, 0.2, { type: 'triangle', gain: 0.07, slideTo: 52, delay: 0.01, send: 0.05 });
       break;
     case 'weak':
       noiseBurst(0.16, { gain: 0.13, highpass: 1200 });
@@ -188,13 +282,16 @@ export function sfx(kind, opts = {}) {
       tone(660, 0.16, { type: 'sine', gain: 0.09, slideTo: 1040, delay: 0.04 });
       break;
     case 'shield':
-      tone(320, 0.14, { type: 'triangle', gain: 0.08, slideTo: 480 });
-      tone(640, 0.18, { type: 'sine', gain: 0.05, delay: 0.04 });
+      // glass ring: a triad that arrives a hair apart, with room around it
+      tone(330, 0.16, { type: 'triangle', gain: 0.07, slideTo: 470, send: 0.18 });
+      tone(660, 0.22, { type: 'sine', gain: 0.05, delay: 0.035, send: 0.24 });
+      tone(990, 0.26, { type: 'sine', gain: 0.03, delay: 0.07, send: 0.3, pan: 0.12 });
       break;
     case 'heal':
-      tone(440, 0.16, { type: 'sine', gain: 0.07 });
-      tone(554, 0.18, { type: 'sine', gain: 0.07, delay: 0.06 });
-      tone(659, 0.24, { type: 'sine', gain: 0.07, delay: 0.12 });
+      tone(440, 0.18, { type: 'sine', gain: 0.06, send: 0.3, attack: 0.03 });
+      tone(554, 0.2, { type: 'sine', gain: 0.06, delay: 0.06, send: 0.3, attack: 0.03 });
+      tone(659, 0.26, { type: 'sine', gain: 0.06, delay: 0.12, send: 0.34, attack: 0.03 });
+      tone(1318, 0.3, { type: 'sine', gain: 0.022, delay: 0.16, send: 0.4, pan: 0.1 });
       break;
     case 'buff':
     case 'celestial':
@@ -202,17 +299,19 @@ export function sfx(kind, opts = {}) {
       tone(587, 0.2, { type: 'triangle', gain: 0.08, delay: 0.05 });
       break;
     case 'break':
-      noiseBurst(0.28, { gain: 0.16, highpass: 350 });
-      tone(160, 0.34, { type: 'sawtooth', gain: 0.12, slideTo: 52 });
-      tone(784, 0.28, { type: 'triangle', gain: 0.1, slideTo: 1175, delay: 0.07 });
+      noiseBurst(0.3, { gain: 0.16, highpass: 330, send: 0.22, curve: 1.5 });
+      tone(160, 0.36, { type: 'sawtooth', gain: 0.12, slideTo: 50, send: 0.12 });
+      tone(784, 0.3, { type: 'triangle', gain: 0.1, slideTo: 1175, delay: 0.07, send: 0.3 });
+      tone(1568, 0.34, { type: 'sine', gain: 0.05, delay: 0.12, send: 0.34, pan: 0.16 });
       break;
     case 'phase':
       tone(180, 0.3, { type: 'sawtooth', gain: 0.11, slideTo: 90 });
       tone(270, 0.35, { type: 'square', gain: 0.07, slideTo: 540, delay: 0.08 });
       break;
     case 'hurt':
-      noiseBurst(0.14, { gain: 0.11, highpass: 250 });
-      tone(140, 0.18, { type: 'sawtooth', gain: 0.1, slideTo: 65 });
+      noiseBurst(0.15, { gain: 0.12, highpass: 240, send: 0.1, curve: 1.4 });
+      tone(145, 0.19, { type: 'sawtooth', gain: 0.1, slideTo: 62, send: 0.06 });
+      tone(70, 0.22, { type: 'sine', gain: 0.09, slideTo: 44, delay: 0.01 }); // body thud
       break;
     case 'stress':
       tone(210, 0.22, { type: 'sine', gain: 0.06, slideTo: 175 });
@@ -234,19 +333,22 @@ export function sfx(kind, opts = {}) {
       tone(340, 0.11, { type: 'sine', gain: 0.06, slideTo: 510 });
       break;
     case 'coin':
-      tone(988, 0.08, { type: 'sine', gain: 0.07 });
-      tone(1318, 0.16, { type: 'sine', gain: 0.08, delay: 0.06 });
+      tone(988, 0.09, { type: 'sine', gain: 0.07, send: 0.16 });
+      tone(1318, 0.18, { type: 'sine', gain: 0.08, delay: 0.06, send: 0.2 });
+      tone(2637, 0.12, { type: 'sine', gain: 0.03, delay: 0.08, send: 0.24 }); // metallic edge
       break;
     case 'upgrade':
-      tone(440, 0.1, { type: 'triangle', gain: 0.08 });
-      tone(659, 0.12, { type: 'triangle', gain: 0.08, delay: 0.06 });
-      tone(880, 0.22, { type: 'sine', gain: 0.09, delay: 0.12 });
+      tone(440, 0.11, { type: 'triangle', gain: 0.07, send: 0.18 });
+      tone(659, 0.13, { type: 'triangle', gain: 0.07, delay: 0.06, send: 0.2 });
+      tone(880, 0.24, { type: 'sine', gain: 0.08, delay: 0.12, send: 0.24 });
+      tone(1320, 0.3, { type: 'sine', gain: 0.035, delay: 0.16, send: 0.3 });
       break;
     case 'win':
-      tone(523, 0.14, { type: 'triangle', gain: 0.09 });
-      tone(659, 0.14, { type: 'triangle', gain: 0.09, delay: 0.09 });
-      tone(784, 0.16, { type: 'triangle', gain: 0.1, delay: 0.18 });
-      tone(1046, 0.36, { type: 'sine', gain: 0.11, delay: 0.27 });
+      tone(523, 0.16, { type: 'triangle', gain: 0.08, send: 0.22 });
+      tone(659, 0.16, { type: 'triangle', gain: 0.08, delay: 0.09, send: 0.24 });
+      tone(784, 0.18, { type: 'triangle', gain: 0.09, delay: 0.18, send: 0.26 });
+      tone(1046, 0.4, { type: 'sine', gain: 0.1, delay: 0.27, send: 0.34 });
+      tone(1568, 0.5, { type: 'sine', gain: 0.04, delay: 0.3, send: 0.4, pan: 0.14 });
       break;
     case 'loss':
       tone(294, 0.22, { type: 'sawtooth', gain: 0.08, slideTo: 220 });
@@ -279,9 +381,10 @@ export function sfx(kind, opts = {}) {
       tone(240, 0.1, { type: 'sawtooth', gain: 0.06, slideTo: 120 });
       break;
     case 'epiphany':
-      tone(523, 0.12, { type: 'sine', gain: 0.08 });
-      tone(784, 0.16, { type: 'sine', gain: 0.09, delay: 0.06 });
-      tone(1046, 0.24, { type: 'triangle', gain: 0.09, delay: 0.12 });
+      tone(523, 0.13, { type: 'sine', gain: 0.07, send: 0.26 });
+      tone(784, 0.17, { type: 'sine', gain: 0.08, delay: 0.06, send: 0.3 });
+      tone(1046, 0.26, { type: 'triangle', gain: 0.08, delay: 0.12, send: 0.34 });
+      tone(1568, 0.3, { type: 'sine', gain: 0.035, delay: 0.17, send: 0.4, pan: 0.2 });
       break;
     default:
       break;
@@ -464,15 +567,176 @@ export function badgeHeartbeatStop() {
   if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
 }
 
+/* ===========================================================================
+   PER-CARD VOICE — every card speaks its own syllable
+   ---------------------------------------------------------------------------
+   One recorded "attack" clip per CHARACTER meant all five of a character's
+   cards said the identical thing, which is why the hand sounded like a
+   broken record. Instead each card gets a short formant-synthesised utterance
+   derived from a hash of its id: a fixed number of syllables, its own vowels,
+   its own pitch contour and its own consonant onsets. The character still owns
+   the timbre (kaito is bright and clipped, goro is low and gravelly, …), so a
+   card is recognisable by character but never identical to its neighbour.
+
+   Deterministic: card 'k_jab' sounds the same in every battle and every
+   install, because the seed is the id — not Math.random().
+   =========================================================================== */
+
+/* FNV-1a: tiny, stable across engines, and good enough to scatter ids. */
+function hash32(str) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return h >>> 0;
+}
+/* mulberry32 — one seed in, a repeatable stream of 0..1 out. */
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* Formant pairs (F1/F2) of the vowels a human actually uses for short shouts. */
+const VOWELS = {
+  a: [730, 1090], e: [530, 1840], i: [285, 2260], o: [570, 840], u: [320, 870],
+  ae: [660, 1720], eh: [580, 1790], oh: [500, 900], ih: [400, 1990],
+};
+
+/* Character timbre. f0 = speaking pitch, formant = vocal-tract scale (>1 is a
+   smaller head), breath = air on the voice, grit = sub-harmonic rasp. */
+const VOICE_PROFILE = {
+  kaito: { f0: 128, formant: 1.04, breath: 0.05, grit: 0.10, vowels: ['e', 'a', 'ih'], rate: 1.0, gain: 0.20 },
+  momo:  { f0: 214, formant: 1.16, breath: 0.16, grit: 0.02, vowels: ['e', 'a', 'i'], rate: 1.12, gain: 0.18 },
+  goro:  { f0: 92,  formant: 0.92, breath: 0.04, grit: 0.26, vowels: ['o', 'u', 'oh'], rate: 0.84, gain: 0.22 },
+  bibi:  { f0: 176, formant: 1.10, breath: 0.08, grit: 0.08, vowels: ['a', 'oh', 'e'], rate: 1.18, gain: 0.21 },
+  yuna:  { f0: 246, formant: 1.20, breath: 0.22, grit: 0.02, vowels: ['i', 'e', 'ae'], rate: 0.95, gain: 0.17 },
+  sable: { f0: 158, formant: 1.02, breath: 0.07, grit: 0.06, vowels: ['eh', 'a', 'ih'], rate: 1.05, gain: 0.19 },
+};
+const DEFAULT_PROFILE = { f0: 140, formant: 1, breath: 0.08, grit: 0.08, vowels: ['a', 'e', 'o'], rate: 1, gain: 0.29 };
+
+/* Onset consonants: how the syllable starts, not what it says. */
+const ONSETS = [
+  { kind: 'plosive', band: 1400, gain: 0.10, len: 0.022 }, // t / k / p — a click
+  { kind: 'fricative', band: 4200, gain: 0.055, len: 0.055 }, // s / sh — a hiss
+  { kind: 'soft', band: 900, gain: 0.035, len: 0.03 }, // m / n — a hum
+];
+
+/* One voiced syllable: glottal saw + square body through two formant filters.
+   That is a crude but very recognisable "voice" and it costs nothing. */
+function syllable(c, prof, { f0, vowel, onset, dur, gain, pan, at, rise }) {
+  const [F1, F2] = (VOWELS[vowel] || VOWELS.a).map((f) => f * prof.formant);
+  const now = c.currentTime + at;
+  const env = c.createGain();
+  env.gain.setValueAtTime(0.0001, now);
+  env.gain.linearRampToValueAtTime(gain, now + Math.min(0.03, dur * 0.22));
+  env.gain.exponentialRampToValueAtTime(gain * 0.55, now + dur * 0.6);
+  env.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+
+  const f1 = c.createBiquadFilter();
+  f1.type = 'bandpass'; f1.frequency.value = F1; f1.Q.value = 5.5;
+  const f2 = c.createBiquadFilter();
+  f2.type = 'bandpass'; f2.frequency.value = F2; f2.Q.value = 7.5;
+  /* A third, quiet formant around 2.8kHz. Without it the voice reads as a
+     buzzer: F1/F2 alone carry no "t" or "s" colour and the result sounds like
+     a synth patch rather than a person. */
+  const f3 = c.createBiquadFilter();
+  f3.type = 'bandpass'; f3.frequency.value = 2800 * prof.formant; f3.Q.value = 6;
+  const body = c.createGain();
+  body.gain.value = 1;
+  const hp = c.createBiquadFilter(); // kill rumble so the mix stays clear
+  hp.type = 'highpass'; hp.frequency.value = 110;
+
+  const osc = c.createOscillator();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(Math.max(40, f0 * (1 + rise)), now);
+  osc.frequency.exponentialRampToValueAtTime(Math.max(40, f0 * (1 - rise * 0.8)), now + dur);
+  const sub = c.createOscillator();
+  sub.type = 'square';
+  sub.frequency.setValueAtTime(Math.max(40, f0 * 0.5), now);
+
+  const g2 = c.createGain(); g2.gain.value = 0.85;   // F2 carries the vowel colour
+  const g3 = c.createGain(); g3.gain.value = 0.22;   // F3 adds presence
+  osc.connect(f1).connect(body);
+  osc.connect(f2).connect(g2).connect(body);
+  osc.connect(f3).connect(g3).connect(body);
+  if (prof.breath > 0) {
+    const air = c.createGain(); air.gain.value = prof.breath;
+    osc.connect(air).connect(body);                   // unfiltered = breath
+  }
+  if (prof.grit > 0) {
+    const rasp = c.createGain(); rasp.gain.value = prof.grit * 0.35;
+    sub.connect(rasp).connect(body);
+  }
+  body.connect(hp).connect(env);
+  output(c, env, { pan, send: 0.12 });
+  osc.start(now); sub.start(now);
+  osc.stop(now + dur + 0.03); sub.stop(now + dur + 0.03);
+
+  if (onset && onset.gain > 0.005) {
+    noiseBurst(onset.len, {
+      gain: onset.gain * sfxVolume * 1.5, band: onset.band, q: 1.1,
+      delay: at, pan, send: 0.05, attack: 0.004,
+    });
+  }
+}
+
+/* The card's whole utterance. */
+export function cardVoice(cardId = '', charId = null) {
+  if (muted) return;
+  const c = ac();
+  if (!c) return;
+  const prof = VOICE_PROFILE[charId] || DEFAULT_PROFILE;
+  const seed = hash32(`${charId}:${cardId || 'x'}`);
+  const rnd = mulberry32(seed);
+
+  // 1-3 syllables; short cards bark once, dense ones get a phrase.
+  const count = 1 + Math.floor(rnd() * 3);
+  const contour = rnd();                       // 0 = falling (command), 1 = rising (question)
+  const pan = (rnd() * 2 - 1) * 0.18;
+  const baseRate = 0.10 / prof.rate;           // syllable length, character tempo
+  let at = 0;
+  for (let i = 0; i < count; i++) {
+    const vowel = prof.vowels[Math.floor(rnd() * prof.vowels.length)];
+    const onset = ONSETS[Math.floor(rnd() * ONSETS.length)];
+    const dur = baseRate * (0.82 + rnd() * 0.62);
+    const f0 = prof.f0 * (0.9 + rnd() * 0.24) * (1 + (contour - 0.5) * 0.10 * i);
+    const rise = 0.06 + rnd() * 0.12;
+    syllable(c, prof, {
+      f0, vowel, onset, dur,
+      gain: prof.gain * (i === count - 1 ? 1 : 0.82) * BUS_GAIN,
+      pan: pan * (1 - i * 0.15), at, rise,
+    });
+    at += dur * (0.86 + rnd() * 0.3);
+  }
+  // A tiny tick on the tail gives every card an audible fingerprint without
+  // becoming a beep in the middle of the phrase.
+  tone(prof.f0 * (2 + (seed % 7) / 10), 0.045, {
+    type: 'sine', gain: 0.02, delay: at, pan, send: 0.22, exact: true,
+  });
+}
+
+
 let activeAudio = null;
 
-export function bark(charId, kind = 'attack') {
+export function bark(charId, kind = 'attack', cardId = null) {
   const bank = BARK_LINES[charId];
   const raw = bank ? bank[kind] : null;
   const line = Array.isArray(raw) ? raw[Math.floor(Math.random() * raw.length)] : raw;
 
+  // Card plays: one distinct utterance per card, derived from its id.
+  if (!muted && kind === 'attack') {
+    cardVoice(cardId || charId, charId);
+    return line || '';
+  }
   if (!muted) {
-    const clipKey = `${charId}:${kind === 'ego' ? 'ego' : 'attack'}`;
+    const clipKey = `${charId}:ego`; // only Ego activations still use a clip
     const src = VOICE_CLIPS[clipKey];
     if (src && typeof Audio !== 'undefined') {
       try {
@@ -482,17 +746,12 @@ export function bark(charId, kind = 'attack') {
         a.currentTime = 0;
         a.volume = 0.85 * sfxVolume;
         activeAudio = a;
-        a.play().catch(() => {
-          const base = CHAR_PITCH[charId] || 300;
-          tone(base, 0.09, { type: 'triangle', gain: 0.05, slideTo: base * 1.18 });
-        });
+        a.play().catch(() => cardVoice(cardId || kind, charId));
       } catch {
-        const base = CHAR_PITCH[charId] || 300;
-        tone(base, 0.09, { type: 'triangle', gain: 0.05, slideTo: base * 1.18 });
+        cardVoice(cardId || kind, charId);
       }
     } else {
-      const base = CHAR_PITCH[charId] || 300;
-      tone(base, 0.09, { type: 'triangle', gain: 0.05, slideTo: base * 1.18 });
+      cardVoice(cardId || kind, charId);
     }
   }
   return line || '';
