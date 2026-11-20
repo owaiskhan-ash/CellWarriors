@@ -21,7 +21,7 @@ import {
   canSkillUp, skillUp, SKILL_COST,
 } from './progress.js';
 import { sfx, bark, isMuted, toggleMute, setSfxVolume, sfxDamage, sfxMajor, sfxBadgeHover, badgeHeartbeatStop, duckMix } from './audio.js';
-import { installPlatformBridge, installDoubleTapGuard, syncRootVars, updateAdaptiveUI, storageGet, storageSet, isAndroidApp } from './touch.js';
+import { installPlatformBridge, installDoubleTapGuard, syncRootVars, setUiScaleFactor, updateAdaptiveUI, storageGet, storageSet, isAndroidApp } from './touch.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, html) => {
@@ -140,7 +140,23 @@ function applySettings() {
   document.body.classList.toggle('cb-palette', !!settings.cb);
   document.body.classList.toggle('fx-sm', settings.fxSize === 's');
   document.body.classList.toggle('fx-lg', settings.fxSize === 'l');
-  const app = $('app'); if (app) app.style.zoom = settings.uiScale && settings.uiScale !== 100 ? String(settings.uiScale / 100) : '';
+  /* UI SCALE.
+     CSS `zoom` scales a subtree but leaves the element's own box at its layout
+     size, which is why 110% painted the bottom of the hand strip (and the whole
+     resonance footer) past the bottom of the screen. A transform with an
+     inverse-sized box is well defined: lay the app out at 1/scale of the
+     viewport and scale it back up, so it is exactly one screen at every step.
+     --ui-scale tells syncRootVars to hand the layout a local --vh. */
+  const app = $('app');
+  const uiScale = settings.uiScale && settings.uiScale !== 100 ? settings.uiScale / 100 : 1;
+  if (app) {
+    app.style.transformOrigin = '0 0';
+    app.style.transform = uiScale !== 1 ? `scale(${uiScale})` : '';
+    app.style.width = uiScale !== 1 ? `${100 / uiScale}%` : '';
+    app.style.height = uiScale !== 1 ? `${100 / uiScale}%` : '';
+  }
+  document.documentElement.style.setProperty('--ui-scale', String(uiScale));
+  setUiScaleFactor(uiScale);
   setSfxVolume((settings.volume == null ? 90 : settings.volume) / 100);
   const sync = (id, fn) => { const n = $(id); if (n) fn(n); };
   sync('set-volume', (n) => { n.value = settings.volume; $('set-volume-val').textContent = `${settings.volume}%`; });

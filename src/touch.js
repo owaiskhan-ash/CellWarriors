@@ -87,13 +87,27 @@ export function updateAdaptiveUI() {
  * Keeps the CSS custom properties that the mobile layout reads in sync with
  * the real hand/rail geometry. Called on resize + after every hand render.
  */
+/* UI SCALE factor, set by the settings panel. Kept in a module variable rather
+   than read back from computed styles so this works in jsdom (no
+   getComputedStyle global) as well as in the browser. */
+let uiScaleFactor = 1;
+export function setUiScaleFactor(v) {
+  const n = Number(v);
+  uiScaleFactor = Number.isFinite(n) && n > 0 ? n : 1;
+  syncRootVars();
+}
+
 export function syncRootVars() {
   const root = document.documentElement;
   if (!root || !root.style) return;
-  const h = window.innerHeight || 768;
-  const w = window.innerWidth || 1024;
-  root.style.setProperty('--vh', `${h}px`);
-  root.style.setProperty('--vw', `${w}px`);
+  /* --vh is the height available to the *app*, not to the window: under a
+     zoomed app (Settings → UI SCALE) those differ, and using window units is
+     what pushed the hand strip off the bottom of the screen. */
+  const scale = uiScaleFactor || 1;
+  const h = (window.innerHeight || 768) / scale;
+  const w = (window.innerWidth || 1024) / scale;
+  root.style.setProperty('--vh', `${Math.round(h)}px`);
+  root.style.setProperty('--vw', `${Math.round(w)}px`);
   const hand = document.getElementById('hand');
   if (hand) {
     const r = hand.getBoundingClientRect ? hand.getBoundingClientRect() : null;
