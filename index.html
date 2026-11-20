@@ -228,6 +228,11 @@
           <!-- left rail -->
           <aside class="rail rail-left">
             <div class="turn-plate"><span>TURN</span><b id="b-turn">1</b></div>
+            <div class="res-box" id="res-box" title="Resonance: Skills & Tag Chains build to 5+ for ×1.6 Resonance Burst!">
+              <span class="res-lbl">RES</span>
+              <b id="res-num">0</b>
+              <div class="res-track"><i id="res-fill"></i></div>
+            </div>
             <div class="pile-box" id="draw-pile" title="Inspect draw pile">
               <b id="draw-count">0</b><span>DRAW</span>
             </div>
@@ -235,6 +240,7 @@
               <span class="ep-label">EP</span>
               <b id="ep-num">0</b>
               <div class="ep-pips" id="ep-pips"></div>
+              <button class="exalt-toggle hidden" id="btn-exalt" title="Spend 7 EP for 2x Over-Exalt Ego">EXALT 7</button>
             </div>
             <div class="ego-stack" id="ego-list"></div>
           </aside>
@@ -349,6 +355,19 @@
           </header>
           <div class="lab-tabs" id="lab-tabs"></div>
           <div class="lab-body" id="lab-body"></div>
+        </div>
+      </div>
+
+      <!-- 3-choice epiphany evolution modal -->
+      <div class="modal hidden" id="epiphany-modal">
+        <div class="modal-panel epi-panel">
+          <header class="modal-head">
+            <div>
+              <h2 id="epi-title">EPIPHANY MUTATION</h2>
+              <span class="head-sub" id="epi-sub">Choose 1 evolved 0-AP card to add directly to your hand.</span>
+            </div>
+          </header>
+          <div class="epi-grid" id="epi-choices"></div>
         </div>
       </div>
 

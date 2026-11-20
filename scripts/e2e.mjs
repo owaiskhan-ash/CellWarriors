@@ -223,5 +223,156 @@ const sandRes = cw.useSands(s2, 1);
 ok('sands rewind works', sandRes.ok && s2.hand.length === handBefore && s2.enemies[0].hp === hpBefore, JSON.stringify(sandRes));
 ok('sands charge spent', s2.sands === 2);
 
+// 6. CZN × Morimens Build-Ups, Synergies, Epiphany Modal, Over-Exalt, & Mega DMG
+const synState = cw.startBattle({
+  name: 'Synergy Lab',
+  place: 'Test Arena',
+  enemies: ['boss_bloom'],
+  party: ['kaito', 'momo', 'bibi'],
+  deck: ['k_berserk', 'b_flare', 'b_prism', 'k_last', 'm_bastion', 'm_bash', 'k_first', 'k_jab'],
+  seed: 777,
+});
+cw.beginRunBattle(
+  { floor: 10, lane: 0, type: 'boss' },
+  { key: 'boss_a', name: 'Chaos Bloom', place: 'Heart', enemies: ['boss_bloom'], scale: 1 }
+);
+const mb = cw.battle;
+// Inject an exact deterministic build-up hand to verify every combo system end-to-end
+mb.ap = 10;
+mb.ep = 7;
+mb.resonance = 5;
+mb.epiphany = 'kaito';
+mb.hand = [];
+const mk = (id) => {
+  const c = mb.drawPile.find((x) => x.id === id) || mb.discard.find((x) => x.id === id);
+  return c;
+};
+// Ensure a deterministic hand via startBattle with custom deck that draws all 7
+const comboB = cw.startBattle({
+  name: 'Mega Combo',
+  place: 'Ventricle',
+  enemies: ['boss_bloom'],
+  party: ['kaito', 'goro', 'bibi'],
+  deck: [
+    { id: 'k_berserk', upgraded: false },
+    { id: 'b_flare', upgraded: false },
+    { id: 'b_prism', upgraded: false },
+    { id: 'k_last', upgraded: false },
+    { id: 'g_catalyst', upgraded: false },
+    { id: 'g_purge', upgraded: false },
+    { id: 'k_first', upgraded: false },
+  ],
+  seed: 99,
+});
+// Sync UI onto comboB cleanly via __cw helpers
+Object.assign(cw.battle, comboB);
+cw.battle.ap = 10;
+cw.battle.ep = 7;
+cw.battle.resonance = 4;
+cw.battle.epiphany = 'kaito';
+cw.renderBattle();
+ok('resonance gauge shown', $('res-num').textContent === '4');
+ok('over-exalt button visible at 7 EP', !$('btn-exalt').classList.contains('hidden'));
+
+// Arm Over-Exalt toggle
+click('btn-exalt');
+ok('over-exalt armed on Ego stack', !!$('ego-list').querySelector('.ego-btn.exalt'));
+
+// Trigger 3-choice Epiphany modal by playing a Kaito card
+const kbIdx = cw.battle.hand.findIndex((c) => c.id === 'k_berserk');
+cw.playCard(cw.battle, kbIdx, cw.battle.enemies[0].uid);
+cw.renderBattle();
+ok('3-choice epiphany modal opens', !$('epiphany-modal').classList.contains('hidden'));
+ok('epiphany shows 3 mutated branches', $('epi-choices').querySelectorAll('.epi-choice').length === 3);
+$('epi-choices').querySelector('.epi-choice').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+ok('epiphany modal closes after pick', $('epiphany-modal').classList.contains('hidden'));
+
+// Execute Tag Chain + Mark/Vuln + Catalyst + Prism Echo + Resonance Burst + Fury Crit Mega Strike!
+const bfIdx = cw.battle.hand.findIndex((c) => c.id === 'b_flare');
+cw.playCard(cw.battle, bfIdx, cw.battle.enemies[0].uid); // Mark + Vuln + Chain (+1 Res -> 5!)
+const bpIdx = cw.battle.hand.findIndex((c) => c.id === 'b_prism');
+cw.playCard(cw.battle, bpIdx, cw.battle.enemies[0].uid); // Echo next attack x2!
+const klIdx = cw.battle.hand.findIndex((c) => c.id === 'k_last');
+const bossHpBefore = cw.battle.enemies[0].hp;
+cw.playCard(cw.battle, klIdx, cw.battle.enemies[0].uid);
+const bossDmgDealt = bossHpBefore - cw.battle.enemies[0].hp;
+ok('mega damage combo exceeds 250 dmg', bossDmgDealt >= 250, `dealt ${bossDmgDealt}`);
+cw.renderBattle();
+ok('phase shift or mega banner triggered', cw.battle.stats.maxHit >= 150, `maxHit ${cw.battle.stats.maxHit}`);
+
+// Catalyst + Detonate + Retain Growth test on a fresh enemy
+const dotBattle = cw.startBattle({
+  name: 'Catalyst Test',
+  place: 'Vein',
+  enemies: ['boss_prion'],
+  party: ['kaito', 'goro', 'bibi'],
+  deck: [
+    { id: 'g_cleave', upgraded: false },
+    { id: 'g_catalyst', upgraded: false },
+    { id: 'g_purge', upgraded: false },
+    { id: 'k_first', upgraded: false },
+    { id: 'g_strike', upgraded: false },
+    { id: 'b_ping', upgraded: false },
+    { id: 'k_jab', upgraded: false },
+  ],
+  seed: 33,
+});
+dotBattle.ap = 6;
+const clvIdx = dotBattle.hand.findIndex((c) => c.id === 'g_cleave');
+cw.playCard(dotBattle, clvIdx, dotBattle.enemies[0].uid);
+const catIdx = dotBattle.hand.findIndex((c) => c.id === 'g_catalyst');
+const bleedBefore = dotBattle.enemies[0].bleed;
+cw.playCard(dotBattle, catIdx, dotBattle.enemies[0].uid);
+ok('catalyst doubles enemy bleed', dotBattle.enemies[0].bleed === bleedBefore * 2 && bleedBefore >= 4, `${bleedBefore} -> ${dotBattle.enemies[0].bleed}`);
+const prgIdx = dotBattle.hand.findIndex((c) => c.id === 'g_purge');
+const hpBeforePurge = dotBattle.enemies[0].hp;
+cw.playCard(dotBattle, prgIdx, dotBattle.enemies[0].uid);
+ok('detonate deals attack + status burst', hpBeforePurge - dotBattle.enemies[0].hp >= 20, String(hpBeforePurge - dotBattle.enemies[0].hp));
+const kfCard = dotBattle.hand.find((c) => c.id === 'k_first');
+const beforeRet = kfCard.retainedAtk || 0;
+cw.endTurn(dotBattle);
+ok('retain growth scales across turn', kfCard.retainedAtk > beforeRet, String(kfCard.retainedAtk));
+
+// Over-Exalt 7-EP Ego firing test
+const exBattle = cw.startBattle({
+  name: 'Exalt Test',
+  place: 'Test',
+  enemies: ['boss_prion'],
+  party: ['kaito', 'momo', 'bibi'],
+  seed: 42,
+});
+exBattle.ep = 7;
+const exRes = cw.playEgo(exBattle, 0, { exalt: true });
+ok('over-exalt consumes 7 EP and flags exalt', exRes.ok && exRes.exalt === true && exBattle.ep === 0);
+
+// Shield Slam + Barricade Shield Retain test
+const mBattle = cw.startBattle({
+  name: 'Bastion Test',
+  place: 'Test',
+  enemies: ['boss_bloom'],
+  party: ['momo', 'kaito', 'goro'],
+  deck: [
+    { id: 'm_bastion', upgraded: false },
+    { id: 'm_bash', upgraded: false },
+    { id: 'm_guard', upgraded: false },
+    { id: 'k_jab', upgraded: false },
+    { id: 'k_jab', upgraded: false },
+    { id: 'g_guard', upgraded: false },
+    { id: 'g_strike', upgraded: false },
+  ],
+  seed: 55,
+});
+mBattle.ap = 6;
+const bastIdx = mBattle.hand.findIndex((c) => c.id === 'm_bastion');
+cw.playCard(mBattle, bastIdx, mBattle.enemies[0].uid);
+const bashIdx = mBattle.hand.findIndex((c) => c.id === 'm_bash');
+const bBefore = mBattle.enemies[0].hp;
+cw.playCard(mBattle, bashIdx, mBattle.enemies[0].uid);
+const slamDmg = bBefore - mBattle.enemies[0].hp;
+ok('momo aegis slam deals team-shield damage', slamDmg >= 45, `slamDmg ${slamDmg}`);
+const shieldBeforeEnd = mBattle.characters[0].shield;
+cw.endTurn(mBattle);
+ok('barricade retains shield across endTurn', shieldBeforeEnd > 0 && mBattle.characters[0].shield >= shieldBeforeEnd, `${shieldBeforeEnd} -> ${mBattle.characters[0].shield}`);
+
 console.log(errors.length ? 'JS ERRORS: ' + errors.join(' | ') : 'no JS errors');
 if (errors.length) process.exitCode = 1;
