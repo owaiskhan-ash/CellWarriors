@@ -105,7 +105,8 @@ export function startBattle(opts, partyIds, seed) {
       uid: `e${i}`, id: eid, name: e.name, hp, maxHp: hp,
       tenacity: e.tenacity, maxTenacity: e.tenacity, weakness: e.weakness,
       counter: e.counter, maxCounter: e.counter, counterBonus: 0,
-      ravaged: false, weaken: 0, atkBuff: 0, mark: 0, vuln: 0,
+      ravaged: false, weaken: 0, atkBuff: 0, hpStat: 0,
+      mark: 0, vuln: 0,
       bleed: 0, toxin: 0, poison: 0, charging: null,
       intentIndex: 0, intents: e.intents,
       mods: e.mods || [], phases: e.phases || [], phaseIndex: 0,
@@ -273,6 +274,7 @@ function beginTurn(state, first = false, opening = [], extraAp = 0) {
   state.ap = state.maxAp + (first ? extraAp : 0);
   state.cardsPlayedThisTurn = 0;
   state.cardsUsedThisTurn = 0;
+  state.drawStarted = false; // reset turn-end draw label (turn 2 draw happens at the usual draw point)
   state.lastTypePlayed = null;
   state.lastOwnerPlayed = null;
   state.echoNext = null;
@@ -411,8 +413,9 @@ function computeAttackPlan(state, card, target, actor, { simulate = false } = {}
   };
 }
 
+const CASCADE_EXTRA = 1; // CASCADE synergy: +1 stack per application
 function applyStatusStacks(state, enemy, { bleed = 0, toxin = 0, poison = 0 }) {
-  const cascade = state.synergy && state.synergy.some((s) => s.id === 'catalyst') ? 1 : 0;
+  const cascade = state.synergy && state.synergy.some((s) => s.id === 'catalyst') ? CASCADE_EXTRA : 0;
   if (bleed > 0) enemy.bleed += bleed + cascade;
   if (toxin > 0) enemy.toxin += toxin + cascade;
   if (poison > 0) enemy.poison = Math.min(POISON_CAP, enemy.poison + poison + cascade);
@@ -904,11 +907,19 @@ export function playCard(state, handIndex, targetUid = null) {
 
   if (card.doubleStatus) {
     const list = card.doubleStatusAoe ? state.enemies.filter((e) => e.hp > 0) : [target].filter(Boolean);
+    // CATALYST inherits status to anyone who has any so far
+    const hasStatus = (e) => (e.bleed || 0) > 0 || (e.toxin || 0) > 0 || (e.poison || 0) > 0;
     list.forEach((e) => {
+      const before = hasStatus(e);
       e.bleed *= 2;
       e.toxin *= 2;
       e.poison = Math.min(POISON_CAP, (e.poison || 0) * 2);
-      log(state, `CATALYST — ${e.name} Bleed (${e.bleed}), Toxin (${e.toxin}) & Poison (${e.poison}) DOUBLED!`, 'epiphany');
+      if (!before && hasStatus(e)) {
+        // Inherited stacks → +CASCADE extra (same as a play-time apply)
+        const c = CASCADE_EXTRA;
+        e.bleed += c; e.toxin += c; e.poison = Math.min(POISON_CAP, e.poison + c);
+      }
+      log(state, `CATALYST — ${e.name} Bleed (${e.bleed}), Toxin (${e.toxin}) & Poison (${e.poison})`, 'epiphany');
     });
   }
 
@@ -1056,7 +1067,7 @@ function enemyAct(state, enemy) {
     enemy.charging = null;
     const target = weakestTarget(state);
     log(state, `${enemy.name} UNLEASHES ${value}!`, 'enemy');
-    damageCharacter(state, target, Math.round(value * (enemy.weaken > 0 ? 0.65 : 1)), enemy);
+    damageCharacter(state, target, Math.round((value + (enemy.hpStat || 0)) * (enemy.weaken > 0 ? 0.65 : 1)), enemy);
     enemy.counter = resetCounter(state, enemy);
     tickEnemy(state, enemy);
     checkResult(state);
@@ -1068,10 +1079,11 @@ function enemyAct(state, enemy) {
   tickEnemy(state, enemy);
   const weaken = enemy.weaken > 0 ? 0.65 : 1;
 
+  const hpStat = enemy.hpStat || 0;
   if (intent.type === 'attack') {
-    damageCharacter(state, weakestTarget(state), Math.round((intent.value + enemy.atkBuff) * weaken), enemy);
+    damageCharacter(state, weakestTarget(state), Math.round((intent.value + enemy.atkBuff + hpStat) * weaken), enemy);
   } else if (intent.type === 'charge') {
-    enemy.charging = { value: Math.round(intent.value * weaken), turns: intent.turns || 2 };
+    enemy.charging = { value: Math.round((intent.value + hpStat) * weaken), turns: intent.turns || 2 };
     log(state, `${enemy.name} begins charging — ${enemy.charging.value} in ${enemy.charging.turns}.`, 'enemy');
   } else if (intent.type === 'debuff') {
     state.characters.forEach((c) => { if (c.hp > 0) addStress(state, c, intent.value); });
@@ -1112,13 +1124,22 @@ function tickEnemy(state, enemy) {
   }
 }
 
+/** Attack Draw (Alt+Gesture in the UI): card stays out, Draw+1 starts now. */
+export function startDraw(state, n = 1) {
+  if (state.result) return 0;
+  state.drawStarted = true;
+  return drawCards(state, n);
+}
+
 export function endTurn(state) {
   if (state.result) return state;
   if (state.pendingEpiphany) chooseEpiphany(state, 0);
 
   // POISON (Damage over Time) resolves when the turn ends, before the next
-  // turn begins — stacks collected this turn melt the enemy now.
+  // turn beginTurn resets drawStarted; after endTurn it shows "Draw started".
   resolveEndTurnPoison(state);
+  state.drawStarted = false;
+  if (state.cardsPlayedThisTurn > 0) state.drawStarted = true; // label: draw starts (see renderHand)
   checkResult(state);
   if (state.result) return state;
 
@@ -1267,6 +1288,41 @@ function checkResult(state) {
   if (state.enemies.every((e) => e.hp <= 0)) { state.result = 'win'; log(state, 'ENCOUNTER CLEAR.', 'system'); return true; }
   if (state.characters.every((c) => c.hp <= 0)) { state.result = 'loss'; log(state, 'THE TEAM COLLAPSED.', 'system'); return true; }
   return false;
+}
+
+// Types whose upgrades attach status stacks, so raw ATTACK stat alone can't judge damage.
+export const STATUS_SENSITIVE = new Set(['debuff', 'strengthen', 'flee', 'cure']);
+
+/** Larger status-heavy enemies: their own upgrades matter — scale up (they're harder to reach with stat damage). */
+export function statusEnemyHealthScale(state) {
+  const alive = state.enemies.filter((e) => e.hp > 0);
+  if (!alive.length) return 1;
+  const frac = alive.filter((e) => e.intents.some((i) => STATUS_SENSITIVE.has(i.type) && i.value > 0)).length / alive.length;
+  return Math.min(1.8, 0.8 + 1.0 * frac);
+}
+
+/**
+ * Attack-card scoring (used by the AI picker + hand highlighting).
+ *
+ * Status-heavy enemies (Debuff/Strenuf attacks of value) need their status stacks
+ * to feel: deck blueprint + attack-card math. Correct band: base 6–16 + same-type +15/+40.
+ */
+export function attackCardScore(state, card, target, hpScale, statLevel) {
+  const statAmt = Math.max(0, statLevel || 0);
+  let score = 6; // baseline value of playing the card at AP-cost parity
+  const atk = card.dmg > 0 && card.attr ? card.dmg * (1 + (card.hits || 1) * 0.35 + (card.aoe ? 0.3 : 0)) * (1 + statAmt * 0.15) : 0;
+  if (atk > 0 && target) {
+    let v = atk * (target.weakness === card.attr ? 1.8 : 1);
+    score += Math.round(v * Math.min(2.6, hpScale + 0.2)); // value × effective scale
+    const remaining = target.hp - target.hp_charged;
+    if (remaining > 0 && v >= remaining) score += 60; // lethal bonus
+  }
+  const type = card.type;
+  if (type === 'attack' && state.lastPlayed?.type === type) score += 14; // same-type +15 estimated at AP/3
+  const isBuffer = STATUS_SENSITIVE.has(type);
+  if (isBuffer) score += 40; // status-heavy: stacking matters
+  else score += 5; // command types: attack + / stack = meaningful
+  return Math.max(0, score);
 }
 
 export const canPlay = (state, card) => !!card && !card.unplayable

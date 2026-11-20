@@ -1124,3 +1124,17 @@ body.cb-palette .fx-line.poison b { color:#67e8f9; text-shadow:0 4px 18px #000, 
 .res-box.burst .res-track i { box-shadow: 0 0 10px rgba(53,208,192,.35); }
 .tx { position: fixed; inset: 0; pointer-events: none; z-index: 60; background: radial-gradient(circle at var(--fx,50%) var(--fy,50%), rgba(0,0,0,.45), transparent 60%); animation: txFade .5s ease-out; }
 @keyframes txFade { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+/* status-heavy enemy alert: priority card pulses with a teal glow */
+.hand .card[data-priority='weak'] { animation: weakPulse 1.6s ease-in-out infinite; }
+@keyframes weakPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(77, 163, 255, .25); } 50% { box-shadow: 0 0 26px rgba(77, 163, 255, .75); } }
+/* drag-to-play: card follows the hand, fast when hovering an enemy */
+.hand .card.dragging { transform: translateY(-46px) scale(1.05); transition: transform 60ms linear, opacity 60ms linear; }
+.hand .card.drag-fast { animation: none; }
+.hand .card.drag-fast .card-frame { box-shadow: 0 0 18px var(--blood), 0 0 34px rgba(255,77,109,.55); transition: box-shadow 40ms linear; }
+/* ALT GESTURE — Attack Draw */
+.hand .card.drag-draw .card-frame { border: 2px dashed var(--gold); box-shadow: 0 0 14px var(--gold); }
+.hand .card.drag-draw .card-name { text-decoration: underline dotted; }
+/* small alt hint chip on END TURN when hovering enemy with Alt held */
+.end-turn.alt-hint { background: var(--gold) !important; color: #000; opacity: 1; }
+#end-turn[title*="Alt"]:hover::after { content: "  ▲"; color: var(--gold); font-size: 14px; }
