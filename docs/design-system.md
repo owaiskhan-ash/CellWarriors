@@ -205,3 +205,37 @@ Infection: gradient crimson. Inflammation: cyan → amber → crimson with a tic
 | `docs/character-bible.md` | characters, art style, image prompts |
 | `docs/store-listing.md` | icon, screenshots, listing copy, age rating |
 | `docs/privacy-policy.md` | legal page text |
+
+---
+
+## 12. Battle screen — CZN layout canon
+
+Laid out to match the reference frames exactly (landscape, 16:9):
+
+```
+┌─ pooled team HP bar (green) ──────── portraits + stress dots ─── mission ── ▤ ☰ ┐
+│ TURN 1                                                                    ⧗     │
+│ [draw 7]                       ENEMY INTENT ◆8 ×1 ↓2                             │
+│ EP 2                           ENEMY HP BAR  281/281                             │
+│ (ego)                          tenacity bar                                       │
+│ (ego)                                                          GRAVE 5+4  ( ✓ )  │
+└───────────────────────── fanned hand ──────────────────────────────────┐
+                             big AP number
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+Rules that make it read as CZN:
+
+1. **One pooled green HP bar** at top-left with the three portrait chips tucked under its
+   leading edge, and a purple stress dot per character beside them.
+2. **Enemies own the upper right of the frame**: weakness glyph, intent diamond (damage value),
+   hit count, action counter, then the HP plate and tenacity bar under the art.
+3. **Left rail** is the deck economy: turn plate, draw pile, EP pips, Ego portraits with EP costs.
+   **Right rail** is the tempo economy: hourglass, graveyard, the big blue end-turn check.
+4. **The hand is the hero**: fanned, angled, overlapping, ~188px tall. Each card is a full-bleed
+   illustration with a coloured accent border (crimson attack, azure skill, gold upgrade), a
+   cost orb top-left, and a name/type/text block at the bottom.
+5. **AP is a huge numeral under the hand**, flanked by hairlines — never a small pip row.
+6. **Playing a card triggers a cut-in**: the owning character's full-body art sweeps in from the
+   left over speed lines, the card is echoed at the right, and the effects land as a bullet list.
+7. Damage floats on the enemy it hit; weakness and Tenacity breaks float in gold.

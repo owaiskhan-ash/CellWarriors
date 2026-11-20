@@ -53,21 +53,34 @@ ok('opening hand 7', b.hand.length === 7, String(b.hand.length));
 ok('3 AP', b.ap === 3, String(b.ap));
 ok('draw pile has cards', b.drawPile.length > 0, String(b.drawPile.length));
 ok('hand rendered', $('hand').querySelectorAll('.card').length === b.hand.length);
-ok('party rendered', $('party').querySelectorAll('.pc').length === 3);
-ok('enemy counter badge', !!$('enemies').querySelector('.counter'));
-ok('enemy weakness glyph', !!$('enemies').querySelector('.weak-glyph'));
-ok('enemy intent shown', !!$('enemies').querySelector('.intent-pill'));
-ok('tenacity bar', !!$('enemies').querySelector('.bar.tenacity'));
-ok('stress bars', $('party').querySelectorAll('.bar.stress').length === 3);
+ok('team portraits', $('team-portraits').querySelectorAll('.portrait').length === 3);
+ok('pooled team HP', /\d+ \/ \d+/.test($('team-hp-num').textContent), $('team-hp-num').textContent);
+ok('stress dots', $('team-stress').querySelectorAll('.sdot').length === 3);
+ok('per-char stress bars', $('team-portraits').querySelectorAll('.p-stress').length === 3);
+ok('per-char HP bars', $('team-portraits').querySelectorAll('.p-hp').length === 3);
+ok('enemy counter badge', !!$('enemies').querySelector('.badge.counter'));
+ok('enemy weakness glyph', !!$('enemies').querySelector('.badge.weak'));
+ok('enemy intent diamond', !!$('enemies').querySelector('.badge.dmg'));
+ok('tenacity bar', !!$('enemies').querySelector('.ten-bar'));
+ok('enemy HP bar', !!$('enemies').querySelector('.enemy-hp'));
 ok('EP pips', $('ep-pips').querySelectorAll('.ep-pip').length === 7);
-ok('ego list', $('ego-list').querySelectorAll('.ego-btn').length === 3);
-ok('sands charges', $('sands').querySelectorAll('.sands-btn').length === 3);
-ok('AP orb', $('ap-now').textContent === '3');
+ok('ego portraits', $('ego-list').querySelectorAll('.ego-btn').length === 3);
+ok('AP number', $('ap-now').textContent === '3');
+click('btn-sands');
+ok('sands menu opens', !$('sands-menu').classList.contains('hidden'));
+ok('3 sands options', $('sands-menu').querySelectorAll('button').length === 3);
+click('btn-sands');
 
-// play a card by clicking it
+// play a card by clicking it -> character cut-in should fire
 const before = b.hand.length;
-const attacks = [...$('hand').querySelectorAll('.card')];
-attacks[attacks.length - 1].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+const domCards = [...$('hand').querySelectorAll('.card')];
+ok('cards render art', !!$('hand').querySelector('.card-art, .card-artimg'));
+ok('cards render cost + name', $('hand').querySelectorAll('.card-cost').length === domCards.length && $('hand').querySelectorAll('.card-name').length === domCards.length);
+const atkIdx = cw.battle.hand.findIndex((c) => c.type === 'attack' && (c.zeroCost ? 0 : c.cost) <= cw.battle.ap);
+domCards[atkIdx >= 0 ? atkIdx : 0].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+ok('character cut-in shown', !$('cutin').classList.contains('hidden'));
+ok('cut-in has character art', !!$('cutin-art').getAttribute('src'), String($('cutin-art').getAttribute('src')));
+ok('cut-in names the card', $('cutin-name').textContent.length > 1, $('cutin-name').textContent);
 ok('card played from UI', cw.battle.hand.length === before - 1, `${before} → ${cw.battle.hand.length}`);
 ok('card hits enemy', cw.battle.enemies[0].hp < cw.battle.enemies[0].maxHp || cw.battle.enemies[0].tenacity < cw.battle.enemies[0].maxTenacity);
 
@@ -90,6 +103,12 @@ ok('win on m01', cw.battle.result === 'win');
 ok('overlay shown', !$('overlay').classList.contains('hidden'));
 ok('overlay says clear', /CLEAR/.test($('overlay-title').textContent));
 ok('save recorded m01', JSON.parse(window.localStorage.getItem('cellwarriors.save.v4')).cleared.includes('m01'));
+
+// pause menu
+click('btn-menu');
+ok('pause opens', !$('pause').classList.contains('hidden'));
+click('pause-resume');
+ok('pause resumes', $('pause').classList.contains('hidden'));
 
 // Sands of Time: rewind
 click('overlay-btn');
