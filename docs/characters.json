@@ -204,19 +204,92 @@
       "kind": "pathogen",
       "identity": "A chain of five spheres joined by a thin translucent ligament forming a whip shape. Colour #8E3FA8 violet with #D9A6F0 highlights, wet and glossy. Three small dark eyes clustered at the leading sphere, no mouth.",
       "pose": "Coiled mid-lash, asymmetric, in motion.",
-      "never": "human anatomy, face, clothing, weapon, symmetry"
+      "never": "human anatomy, face, clothing, weapon, symmetry",
+      "art": "images/pathogen-strep-cut.png"
     },
     "toxin": {
       "kind": "pathogen",
       "identity": "A translucent sac taller than it is wide, #B6E02A acid yellow-green, with bubbles suspended inside. No eyes at all. Two thin dripping tendrils at the base.",
       "pose": "Slumped and oozing, heavy, waiting.",
-      "never": "eyes, human anatomy, limbs, clothing, weapon"
+      "never": "eyes, human anatomy, limbs, clothing, weapon",
+      "art": "images/enemy-toxin-cut.png"
     },
     "biofilm": {
       "kind": "pathogen",
       "identity": "A massive armoured crustacean-like mass, wider than a character, #4A5A3A grey-green. Overlapping chitin plates, slime trails, dozens of tiny pinprick eyes scattered at random, never two symmetric ones.",
       "pose": "Rooted like a wall, impossibly slow, slime pooling.",
-      "never": "human anatomy, symmetry, speed, clothing, weapon"
+      "never": "human anatomy, symmetry, speed, clothing, weapon",
+      "art": "images/enemy-biofilm-cut.png"
+    },
+    "strain": {
+      "kind": "pathogen",
+      "name": "Mutant Strain",
+      "identity": "A twisted glossy violet segmented serpent, uneven mutated spikes of different sizes along its back, four mismatched pale eyes clustered on the head, a small fanged beak, split tendril tail. A warped, asymmetric mutation of the strep chain.",
+      "pose": "Coiled in an S-curve, head raised, mid-strike.",
+      "never": "human anatomy, face, clothing, weapon, symmetry, scenery, background",
+      "art": "images/enemy-strain-cut.png"
+    },
+    "prion": {
+      "kind": "pathogen",
+      "name": "Prion Knot",
+      "identity": "A dense knot of folded misfolded protein ribbons in deep magenta and bone white, sharp angular origami-blade folds spiralling into a rosette, one dark core at the centre. Crystalline and wrong.",
+      "pose": "Slowly rotating knot, blades fanned outward.",
+      "never": "human anatomy, face, clothing, weapon, organic blob shape, scenery, background",
+      "art": "images/enemy-prion-cut.png"
+    },
+    "elite_hive": {
+      "kind": "pathogen",
+      "tier": "elite",
+      "name": "Strepto Hive",
+      "identity": "An elite queen sphere of glossy violet #8E3FA8 strapped in dark chitin band armour, dozens of small black bead eyes scattered across the main sphere never symmetric, chains of smaller budding spheres hanging from its sides ending in chitin claw pincers. Elite scale, visibly larger than a strep chain.",
+      "pose": "Hovering heavy and gravid, bud-chains swaying, claws open.",
+      "never": "human anatomy, face, clothing, weapon, symmetry, scenery, background, separate other creatures",
+      "art": "images/enemy-hive-cut.png"
+    },
+    "elite_wall": {
+      "kind": "pathogen",
+      "tier": "elite",
+      "name": "Biofilm Cathedral",
+      "identity": "An elite towering fortress-crustacean of layered grey-green #4A5A3A cracked stone-chitin plates stacked like cathedral arches and spires, frozen slime icicle drips, heavy jointed legs and crab claws beneath the shell, tiny eyes glinting in the shadow under the shell brow. A living wall.",
+      "pose": "Rooted and immovable, claws planted, slime dripping.",
+      "never": "human anatomy, symmetry, speed, clothing, weapon, scenery, background",
+      "art": "images/enemy-cathedral-cut.png"
+    },
+    "elite_prime": {
+      "kind": "pathogen",
+      "tier": "elite",
+      "name": "Strain Prime",
+      "identity": "An elite apex mutant strain: a spined violet crystal serpent of jagged angular plates, cyan energy veins crackling between the plates, one glowing violet core eye at the centre of the head. Faster and sharper than the Mutant Strain.",
+      "pose": "Coiled mid-lunge, energy arcing, blades fanned.",
+      "never": "human anatomy, face, clothing, weapon, symmetry, scenery, background",
+      "art": "images/pathogen-prime-cut.png"
+    },
+    "boss_bloom": {
+      "kind": "pathogen",
+      "tier": "boss",
+      "name": "Chaos Bloom",
+      "identity": "A BOSS: a gigantic corrupted flower of flesh and chitin, layered crimson and magenta petals around a glowing violet spore core, spore pods budding asymmetrically on tendrils, dozens of mismatched eyes of different sizes among the petals, tendril roots below. Majestic and wrong.",
+      "pose": "Fully bloomed and facing the viewer, roots writhing, core pulsing.",
+      "never": "human anatomy, face, clothing, weapon, symmetry, scenery, background, other creatures",
+      "art": "images/enemy-bloom-cut.png"
+    },
+    "boss_prion": {
+      "kind": "pathogen",
+      "tier": "boss",
+      "name": "Prion Sovereign",
+      "identity": "A BOSS: an enormous crowned knot of folded protein ribbons in deep magenta, antique gold and bone white, crown-like angular blade folds radiating upward, a ring of small dark eyes around one black central core, massive spiralling sheet tendrils below. Apex crystalline menace.",
+      "pose": "Crown fanned to full span, tendrils spiralling, core facing the viewer.",
+      "never": "human anatomy, face, clothing, weapon, organic blob shape, scenery, background, other creatures",
+      "art": "images/enemy-sovereign-cut.png"
+    },
+    "sim_colossus": {
+      "kind": "pathogen",
+      "tier": "boss",
+      "name": "Training Colossus",
+      "identity": "A BOSS (simulation only): a hulking golem of dark grey stone plates and crimson crystal spikes, massive clawed arms and clawed feet all tipped in red crystal, one glowing amber hexagonal core in the chest, a small stone head with two amber eyes. A rocky armoured training dummy built like a siege wall.",
+      "pose": "Standing square and immovable, arms hanging heavy, core lit.",
+      "never": "human anatomy, clothing, scenery, ground, rubble, smoke, holographic rings, background, other creatures",
+      "art": "images/enemy-colossus-cut.png"
     }
   },
   "shots": {
