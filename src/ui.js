@@ -1,6 +1,6 @@
 import {
   CARDS, CHARACTERS, EGOS, MISSIONS, ENEMIES, ATTRIBUTES, CLASSES, ROLES,
-  RELICS, EVENTS, MOD_INFO, CHAOS_WEAKNESSES,
+  RELICS, EVENTS, MOD_INFO, CHAOS_WEAKNESSES, CHARACTER_GUIDES,
 } from './data.js';
 import {
   startBattle, playCard, endTurn, playEgo, useSands, canPlay, previewCard, intentOf,
@@ -41,11 +41,20 @@ let pressTimer = null;
 let currentEvent = null;
 let currentShop = null;
 let labCharId = 'kaito';
+let detailCharId = 'kaito';
+let charReturnView = 'roster';
+let guideCat = 'all';
+let guideQuery = '';
+let simCharId = 'kaito';
+let simLoadout = 'arsenal';
+let simBehaviour = 'training';
+let simTracker = null;
+let simReported = false;
 let deckModalCtx = null; // { mode: 'view'|'remove'|'upgrade'|'pile', title, cards, onPick }
 let barkTimer = null;
 let exaltArmed = false;
 
-const VIEWS = ['title', 'roster', 'missions', 'story', 'map', 'event', 'shop', 'rest', 'reward', 'battle', 'rank'];
+const VIEWS = ['title', 'roster', 'missions', 'story', 'map', 'event', 'shop', 'rest', 'reward', 'battle', 'rank', 'guide', 'character', 'sim'];
 const raf = (fn) => (typeof requestAnimationFrame !== 'undefined' ? requestAnimationFrame(fn) : fn());
 const showView = (name) => {
   VIEWS.forEach((v) => $('view-' + v).classList.toggle('hidden', v !== name));
@@ -65,6 +74,7 @@ const ENEMY_ART = {
   elite_prime: 'images/pathogen-prime-cut.png',
   boss_bloom: 'images/boss-bloom-cut.png',
   boss_prion: 'images/boss-prion-cut.png',
+  sim_colossus: 'images/pathogen-training.png',
 };
 const ENEMY_HUE = {
   strain: 'hue-rotate(250deg) saturate(1.4)',
@@ -159,10 +169,25 @@ function renderRoster() {
         <div class="roster-stats"><span>HP <b>${c.hp + st.hp}</b></span><span>SK <b>+${st.skillLv}</b></span></div>
         <div class="roster-foot-row">
           <span class="awk-pips" title="Awakenings">${pips}</span>
-          <button class="lab-link" type="button">LAB</button>
+          <span style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end">
+            <button class="lab-link detail-link" type="button">DETAILS</button>
+            <button class="lab-link sim-link" type="button">SIM</button>
+            <button class="lab-link" type="button">LAB</button>
+          </span>
         </div>
+        <div style="font-size:9.5px;color:var(--ink-dim);letter-spacing:.04em">Tap card to add/remove from team · DETAILS opens cards &amp; skills</div>
       </div>`;
-    card.querySelector('.lab-link').addEventListener('click', (ev) => {
+    card.querySelector('.detail-link').addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      sfx('click');
+      openCharacter(id, 'roster');
+    });
+    card.querySelector('.sim-link').addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      sfx('click');
+      openSim(id);
+    });
+    card.querySelector('.lab-link:not(.detail-link):not(.sim-link)').addEventListener('click', (ev) => {
       ev.stopPropagation();
       sfx('click');
       openLab(id);
@@ -209,6 +234,307 @@ function renderSynergyPreview() {
   box.innerHTML = `
     <div class="syn-list">${synHtml}</div>
     <div class="weak-preview"><span class="weak-preview-label">WEAKNESS COVERAGE</span>${weakHtml}</div>`;
+}
+
+/* ============================================================ GUIDE / CODEX */
+const GUIDE_CATS = [
+  ['all', 'ALL'], ['core', 'CORE TURN'], ['scaling', 'FURY & SCALING'], ['defense', 'DEFENCE'],
+  ['status', 'STATUS EFFECTS'], ['enemy', 'ENEMY & BREAK'], ['cards', 'CARD KEYWORDS'], ['team', 'TEAM & META'],
+];
+const GUIDE_ENTRIES = [
+  { cat: 'core', icon: 'i-bolt', name: 'AP (Action Points)', short: 'Your spending money each turn', body: 'You start every turn with 3 AP (some Leaders, Upgrades and relics raise this). A card’s number in its top-left gem is its AP cost. When AP runs out, End Turn. Unspent AP does not carry over — spending your last AP is sometimes a bonus (see Finale).', example: 'Overclock (Kaito Upgrade) gives +1 AP every turn for the whole fight. That is why Upgrades are played early.', tags: ['ap', 'cost', 'turn', 'energy'] },
+  { cat: 'core', icon: 'i-cell', name: 'Draw, Hand & Piles', short: '5 new cards a turn · 7 on turn 1', body: 'You draw 7 cards on turn 1, then 5 each turn, up to a 10-card hand. Played cards go to the Graveyard; when the Draw pile empties the Graveyard shuffles back in. Exhausted cards are gone for the rest of the fight. Tap DRAW or GRAVE in battle to inspect a pile.', example: 'Retain cards survive End Turn instead of being discarded — everyone else leaves.', tags: ['draw', 'hand', 'graveyard', 'discard', 'deck'] },
+  { cat: 'core', icon: 'i-target', name: 'Enemy Action Counter', short: 'The small number under each enemy', body: 'Every non-Haste card you play ticks every living enemy’s counter down by 1. At 0, that enemy acts immediately, then resets (usually 2–4). Haste and 0-AP token cards do NOT tick it. This is the real clock of the game: three cheap cards can be more dangerous than one big one.', example: 'Bibi’s Neuro-Sparks are Haste: free damage that never brings the enemy’s turn closer.', tags: ['counter', 'clock', 'haste', 'enemy turn', 'intent'] },
+  { cat: 'core', icon: 'i-eye', name: 'Intent (enemy badge)', short: 'What the enemy will do next', body: 'The diamond/badge above an enemy shows its next action: a number is incoming damage, a shield is defence, arrows are buffs/debuffs and a bolt with “T” is a charged mega-hit counting down. Enemy hits target your weakest living combatant unless someone is Taunting. Shield the right person before the counter hits 0.', example: 'A “42 · 2T” badge means: you have about 2 enemy-actions to kill, break or out-shield it.', tags: ['intent', 'attack', 'charge', 'telegraph'] },
+  { cat: 'scaling', icon: 'i-bolt', name: 'FURY — the headline mechanic', short: 'Stored damage. Spend it, don’t hoard it', body: 'Fury is mainly Kaito’s resource. Fury alone adds NO damage. It becomes damage only through cards: “consume Fury” converts every stack then resets Fury to 0; “+X per Fury / scale with Fury” converts stacks but keeps them. Gain Fury from Cytokine Jab (+1), Adrenal Brace, Fever Surge, Overclock (+1 per Attack), taking Stress (Kaito gains +1 Fury whenever he gains Stress), Counter hits with PHALANX synergy, and some Egos/relics.', example: '8 Fury + Last Shift = 18 + (8×12) = 114 base before Weakness/Mark/Crit multipliers. That is the whole character.', tags: ['fury', 'kaito', 'consume', 'scale', 'burst damage'] },
+  { cat: 'scaling', icon: 'i-buff', name: 'Strength (STR)', short: 'Permanent +damage on every hit', body: 'Each point of Strength adds +1 damage to every hit of every Attack that character makes, for the rest of the fight. Multi-hit cards gain it per hit, so 4 hits × +3 Strength is +12, not +3. Strength also increases Counter damage. It never expires — early Strength is an investment.', example: 'Neutrophil Flurry (4 hits) with +5 Strength deals +20 total before any multiplier.', tags: ['strength', 'str', 'buff', 'multi-hit', 'scaling'] },
+  { cat: 'scaling', icon: 'i-buff', name: 'Buff ATK (this turn)', short: 'Temporary Strength', body: '“+X Attack this turn” works like Strength but is wiped at the start of your next turn. Use it on the turn you gain it, ideally before a multi-hit or Echo attack. Card previews already include it — trust the big number on the card.', example: 'Histamine gives the team +4 ATK this turn: play it first, then attack.', tags: ['buff atk', 'temporary', 'attack this turn'] },
+  { cat: 'scaling', icon: 'i-star', name: 'Crit (×1.75)', short: 'Guaranteed, never random', body: 'There is no crit chance in Cell Warriors. Crits are guaranteed by effects: “Crit on next Attack”, Fever Surge, Finale Last Shift, Recovery and Over-Exalt. A crit multiplies the whole per-hit damage by ×1.75 after most other multipliers. Save guaranteed crits for your biggest Fury/Resonance hit.', example: 'Fever Surge → Apex Cleaver is Kaito’s classic one-card exam question.', tags: ['crit', 'critical', '1.75', 'guaranteed'] },
+  { cat: 'scaling', icon: 'i-cell', name: 'Resonance & Burst (×1.6)', short: 'Skills charge the team battery', body: 'Playing a Skill gives +1 Resonance (max 10); Sparks and several cards add more. At 5+ Resonance, an eligible Attack (costs 2+ AP, is a Finale, scales with Resonance, or says “always Bursts”) consumes 5 Resonance to deal ×1.6 damage and grant +1 EP. The card glows when Burst is live. Bibi’s Resonance Singularity always Bursts and also gains +10 damage per Resonance stack before the multiplier.', example: 'Do not waste Burst on a 6-damage jab. Charge it, Mark the enemy, then spend it on the finisher.', tags: ['resonance', 'burst', 'battery', 'bibi', 'skills'] },
+  { cat: 'scaling', icon: 'i-star', name: 'EP, Ego & Over-Exalt', short: 'Your ultimate meter (max 7)', body: 'Gain +1 EP every 2 cards played, +1 when an enemy dies, and +1 on a Resonance Burst. At 4 EP an Ego skill (the portraits on the left rail) fires. At the full 7 EP, arm EXALT and the same Ego becomes an Over-Exalt: roughly double power, bonus effects, and damaging Egos auto-crit. Broken-down characters cannot use their Ego.', example: 'Bibi Leader starts with +2 EP, so her team ultimates arrive a full turn earlier.', tags: ['ep', 'ego', 'ultimate', 'over-exalt', 'exalt', '7 ep'] },
+  { cat: 'defense', icon: 'i-shield', name: 'Shield', short: 'Blocks damage AND Stress', body: 'Shield absorbs damage before HP. Crucially, damage fully absorbed by Shield causes no Stress at all. Normally Shield vanishes at End Turn unless Barricade keeps it. The number on a portrait’s shield badge is that character’s personal Shield; Aegis Slam uses the whole team’s total.', example: 'Momo with 20 Shield can eat a 19-damage intent for 0 HP and 0 Stress — then Counter hits back anyway.', tags: ['shield', 'block', 'armour', 'defence'] },
+  { cat: 'defense', icon: 'i-shield', name: 'Barricade', short: 'Shield that survives End Turn', body: 'Barricade level 1 keeps 50% of Shield when your turn ends; level 2 keeps 100% (for its duration). This is how Momo banks a wall across turns and turns it into an Aegis Slam. Field Protocol gives the whole team Barricade 1 permanently.', example: 'End a turn on 40 Shield with Barricade 1: you start the next turn already holding 20.', tags: ['barricade', 'retain shield', 'momo', 'stand firm'] },
+  { cat: 'defense', icon: 'i-shield', name: 'Counter', short: 'Hit me. I dare you', body: 'When an enemy attacks a character with Counter, they retaliate for Counter + Strength damage — even if Shield blocked the hit completely. Counter can trigger Bleed and benefits from Weakness/Mark/Vulnerable. At End Turn Counter decays by 25%, so it is a “use it soon” defence. With PHALANX synergy (Kaito+Momo), Counter hits also give Kaito +1 Fury.', example: 'Guard Stance is not passive: 13 Shield + 5 Counter often kills the thing that attacked Momo.', tags: ['counter', 'retaliate', 'thorns', 'momo'] },
+  { cat: 'defense', icon: 'i-shield', name: 'Fortitude & Taunt', short: 'Take less · take it for the team', body: 'Fortitude reduces damage that character takes by 20% per active duration. Taunt forces enemies to target that character instead of your weakest ally (charged attacks included). Together on Momo they read: “hit the tank, for less, into her Counter.”', example: 'Stand Firm = Shield + Taunt + Fortitude + Barricade in one card. It is four mechanics wearing a trench coat.', tags: ['fortitude', 'taunt', 'tank', 'damage reduction'] },
+  { cat: 'status', icon: 'i-skull', name: 'STRESS & Mental Breakdown', short: 'The second health bar (0–100)', body: 'Unblocked damage adds Stress (roughly 1.5× the HP lost + 4, minimum 6). Debuffs, Fever curses and some of your own cards add more. At 100 Stress: Mental Breakdown — one third of Max HP becomes locked (unhealable), that character’s cards in hand/draw become Recovery status cards, and their Ego is sealed. Play their Recovery card enough times (5, then 6, 8, 10… after repeat breakdowns) to recover: full HP, Stress 0, +2 Strength, next Ego free, and the team heals. Shield prevents Stress; heals and skills remove it.', example: 'Kaito deliberately farms Stress for Fury and Apex bonuses. Everyone else should treat 70+ Stress as a fire alarm.', tags: ['stress', 'breakdown', 'mental', 'recovery', 'locked hp', '100'] },
+  { cat: 'status', icon: 'i-skull', name: 'Bleed', short: 'Damage that triggers on hits', body: 'Bleed stacks sit on an enemy. Whenever that enemy takes an Attack hit, Bleed ruptures for damage equal to its stacks (then loses 1 stack). Detonate effects trigger it on demand. Because multi-hit attacks trigger it repeatedly, Bleed loves Blade Rush and Flurry. CASCADE synergy adds +1 stack whenever you apply Bleed/Toxin.', example: 'Apply 6 Bleed, then a 4-hit Flurry: the hits keep rupturing the stack while your Strength applies per hit.', tags: ['bleed', 'dot', 'goro', 'kaito', 'rupture'] },
+  { cat: 'status', icon: 'i-skull', name: 'Toxin', short: 'Damage when the enemy acts', body: 'Toxin ticks for its full stack value whenever that enemy’s action counter reaches 0 and it acts, also chewing through Tenacity, then slowly decays. It punishes slow enemies and rewards Goro for simply staying alive. Detonating Toxin early trades future ticks for immediate damage + healing via Lysis Detonation.', example: 'A 12-Toxin enemy that acts 3 more times is already dead — it just hasn’t noticed.', tags: ['toxin', 'poison', 'dot', 'goro'] },
+  { cat: 'status', icon: 'i-target', name: 'Mark (×1.5) & Vulnerable (×1.35)', short: 'Paint the target, then everyone hits it', body: 'Marked enemies take ×1.5 damage and Vulnerable enemies take ×1.35 from all direct hits, for a number of enemy actions/turns shown on their chips. They stack multiplicatively with Weakness (×1.5), Ravaged (×1.3), Burst (×1.6) and Crit (×1.75). This multiplication is how 30-damage cards become 200-damage cards. Apply these BEFORE the big spend, not after.', example: 'Flare (Mark+Vuln) → Last Shift into Weakness with Crit can exceed ×6 total multiplication.', tags: ['mark', 'vulnerable', 'vuln', 'multiplier', 'bibi', 'setup'] },
+  { cat: 'status', icon: 'i-debuff', name: 'Weaken, Curses & Statuses', short: 'Enemy debuffs and hand-cloggers', body: 'Weakened enemies deal 35% less damage while it lasts. Curses (Fever/Doubt) are unplayable cards that clog your hand; Fever also adds 6 Stress when drawn. Status cards are usually Breakdown Recovery cards — those you DO want to play. Shops can purge curses from a run deck.', example: 'Drawing Fever at 94 Stress can cause a Breakdown before you play a single card. Respect the curse.', tags: ['weaken', 'curse', 'fever', 'doubt', 'status', 'unplayable'] },
+  { cat: 'enemy', icon: 'i-target', name: 'Weakness (×1.5)', short: 'Match the attribute, break faster', body: 'Every enemy is weak to one attribute (Passion/Order/Justice/Void/Instinct), shown as its coloured glyph badge. Weakness hits deal ×1.5 damage (×1.75 with Antigen Lens, +0.15 more if Attuned) and deal 2.5× Tenacity damage. Your selected enemy’s weakness is also in the banner above the arena. Bosses change weakness at 66% and 33% HP — watch for PHASE SHIFT.', example: 'The damage preview on a card already includes Weakness. Yellow “WEAK” means you matched it.', tags: ['weakness', 'attribute', 'passion', 'order', 'justice', 'void', 'instinct'] },
+  { cat: 'enemy', icon: 'i-bolt', name: 'Tenacity & RAVAGED (Break)', short: 'The amber bar under enemy HP', body: 'Damaging cards reduce Tenacity by roughly 3 + (2× card cost), multiplied ×2.5 on a Weakness hit. 0-cost cards do not reduce it. At 0 Tenacity the enemy is RAVAGED: your team gains +1 AP immediately, everyone loses 10 Stress, the enemy’s counter is delayed, and it takes +30% damage. Some enemies resist or are immune. Breaking at the right moment is worth more than raw HP damage.', example: 'Three cheap Weakness hits can break faster than one huge off-weakness hit — and fund the huge hit with the bonus AP.', tags: ['tenacity', 'break', 'ravaged', 'amber bar', 'stagger'] },
+  { cat: 'enemy', icon: 'i-crown', name: 'Elites, Bosses & Phases', short: 'Badges above the enemy name', body: 'ELITE/BOSS chips and mod chips (REGEN, IRON SHELL, QUICK) change the rules: Regen restores Tenacity, Iron Shell resists Tenacity damage and cannot be Ravaged, Quick resets its action counter 1 faster. Bosses shift phase (and weakness/name) at HP thresholds. The live intent badge and counter still tell the truth — plan around them.', example: 'Against IRON SHELL, stop trying to break it. Race HP and use the fight’s other mechanics.', tags: ['elite', 'boss', 'regen', 'iron shell', 'quick', 'phase'] },
+  { cat: 'cards', icon: 'i-sword', name: 'Reading a card (live numbers)', short: 'The big number is the real number', body: 'Top-left gem = AP cost. The pill = Attack/Skill/Upgrade. The big FX number is a live preview against your selected enemy including Strength, Fury, Shield totals, Weakness, Mark, Vulnerable, Resonance Burst, Crit and multi-hits. Hold/right-click a card for the full maths breakdown, upgrade text and tags. If the preview says LETHAL, it is lethal — previews and resolution use the same code.', example: 'Switch targets by clicking an enemy and watch every card in hand re-price itself instantly.', tags: ['card', 'preview', 'damage number', 'cost', 'type', 'hold'] },
+  { cat: 'cards', icon: 'i-bolt', name: 'Combo · Chain · Finale', short: 'Order-of-play bonuses', body: 'Combo: if your previous card this turn was the same type, gain the listed bonus (Blade Rush wants an Attack before it). Chain: if your previous card belonged to a different character, gain the listed effect (+1 Resonance from the engine; EDGE teams also get +20% damage). Finale: if this card spends your last AP, gain the bonus — Last Shift also guarantees a Crit. Sequence is a resource: cheap first, spender last.', example: 'Attack (Combo armed) → Blade Rush → Last Shift as final AP is a complete Kaito sentence.', tags: ['combo', 'chain', 'finale', 'sequence', 'last ap'] },
+  { cat: 'cards', icon: 'i-star', name: 'Retain · Haste · Exhaust · Tokens', short: 'The four tag words that change timing', body: 'Retain: the card stays in hand at End Turn and may grow cheaper/stronger (Apex Cleaver). Haste: playing it does not tick enemy counters. Exhaust: after use it leaves the fight (gone until next battle) — often attached to powerful 0-AP effects. Tokens are free cards created mid-fight (Neuro-Sparks, Micro-Cuts): usually Haste + Exhaust, built to feed Resonance, Bleed and Chain without spending AP.', example: 'A hand of Sparks looks weak until you realise they are free Resonance that never wakes the enemy.', tags: ['retain', 'haste', 'exhaust', 'token', 'spark', 'timing'] },
+  { cat: 'cards', icon: 'i-star', name: 'Epiphany & Glint cards', short: 'Free evolved cards mid-fight', body: 'Most turns have a chance to spark an Epiphany for a character; the next card played opens a 3-way choice (BRUTAL power, FLOW speed, SURGE sustain) and adds an evolved 0-AP version of one of their cards straight to hand. Separately, drawn cards can Glint (gold border): they cost 0 AP and deal ×1.4. Never waste a Glint on a card you were about to discard.', example: 'If Epiphany is armed for Bibi, play a cheap card first to open the choice before your real turn plan.', tags: ['epiphany', 'glint', 'evolution', 'free card', 'mutation'] },
+  { cat: 'cards', icon: 'i-sands', name: 'Sands of Time', short: 'Paid undo buttons (run mode)', body: 'The hourglass (right rail, limited charges per run) buys time tricks: 1 charge undoes your last card, 2 redraws your Ego queue, 3 rewinds to the start of the turn. Snapshots are taken automatically. It cannot save a finished fight — spend it when a misclick or a bad draw is about to cost a run, not after.', example: 'Misclicked your finisher into the wrong enemy? 1-charge Undo is cheaper than a lost run.', tags: ['sands', 'undo', 'rewind', 'hourglass', 'run'] },
+  { cat: 'team', icon: 'i-cell', name: 'Attributes, Classes & Synergies', short: 'Why Slot 1 and team mix matter', body: 'Each combatant has an Attribute (their damage colour/weakness coverage) and a Class (Striker/Vanguard/Controller/Psionic — what their cards do). Slot 1 is Leader and grants their Leader bonus. Class pairs create Synergies: BASTION (Vanguard+Controller), EDGE (Striker+Psionic), PHALANX (Striker+Vanguard), CASCADE (Controller+Psionic); two of one Attribute creates ATTUNED (+weakness damage). The roster screen previews all of this live as you pick.', example: 'Kaito+Momo is not two good cards decks — PHALANX turns Momo’s defence into Kaito’s Fury.', tags: ['synergy', 'leader', 'attribute', 'class', 'team', 'slot 1'] },
+  { cat: 'team', icon: 'i-flask', name: 'Levels, Awakening & the Lab', short: 'Permanent power between runs', body: 'Combatants earn XP and levels (+HP, periodic +ATK). In the Cell Lab you spend Cells on Awakening slots (+10 Max HP, +2 Attack, −1 Ego cost) and Skill Potency (+damage/healing numbers on that character’s cards and Egos). None of this is required to learn a character — the Simulation Chamber ignores your save pressure and just lets you practise.', example: 'Open any combatant’s DETAILS to see their full pool, then LAB to grow them, then SIMULATION to test the result solo.', tags: ['lab', 'level', 'awakening', 'skill potency', 'xp', 'cells', 'meta'] },
+  { cat: 'team', icon: 'i-target', name: 'Simulation Chamber', short: 'The 999,999 HP practice boss', body: 'Pick ONE combatant and fight a Training Colossus that effectively cannot die. Choose Starter, Full Arsenal (adds their 4 rare build-around cards) or Upgraded loadouts; set the dummy to passive/training/live-fire; track damage, damage-per-turn, best hit and character Trials live. Lab Controls can grant Fury/Resonance/EP/AP to test a threshold instantly. Ending the test gives a report — your save and run are never touched.', example: 'New card confusing you? Full Arsenal + Target Dummy + read the card, play it, watch the log.', tags: ['simulation', 'practice', 'dummy', '999999', 'trials', 'dps'] },
+];
+
+function openGuide(cat = 'all') {
+  if (GUIDE_CATS.some(([id]) => id === cat)) guideCat = cat;
+  renderGuide();
+  showView('guide');
+}
+function renderGuide() {
+  const cats = $('guide-cats');
+  if (!cats) return;
+  cats.innerHTML = '';
+  GUIDE_CATS.forEach(([id, label]) => {
+    const b = el('button', guideCat === id ? 'active' : '', label);
+    b.addEventListener('click', () => { guideCat = id; renderGuide(); });
+    cats.appendChild(b);
+  });
+  const q = guideQuery.trim().toLowerCase();
+  const list = GUIDE_ENTRIES.filter((g) => (guideCat === 'all' || g.cat === guideCat)
+    && (!q || `${g.name} ${g.short} ${g.body} ${g.example} ${g.tags.join(' ')}`.toLowerCase().includes(q)));
+  const grid = $('guide-grid');
+  grid.innerHTML = list.map((g) => `
+    <article class="guide-card">
+      <h3>${ico(g.icon)} ${g.name}</h3>
+      <span class="g-short">${g.short}</span>
+      <p>${g.body}</p>
+      <div class="g-example"><b>Example —</b> ${g.example}</div>
+      <div class="g-tags">${g.tags.slice(0, 4).map((t) => `<span class="tag">${t}</span>`).join('')}</div>
+    </article>`).join('');
+  $('guide-empty').classList.toggle('hidden', list.length > 0);
+}
+
+/* ========================================================= CHARACTER DETAILS */
+function charCards(id) {
+  return Object.entries(CARDS)
+    .filter(([, c]) => c.owner === id && !c.token && c.type !== 'status' && c.type !== 'curse')
+    .map(([cid, c]) => ({ id: cid, ...c }));
+}
+function openCharacter(id, from = 'roster') {
+  detailCharId = CHARACTERS[id] ? id : 'kaito';
+  charReturnView = from;
+  renderCharacter();
+  showView('character');
+}
+function renderCharacter() {
+  const ch = CHARACTERS[detailCharId];
+  const guide = CHARACTER_GUIDES[detailCharId] || {};
+  const a = attr(ch.attr);
+  const rec = progress.chars[detailCharId] || { xp: 0, awaken: [false, false, false], skillLv: 0 };
+  const st = charStats(progress)[detailCharId];
+  const lv = levelOf(rec.xp);
+  const inTeam = progress.team.includes(detailCharId);
+  const cards = charCards(detailCharId);
+
+  const rail = $('char-rail');
+  rail.innerHTML = '';
+  Object.values(CHARACTERS).forEach((c) => {
+    const b = el('button', c.id === detailCharId ? 'active' : '', `<img src="${c.art}" alt="" />${c.name.toUpperCase()}`);
+    b.addEventListener('click', () => { sfx('click'); detailCharId = c.id; renderCharacter(); });
+    rail.appendChild(b);
+  });
+  $('char-title').textContent = `${ch.name.toUpperCase()} — DETAILS`;
+
+  const cardSlots = cards.map((c) => {
+    const inStarter = ch.deck.includes(c.id);
+    const obj = makeStaticCard(c.id, false);
+    const { className, html } = cardHTML(obj, null);
+    return `<div class="char-card-slot"><div class="${className}" style="--rot:0deg;--lift:0px" data-char-card="${c.id}">${html}</div><span class="char-card-where">${inStarter ? 'STARTER DECK' : 'BUILD-AROUND · DRAFT / SIM'}</span></div>`;
+  }).join('');
+
+  $('char-main').innerHTML = `
+    <div class="char-hero" style="--skin:${ch.skin}">
+      <div class="char-hero-art"><img src="${ch.art}" alt="${ch.name}" /></div>
+      <div class="char-hero-info">
+        <span class="czn-id">COMBATANT FILE // ${ch.id.toUpperCase()} · SAVE DATA</span>
+        <h2 style="color:${ch.skin}">${ch.name}</h2>
+        <div class="char-classline">
+          <span class="cls-chip">${CLASSES[ch.cls].name}</span>
+          <span class="attr-tag" style="color:${a.color}">${a.glyph} ${a.name}</span>
+          <span class="attr-tag">${ROLES[ch.cls] || ''}</span>
+          <span class="attr-tag">LV ${lv} · ${xpIntoLevel(rec.xp)}/100 XP</span>
+        </div>
+        <p class="char-blurb"><b>${ch.full}.</b> ${ch.blurb}</p>
+        <p class="char-blurb"><b>Core mechanic —</b> ${guide.core || ''}</p>
+        <div class="char-statgrid">
+          <div><b>${ch.hp + st.hp}</b><span>MAX HP (WITH LAB)</span></div>
+          <div><b>+${st.atk}</b><span>BONUS ATTACK</span></div>
+          <div><b>+${st.skillLv}</b><span>SKILL POTENCY</span></div>
+          <div><b>-${st.egoDiscount} EP</b><span>EGO DISCOUNT</span></div>
+        </div>
+        <div class="char-leader"><b>LEADER SKILL — ${ch.leader ? ch.leader.name : ''}.</b> ${ch.leader ? ch.leader.desc : ''}<br/><span style="color:var(--ink-dim)">Only active when ${ch.name} is in team Slot 1. Class: ${CLASSES[ch.cls].desc}</span></div>
+        <div class="char-actions">
+          <button class="btn-primary" id="char-sim">${ico('i-target')} TEST SOLO IN SIMULATION</button>
+          <button class="btn-ghost" id="char-team">${inTeam ? 'REMOVE FROM TEAM' : 'ADD TO TEAM'}</button>
+          <button class="btn-ghost" id="char-lab">${ico('i-flask')} OPEN IN LAB</button>
+          <button class="btn-ghost" id="char-guide-btn">${ico('i-book')} MECHANICS GUIDE</button>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="char-section-title">${ico('i-sword')} HOW TO PLAY ${ch.name.toUpperCase()} <small>${guide.difficulty || ''} — ${guide.fantasy || ''}</small></h3>
+    <div class="char-playbook">
+      <div class="char-mini"><span>THE LOOP</span><ol>${(guide.loop || []).map((x) => `<li>${x}</li>`).join('')}</ol></div>
+      <div class="char-mini"><span>SIGNATURE COMBO ROUTE</span><ol>${(guide.combo || []).map((x) => `<li>${x}</li>`).join('')}</ol></div>
+      <div class="char-mini"><span>PRO TIPS & SYNERGY</span><ul>${(guide.tips || []).map((x) => `<li>${x}</li>`).join('')}<li><b>Partners:</b> ${guide.partners || ''}</li><li><b>Simulation goal:</b> ${guide.simGoal || ''}</li></ul></div>
+    </div>
+
+    <h3 class="char-section-title">${ico('i-eye')} CARDS (${cards.length}) <small>Tap any card for its full damage maths, upgrade text and keyword breakdown. Starter cards appear in a normal deck; build-around cards are drafted in runs or used in Full Arsenal simulation.</small></h3>
+    <div class="char-cards">${cardSlots}</div>
+
+    <h3 class="char-section-title">${ico('i-star')} EGO SKILLS <small>4 EP normally · arm EXALT at 7 EP for the Over-Exalt version. Broken-down combatants cannot use Ego.</small></h3>
+    <div class="char-ego-grid">
+      ${(EGOS[detailCharId] || []).map((e) => `<div class="char-ego"><b style="color:${a.color}">${e.name}</b> <span class="tag">${e.cost} EP</span><p>${e.text}</p><p class="exalt">${e.exaltText}</p></div>`).join('')}
+    </div>`;
+
+  $('char-main').querySelectorAll('[data-char-card]').forEach((node) => {
+    node.addEventListener('click', () => { sfx('click'); openStaticDetail(makeStaticCard(node.dataset.charCard, false)); });
+  });
+  $('char-sim').addEventListener('click', () => { sfx('click'); openSim(detailCharId); });
+  $('char-lab').addEventListener('click', () => { sfx('click'); openLab(detailCharId); });
+  $('char-guide-btn').addEventListener('click', () => { sfx('click'); openGuide('scaling'); });
+  $('char-team').addEventListener('click', () => { sfx('click'); toggleTeam(detailCharId); renderCharacter(); renderRoster(); });
+}
+
+/* ========================================================= SIMULATION CHAMBER */
+function simTrialsFor(id) {
+  const common = [
+    { label: 'Deal 300 total damage', check: (b) => b.stats.damage >= 300 },
+    { label: 'Play 15 cards', check: (b) => b.cardsPlayed >= 15 },
+    { label: 'Break Tenacity → RAVAGED (or deal 800 unbreakable damage)', check: (b, t) => b.enemies[0].ravaged || b.stats.damage >= 800 },
+  ];
+  const byChar = {
+    kaito: [
+      { label: 'Reach 8 Fury at once', check: (b, t) => t.maxFury >= 8 },
+      { label: 'Land a single hit of 60+ damage', check: (b) => b.stats.maxHit >= 60 },
+      { label: 'Gain Stress on purpose, then spend Fury (Fever Surge / Last Shift)', check: (b, t) => t.sawStressSpend },
+    ],
+    momo: [
+      { label: 'Hold 30+ Shield at once', check: (b, t) => t.maxShield >= 30 },
+      { label: 'Deal Counter damage (let it hit your Shield)', check: (b, t) => t.sawCounter },
+      { label: 'Land a single hit of 50+ (Aegis Slam ceiling)', check: (b) => b.stats.maxHit >= 50 },
+    ],
+    goro: [
+      { label: 'Stack 12+ Bleed + Toxin on the Colossus', check: (b, t) => t.maxStatus >= 12 },
+      { label: 'Detonate statuses (Catalyst / Lysis Detonation)', check: (b, t) => t.sawDetonate },
+      { label: 'Heal while at full HP to trigger Purify Strength', check: (b, t) => t.maxStr >= 2 },
+    ],
+    bibi: [
+      { label: 'Reach 8 Resonance', check: (b, t) => t.maxResonance >= 8 },
+      { label: 'Mark the Colossus, then hit it', check: (b, t) => t.sawMark },
+      { label: 'Land a single hit of 60+ (Prism / Singularity)', check: (b) => b.stats.maxHit >= 60 },
+    ],
+  };
+  return [...(byChar[id] || []), ...common];
+}
+function simDeckFor(id, loadout) {
+  const starter = CHARACTERS[id].deck.slice();
+  if (loadout === 'starter') return starter.map((cid) => ({ id: cid, upgraded: false }));
+  const extra = charCards(id).map((c) => c.id).filter((cid) => !starter.includes(cid));
+  const ids = [...starter, ...extra];
+  return ids.map((cid) => ({ id: cid, upgraded: loadout === 'upgraded' }));
+}
+function openSim(charId = simCharId) {
+  simCharId = CHARACTERS[charId] ? charId : 'kaito';
+  renderSimSetup();
+  showView('sim');
+}
+function renderSimSetup() {
+  const wrap = $('sim-chars');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  Object.values(CHARACTERS).forEach((c) => {
+    const a = attr(c.attr);
+    const b = el('button', `sim-char${c.id === simCharId ? ' active' : ''}`,
+      `<img src="${c.art}" alt="" /><div><b style="color:${c.skin}">${c.name}</b><span>${a.glyph} ${a.name} · ${CLASSES[c.cls].name}</span><span>${CHARACTER_GUIDES[c.id].simGoal}</span></div>`);
+    b.style.setProperty('--skin', c.skin);
+    b.addEventListener('click', () => { sfx('click'); simCharId = c.id; renderSimSetup(); });
+    wrap.appendChild(b);
+  });
+  const bindOpts = (id, get, set) => {
+    $(id).querySelectorAll('button').forEach((b) => {
+      b.classList.toggle('active', b.dataset.val === get());
+      b.onclick = () => { sfx('click'); set(b.dataset.val); renderSimSetup(); };
+    });
+  };
+  bindOpts('sim-loadout', () => simLoadout, (v) => { simLoadout = v; });
+  bindOpts('sim-behaviour', () => simBehaviour, (v) => { simBehaviour = v; });
+  $('sim-trials').innerHTML = `<h3>${ico('i-target')} ${CHARACTERS[simCharId].name.toUpperCase()} TRIALS FOR THIS TEST</h3><ul>${simTrialsFor(simCharId).map((t) => `<li>${t.label}</li>`).join('')}</ul><p style="font-size:11px;color:var(--muted);line-height:1.5">Trials tick live in battle. They are learning goals, not unlocks — no save data is changed by simulation.</p>`;
+}
+function beginSimBattle(charId = simCharId) {
+  simCharId = CHARACTERS[charId] ? charId : 'kaito';
+  const ch = CHARACTERS[simCharId];
+  const weaknessSel = $('sim-weakness') ? $('sim-weakness').value : 'match';
+  const tenacitySel = $('sim-tenacity') ? $('sim-tenacity').value : 'breakable';
+  const vitalitySel = $('sim-vitality') ? $('sim-vitality').value : 'training';
+  battleCtx = { kind: 'sim', charId: simCharId, loadout: simLoadout, behaviour: simBehaviour, weaknessSel, tenacitySel, vitalitySel };
+  simReported = false;
+  simTracker = { maxFury: 0, maxShield: 0, maxResonance: 0, maxStatus: 0, maxStr: 0, sawCounter: false, sawDetonate: false, sawMark: false, sawStressSpend: false };
+  battle = startBattle({
+    name: `SIMULATION // ${ch.name.toUpperCase()} SOLO`,
+    place: 'Training Colossus · 999,999 HP · no save impact',
+    enemies: ['sim_colossus'],
+    missionCode: 'sim',
+    party: [simCharId],
+    deck: simDeckFor(simCharId, simLoadout),
+    charStats: charStats(progress),
+    seed: Date.now(),
+  });
+  const c = battle.characters[0];
+  const e = battle.enemies[0];
+  if (vitalitySel === 'training') { c.maxHp *= 5; c.hp = c.maxHp; }
+  e.hp = 999999; e.maxHp = 999999;
+  e.weakness = weaknessSel === 'match' ? ch.attr : weaknessSel;
+  if (tenacitySel === 'unbreakable') { e.tenacity = 9999; e.maxTenacity = 9999; if (!e.mods.includes('immuneRavage')) e.mods = [...e.mods, 'immuneRavage']; }
+  else { e.tenacity = 140; e.maxTenacity = 140; }
+  if (simBehaviour === 'passive') { e.intents = [{ type: 'defend', value: 0 }]; e.counter = 9999; e.maxCounter = 9999; }
+  else if (simBehaviour === 'live') { e.intents = [{ type: 'attack', value: 14 }, { type: 'attack', value: 14 }, { type: 'charge', value: 34, turns: 2 }]; e.counter = 3; e.maxCounter = 3; }
+  else { e.intents = [{ type: 'attack', value: 8 }, { type: 'attack', value: 8 }, { type: 'debuff', value: 8 }]; e.counter = 4; e.maxCounter = 4; }
+  battle.targetUid = e.uid;
+  enterBattleView(`SIMULATION // ${ch.name.toUpperCase()} SOLO`, 'Training Colossus · 999,999 HP');
+}
+function updateSimTracker() {
+  if (!battle || !simTracker) return;
+  const c = battle.characters[0];
+  const e = battle.enemies[0];
+  if (!c || !e) return;
+  simTracker.maxFury = Math.max(simTracker.maxFury, c.fury || 0);
+  simTracker.maxShield = Math.max(simTracker.maxShield, c.shield || 0);
+  simTracker.maxResonance = Math.max(simTracker.maxResonance, battle.resonance || 0);
+  simTracker.maxStatus = Math.max(simTracker.maxStatus, (e.bleed || 0) + (e.toxin || 0));
+  simTracker.maxStr = Math.max(simTracker.maxStr, c.str || 0);
+  const logText = battle.log.map((l) => l.text).join('\n');
+  if (/COUNTER/.test(logText)) simTracker.sawCounter = true;
+  if (/DETONATE|Catalyst/i.test(logText)) simTracker.sawDetonate = true;
+  if (e.mark > 0 || /Mark/i.test(logText)) simTracker.sawMark = true;
+  if (/Consumed .* Fury/.test(logText)) simTracker.sawStressSpend = true;
+}
+function renderSimHud() {
+  const hud = $('sim-hud');
+  if (!hud || !battle || !battleCtx || battleCtx.kind !== 'sim') return;
+  updateSimTracker();
+  $('sim-hud-char').textContent = CHARACTERS[battleCtx.charId].name.toUpperCase();
+  $('sim-dmg').textContent = battle.stats.damage.toLocaleString();
+  $('sim-dpt').textContent = Math.round(battle.stats.damage / Math.max(1, battle.turn)).toLocaleString();
+  $('sim-maxhit').textContent = battle.stats.maxHit.toLocaleString();
+  $('sim-cards').textContent = battle.cardsPlayed;
+  $('sim-trial-list').innerHTML = simTrialsFor(battleCtx.charId).map((t) => {
+    const done = t.check(battle, simTracker);
+    return `<div class="sim-trial${done ? ' done' : ''}"><i>${done ? '✓' : '○'}</i><span>${t.label}</span></div>`;
+  }).join('');
+}
+function endSimTest(manual = true) {
+  if (!battle || simReported) return;
+  simReported = true;
+  updateSimTracker();
+  const trials = simTrialsFor(battleCtx.charId);
+  const done = trials.filter((t) => t.check(battle, simTracker)).length;
+  const title = battle.result === 'win' ? 'COLOSSUS DOWN?!' : (battle.characters[0].hp <= 0 ? 'COMBATANT DOWN — TEST ENDED' : 'SIMULATION REPORT');
+  showOverlay(title,
+    `${CHARACTERS[battleCtx.charId].name} solo · ${battle.stats.damage.toLocaleString()} damage in ${battle.turn} turns (${Math.round(battle.stats.damage / Math.max(1, battle.turn))}/turn) · best hit ${battle.stats.maxHit} · trials ${done}/${trials.length}. No save data was changed.`,
+    'BACK TO SIMULATION SETUP', () => { renderSimSetup(); showView('sim'); }, battle.result === 'win');
+  $('overlay-retry').style.display = 'inline-block';
+  $('overlay-retry').textContent = 'RESTART TEST';
+  $('overlay-retry').onclick = () => beginSimBattle(battleCtx.charId);
 }
 
 function toggleTeam(id) {
@@ -659,8 +985,12 @@ function enterBattleView(title, place) {
   $('pause').classList.add('hidden');
   $('b-mission').textContent = title;
   $('b-place').textContent = place || '';
+  const isSim = battleCtx && battleCtx.kind === 'sim';
+  if ($('battle-bg-img')) $('battle-bg-img').src = isSim ? './images/bg-sim.jpg' : './images/bg-battle.jpg';
+  if ($('sim-hud')) $('sim-hud').classList.toggle('hidden', !isSim);
   $('pause-restart').style.display = battleCtx && battleCtx.kind === 'run' ? 'none' : 'block';
-  $('pause-quit').textContent = battleCtx && battleCtx.kind === 'run' ? 'ABANDON TO MAP' : 'QUIT TO MISSIONS';
+  $('pause-restart').textContent = isSim ? 'RESTART SIMULATION' : 'RESTART FIGHT';
+  $('pause-quit').textContent = isSim ? 'EXIT SIMULATION' : (battleCtx && battleCtx.kind === 'run' ? 'ABANDON TO MAP' : 'QUIT TO MISSIONS');
   renderBattle();
 }
 
@@ -710,6 +1040,7 @@ function renderBattle() {
   renderHand();
   renderResources();
   renderLog();
+  if (battleCtx && battleCtx.kind === 'sim') renderSimHud();
   $('b-turn').textContent = battle.turn;
   const w = attr(battle.enemies[0] ? battle.enemies[0].weakness : null);
   $('weak-banner').innerHTML = `BREAK <b style="color:${w.color}">${w.glyph} ${w.name.toUpperCase()}</b> TENACITY → +1 AP`;
@@ -764,6 +1095,7 @@ function showEpiphanyModal() {
 
 function resolveBattleOutcome() {
   const sum = battleSummary(battle);
+  if (battleCtx && battleCtx.kind === 'sim') { endSimTest(false); return; }
   if (battleCtx && battleCtx.kind === 'run') {
     const run = progress.run;
     const node = battleCtx.node;
@@ -951,7 +1283,12 @@ function showOverlay(title, sub, btn, fn, win) {
   btnEl.textContent = btn;
   btnEl.onclick = fn;
   $('overlay-retry').style.display = win ? 'none' : 'inline-block';
-  $('overlay-retry').onclick = () => beginBattle(battle.mission);
+  $('overlay-retry').textContent = 'RETRY';
+  $('overlay-retry').onclick = () => {
+    if (battleCtx && battleCtx.kind === 'sim') beginSimBattle(battleCtx.charId);
+    else if (battleCtx && battleCtx.kind === 'run') { /* runs restart from map */ renderMap(); showView('map'); }
+    else beginBattle(battle.mission);
+  };
 }
 
 /* --- top hud --- */
@@ -1008,7 +1345,7 @@ function renderEnemies() {
     const a = attr(e.weakness);
     const intent = intentOf(e);
     const isSel = battle.targetUid === e.uid && e.hp > 0;
-    const node = el('div', `enemy${e.hp <= 0 ? ' dead' : ''}${isSel ? ' selected' : ''}${e.ravaged ? ' ravaged' : ''}`);
+    const node = el('div', `enemy enemy-${e.id}${e.hp <= 0 ? ' dead' : ''}${isSel ? ' selected' : ''}${e.ravaged ? ' ravaged' : ''}`);
 
     const isAttack = intent.type === 'attack';
     const isCharge = intent.type === 'charge';
@@ -1537,6 +1874,19 @@ function bind() {
     if (progress.run && !progress.run.finished) { renderMap(); showView('map'); }
   });
   $('btn-open-lab').addEventListener('click', () => { sfx('click'); openLab(); });
+  $('btn-open-guide').addEventListener('click', () => { sfx('click'); openGuide('all'); });
+  $('btn-open-sim').addEventListener('click', () => { sfx('click'); openSim(progress.team[0] || 'kaito'); });
+  $('btn-roster-guide').addEventListener('click', () => { sfx('click'); openGuide('all'); });
+  $('btn-roster-sim').addEventListener('click', () => { sfx('click'); openSim(progress.team[0] || 'kaito'); });
+  $('btn-guide-back').addEventListener('click', () => { sfx('click'); showView('title'); });
+  $('guide-search').addEventListener('input', (e) => { guideQuery = e.target.value; renderGuide(); });
+  $('btn-guide-sim-kaito').addEventListener('click', () => { sfx('click'); openSim('kaito'); });
+  $('btn-char-back').addEventListener('click', () => { sfx('click'); renderRoster(); showView(charReturnView === 'title' ? 'title' : 'roster'); });
+  $('btn-char-guide').addEventListener('click', () => { sfx('click'); openGuide('all'); });
+  $('btn-char-sim-top').addEventListener('click', () => { sfx('click'); openSim(detailCharId); });
+  $('btn-sim-back').addEventListener('click', () => { sfx('click'); renderRoster(); showView('roster'); });
+  $('btn-sim-guide').addEventListener('click', () => { sfx('click'); openGuide('all'); });
+  $('btn-sim-start').addEventListener('click', () => { sfx('click'); beginSimBattle(simCharId); });
   $('lab-close').addEventListener('click', () => $('lab-modal').classList.add('hidden'));
 
   $('btn-reset').addEventListener('click', () => {
@@ -1718,13 +2068,30 @@ function bind() {
   $('btn-menu').addEventListener('click', () => $('pause').classList.remove('hidden'));
   $('pause-resume').addEventListener('click', () => $('pause').classList.add('hidden'));
   $('pause-restart').addEventListener('click', () => {
+    $('pause').classList.add('hidden');
     if (battleCtx && battleCtx.kind === 'story') beginBattle(battleCtx.mission);
+    else if (battleCtx && battleCtx.kind === 'sim') beginSimBattle(battleCtx.charId);
   });
   $('pause-quit').addEventListener('click', () => {
     $('pause').classList.add('hidden');
     if (battleCtx && battleCtx.kind === 'run') { renderMap(); showView('map'); }
+    else if (battleCtx && battleCtx.kind === 'sim') { renderSimSetup(); showView('sim'); }
     else { renderMissions(); showView('missions'); }
   });
+  if ($('btn-sim-end')) $('btn-sim-end').addEventListener('click', () => { sfx('click'); endSimTest(true); });
+  if ($('btn-sim-restart')) $('btn-sim-restart').addEventListener('click', () => { sfx('click'); if (battleCtx && battleCtx.kind === 'sim') beginSimBattle(battleCtx.charId); });
+  document.querySelectorAll('[data-sim-act]').forEach((b) => b.addEventListener('click', () => {
+    if (!battle || !battleCtx || battleCtx.kind !== 'sim' || battle.result) return;
+    const c = battle.characters[0];
+    const act = b.dataset.simAct;
+    if (act === 'fury') c.fury += 5;
+    else if (act === 'resonance') battle.resonance = MAX_RESONANCE;
+    else if (act === 'ep') battle.ep = MAX_EP;
+    else if (act === 'ap') battle.ap += 3;
+    else if (act === 'recover') { c.hp = c.maxHp; c.stress = 0; c.shield += 20; }
+    sfx('upgrade');
+    renderBattle();
+  }));
 
   $('detail').addEventListener('click', closeDetail);
   $('detail').addEventListener('pointerup', () => setTimeout(() => { longPressed = false; }, 10));
@@ -1760,6 +2127,7 @@ window.__cw = {
   beginBattle, beginRunBattle, renderBattle, startBattle, playCard, endTurn, playEgo, useSands,
   chooseEpiphany, setExalt(on) { exaltArmed = !!on; renderResources(); },
   showView, playFromUI, openDetail, closeDetail, openLab, openDeckModal, closeDeckModal,
+  openGuide, renderGuide, openCharacter, renderCharacter, openSim, renderSimSetup, beginSimBattle, endSimTest,
   setTeam(ids) { progress.team = ids.slice(0, 3); saveProgress(progress); renderRoster(); },
   openMission(code) {
     const m = MISSIONS.find((x) => x.code === code);

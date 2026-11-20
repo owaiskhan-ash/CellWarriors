@@ -33,6 +33,10 @@
         <symbol id="i-flask" viewBox="0 0 24 24"><path d="M10 3h4M10 3v6l-5 9a2 2 0 002 3h10a2 2 0 002-3l-5-9V3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
         <symbol id="i-map" viewBox="0 0 24 24"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
         <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+        <symbol id="i-book" viewBox="0 0 24 24"><path d="M5 4a2 2 0 012-2h13v18H7a2 2 0 00-2 2V4zM5 18a2 2 0 012-2h13" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+        <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="1" fill="currentColor"/></symbol>
+        <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+        <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
       </defs>
     </svg>
 
@@ -54,6 +58,8 @@
             <button class="btn-primary big" id="btn-start">CHAOS EXPEDITION</button>
             <div class="title-sub-actions">
               <button class="btn-ghost" id="btn-missions-mode"><svg class="ico"><use href="#i-map"/></svg> STORY MISSIONS</button>
+              <button class="btn-ghost" id="btn-open-guide"><svg class="ico"><use href="#i-book"/></svg> COMBAT GUIDE</button>
+              <button class="btn-ghost" id="btn-open-sim"><svg class="ico"><use href="#i-target"/></svg> SIMULATION</button>
               <button class="btn-ghost" id="btn-open-lab"><svg class="ico"><use href="#i-flask"/></svg> CELL LAB</button>
               <button class="btn-ghost tiny" id="btn-reset">reset save</button>
             </div>
@@ -77,6 +83,8 @@
             <button class="chip-btn" id="mode-story">STORY</button>
           </div>
           <div class="cells-pill"><svg class="ico"><use href="#i-cell"/></svg><b id="roster-cells">0</b></div>
+          <button class="btn-ghost tiny" id="btn-roster-guide"><svg class="ico"><use href="#i-book"/></svg> GUIDE</button>
+          <button class="btn-ghost tiny" id="btn-roster-sim"><svg class="ico"><use href="#i-target"/></svg> SIM</button>
           <span class="team-count" id="team-count">0 / 3</span>
         </header>
         <div class="roster" id="roster"></div>
@@ -236,7 +244,29 @@
 
       <!-- ================= BATTLE ================= -->
       <section id="view-battle" class="view view-dark hidden">
-        <div class="battle-bg"><img src="./images/bg-battle.jpg" alt="" /><div class="battle-bg-shade"></div></div>
+        <div class="battle-bg"><img id="battle-bg-img" src="./images/bg-battle.jpg" alt="" /><div class="battle-bg-shade"></div></div>
+        <div class="sim-hud hidden" id="sim-hud">
+          <div class="sim-hud-head"><svg class="ico"><use href="#i-chart"/></svg><b>SIMULATION</b><span id="sim-hud-char">—</span></div>
+          <div class="sim-stats">
+            <div><b id="sim-dmg">0</b><span>DAMAGE</span></div>
+            <div><b id="sim-dpt">0</b><span>DMG / TURN</span></div>
+            <div><b id="sim-maxhit">0</b><span>BEST HIT</span></div>
+            <div><b id="sim-cards">0</b><span>CARDS</span></div>
+          </div>
+          <div class="sim-trial-list" id="sim-trial-list"></div>
+          <div class="sim-lab">
+            <span>LAB CONTROLS</span>
+            <button data-sim-act="fury">+5 FURY</button>
+            <button data-sim-act="resonance">MAX RES</button>
+            <button data-sim-act="ep">MAX EP</button>
+            <button data-sim-act="ap">+3 AP</button>
+            <button data-sim-act="recover">RECOVER</button>
+          </div>
+          <div class="sim-hud-actions">
+            <button class="btn-ghost tiny" id="btn-sim-restart">RESTART</button>
+            <button class="btn-primary" id="btn-sim-end">END TEST &amp; REPORT</button>
+          </div>
+        </div>
         <div class="turn-banner hidden" id="turn-banner"><span id="turn-banner-text">TURN 1</span><span class="turn-banner-sub" id="turn-banner-sub">ENGAGE</span></div>
         <div class="breakdown-overlay hidden" id="breakdown-overlay"><span>MENTAL BREAKDOWN</span><small id="breakdown-name">—</small></div>
         <svg class="target-line hidden" id="target-line"><line id="target-line-el" x1="0" y1="0" x2="0" y2="0" /></svg>
@@ -341,6 +371,110 @@
           <div class="rank-cells" id="rank-cells"></div>
           <div class="rank-xp" id="rank-xp"></div>
           <button class="btn-primary big" id="btn-rank-done">CONTINUE</button>
+        </div>
+      </section>
+
+      <!-- ================= COMBAT GUIDE / CODEX ================= -->
+      <section id="view-guide" class="view view-light hidden">
+        <header class="screen-head">
+          <button class="btn-ghost tiny" id="btn-guide-back"><svg class="ico"><use href="#i-back"/></svg></button>
+          <div class="head-left">
+            <h1>COMBAT GUIDE</h1>
+            <span class="head-sub">What everything does — Fury, Stress, Tenacity, Resonance and every keyword, in plain language.</span>
+            <span class="czn-id">CODEX // HOW·IT·WORKS</span>
+          </div>
+          <input class="guide-search" id="guide-search" type="search" placeholder="Search: fury, shield, break, crit…" aria-label="Search guide" />
+        </header>
+        <div class="guide-hero">
+          <div>
+            <span class="czn-id">START HERE · THE ONE EVERYONE ASKS ABOUT</span>
+            <h2>What does FURY do?</h2>
+            <p><b>Fury is stored damage.</b> By itself it does nothing. Cards that <b>consume Fury</b> (Kaito’s Last Shift: +12 damage per stack, then Fury resets to 0) or <b>scale with Fury</b> (Apex Cleaver: +8 per stack, keeps the stacks) turn it into real numbers. Build it with cheap Attacks, Stress gains and Counter hits — then spend it into a Weakness / Mark / Crit for the screenshot hit.</p>
+          </div>
+          <button class="btn-primary" id="btn-guide-sim-kaito">TRY IT ON KAITO IN SIMULATION</button>
+        </div>
+        <div class="guide-cats" id="guide-cats"></div>
+        <div class="guide-grid" id="guide-grid"></div>
+        <p class="guide-empty hidden" id="guide-empty">No mechanic matches that search. Try “fury”, “stress”, “shield” or “tenacity”.</p>
+      </section>
+
+      <!-- ================= CHARACTER DETAILS ================= -->
+      <section id="view-character" class="view view-light hidden">
+        <header class="screen-head">
+          <button class="btn-ghost tiny" id="btn-char-back"><svg class="ico"><use href="#i-back"/></svg></button>
+          <div class="head-left">
+            <h1 id="char-title">CHARACTER DETAILS</h1>
+            <span class="head-sub">Full card pool, Ego skills, how to play them — then test it solo in Simulation.</span>
+            <span class="czn-id">DETAILS // COMBATANT·FILE</span>
+          </div>
+          <button class="btn-ghost tiny" id="btn-char-guide"><svg class="ico"><use href="#i-book"/></svg> GUIDE</button>
+          <button class="btn-primary" id="btn-char-sim-top">TEST IN SIMULATION</button>
+        </header>
+        <div class="char-layout">
+          <aside class="char-rail" id="char-rail"></aside>
+          <div class="char-main" id="char-main"></div>
+        </div>
+      </section>
+
+      <!-- ================= SIMULATION CHAMBER (setup) ================= -->
+      <section id="view-sim" class="view view-dark hidden">
+        <div class="sim-bg"><img src="./images/bg-sim.jpg" alt="" /><div class="battle-bg-shade"></div></div>
+        <header class="screen-head">
+          <button class="btn-ghost tiny" id="btn-sim-back"><svg class="ico"><use href="#i-back"/></svg></button>
+          <div class="head-left">
+            <h1>SIMULATION CHAMBER</h1>
+            <span class="head-sub">One combatant. One 999,999 HP Training Colossus. No run at stake — learn the cards, chase the trials, read the damage report.</span>
+            <span class="czn-id">SIM // SOLO·LAB·999999</span>
+          </div>
+          <button class="btn-ghost tiny" id="btn-sim-guide"><svg class="ico"><use href="#i-book"/></svg> GUIDE</button>
+        </header>
+        <div class="sim-setup">
+          <div class="sim-col">
+            <div class="shop-label light">1 · CHOOSE ONE COMBATANT (SOLO)</div>
+            <div class="sim-chars" id="sim-chars"></div>
+            <div class="sim-trials" id="sim-trials"></div>
+          </div>
+          <div class="sim-col">
+            <div class="shop-label light">2 · LOADOUT</div>
+            <div class="sim-opts" id="sim-loadout">
+              <button data-val="starter"><b>STARTER DECK</b><span>The 7 cards they bring to a real run.</span></button>
+              <button data-val="arsenal" class="active"><b>FULL ARSENAL</b><span>Starter + all 4 rare build-around cards. Best for learning.</span></button>
+              <button data-val="upgraded"><b>FULL ARSENAL +</b><span>Everything upgraded. See the ceiling.</span></button>
+            </div>
+            <div class="shop-label light">3 · TRAINING COLOSSUS</div>
+            <div class="sim-opts" id="sim-behaviour">
+              <button data-val="passive"><b>TARGET DUMMY</b><span>Never attacks. Pure combo practice.</span></button>
+              <button data-val="training" class="active"><b>TRAINING</b><span>Hits gently every 4 cards. Learn defence + Stress.</span></button>
+              <button data-val="live"><b>LIVE FIRE</b><span>Real pressure: harder, faster hits and charges.</span></button>
+            </div>
+            <div class="sim-row-opts">
+              <label>WEAKNESS
+                <select id="sim-weakness">
+                  <option value="match" selected>Match my attribute (×1.5)</option>
+                  <option value="passion">Passion</option><option value="order">Order</option>
+                  <option value="justice">Justice</option><option value="void">Void</option>
+                  <option value="instinct">Instinct (off-weakness)</option>
+                </select>
+              </label>
+              <label>TENACITY
+                <select id="sim-tenacity">
+                  <option value="breakable" selected>Breakable — learn Ravage</option>
+                  <option value="unbreakable">Unbreakable — pure DPS race</option>
+                </select>
+              </label>
+              <label>VITALITY
+                <select id="sim-vitality">
+                  <option value="training" selected>Training ×5 HP (survive &amp; learn)</option>
+                  <option value="real">Real HP (can actually fall)</option>
+                </select>
+              </label>
+            </div>
+            <div class="sim-how">
+              <b><svg class="ico"><use href="#i-chart"/></svg> HOW TO READ THE TEST</b>
+              <span>Damage dealt, damage-per-turn and biggest hit update live. Lab Controls in battle can grant Fury / Resonance / EP so you can test thresholds instantly — then replay without them. Nothing here touches your save, team or run.</span>
+            </div>
+            <button class="btn-primary big" id="btn-sim-start">ENTER SIMULATION</button>
+          </div>
         </div>
       </section>
 

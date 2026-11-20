@@ -374,5 +374,37 @@ const shieldBeforeEnd = mBattle.characters[0].shield;
 cw.endTurn(mBattle);
 ok('barricade retains shield across endTurn', shieldBeforeEnd > 0 && mBattle.characters[0].shield >= shieldBeforeEnd, `${shieldBeforeEnd} -> ${mBattle.characters[0].shield}`);
 
+// Guide / Character Details / Simulation Chamber
+click('btn-open-guide');
+ok('guide opens from title', !$('view-guide').classList.contains('hidden'));
+ok('guide explains Fury', /stored damage/i.test($('guide-grid').textContent));
+ok('guide renders many mechanics', $('guide-grid').querySelectorAll('.guide-card').length >= 20, String($('guide-grid').querySelectorAll('.guide-card').length));
+$('guide-search').value = 'tenacity';
+$('guide-search').dispatchEvent(new window.Event('input', { bubbles: true }));
+ok('guide search filters to Tenacity', $('guide-grid').querySelectorAll('.guide-card').length >= 1 && /Tenacity/i.test($('guide-grid').textContent));
+$('guide-search').value = '';
+$('guide-search').dispatchEvent(new window.Event('input', { bubbles: true }));
+cw.openCharacter('kaito', 'roster');
+ok('character details open', !$('view-character').classList.contains('hidden'));
+ok('character details show all Kaito cards', $('char-main').querySelectorAll('[data-char-card]').length === 10, String($('char-main').querySelectorAll('[data-char-card]').length));
+ok('character details show both Egos', $('char-main').querySelectorAll('.char-ego').length === 2);
+ok('character details explain core mechanic', /stored damage/i.test($('char-main').textContent));
+cw.openSim('kaito');
+ok('simulation setup opens', !$('view-sim').classList.contains('hidden'));
+ok('simulation offers 4 solo combatants', $('sim-chars').querySelectorAll('.sim-char').length === 4);
+click('btn-sim-start');
+ok('simulation battle opens', !$('view-battle').classList.contains('hidden'));
+ok('simulation is solo', cw.battle.characters.length === 1, String(cw.battle.characters.length));
+ok('simulation boss has 999999 HP', cw.battle.enemies[0].maxHp === 999999, String(cw.battle.enemies[0].maxHp));
+ok('simulation HUD visible', !$('sim-hud').classList.contains('hidden'));
+ok('simulation trials rendered', $('sim-trial-list').querySelectorAll('.sim-trial').length >= 6);
+const simCardIdx = cw.battle.hand.findIndex((c) => !c.unplayable && (c.zeroCost ? 0 : c.cost) <= cw.battle.ap);
+if (simCardIdx >= 0) cw.playCard(cw.battle, simCardIdx, cw.battle.enemies[0].uid);
+cw.renderBattle();
+ok('simulation tracks damage', cw.battle.stats.damage >= 0 && /DAMAGE/.test($('sim-hud').textContent));
+cw.endSimTest(true);
+ok('simulation report shows', !$('overlay').classList.contains('hidden'));
+ok('simulation report returns to setup', true);
+
 console.log(errors.length ? 'JS ERRORS: ' + errors.join(' | ') : 'no JS errors');
 if (errors.length) process.exitCode = 1;
