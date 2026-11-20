@@ -810,7 +810,17 @@ export const MISSIONS = [
       { art: 'images/story/m04-08-engage.jpg', who: 'Mission 04 — Signal Rot', text: 'Vial up. Voice up. Out-shout the rot.' },
     ] },
   { code: 'm05', name: 'Prion Gate', place: 'The Blood-Brain Barrier', threat: 'Severe', rec: 'instinct', reward: 100, enemies: ['prion', 'strain', 'biofilm'], hero: 'yuna',
-    story: ['The barrier is one cell thick and the prion knot is already folding through it.', 'Everything they have learned about each other gets spent here.', 'Hold the gate. Nothing gets through.'] },
+    // Scripted story beats: { art, who, text } — art lives in images/story/.
+    story: [
+      { art: 'images/story/m05-01-barrier.jpg', who: 'The Blood-Brain Barrier', text: 'The barrier is one cell thick — the last wall before the brain, and the quietest place in the body.' },
+      { art: 'images/story/m05-02-prion.jpg', who: 'The Gate', text: 'The Prion Knot is already folding through it. Protein origami, patient as geology, wrong in every fold.' },
+      { art: 'images/story/m05-03-yuna.jpg', who: 'Yuna — Eosinophil', text: 'Wrong folds. I can smell them off it from here. …What? Instinct is a sense. Mine just files reports.' },
+      { art: 'images/story/m05-04-mist.jpg', who: 'The Gate', text: 'Nothing breaks a prion. But her toxins can loosen it — one wrong fold at a time, until wrong becomes undone.' },
+      { art: 'images/story/m05-05-assault.jpg', who: 'The Gate', text: 'And the knot did not come alone. Strain in the dark, Biofilm on the wall — the whole rotten army, at one gate.' },
+      { art: 'images/story/m05-06-team.jpg', who: 'The Blood-Brain Barrier', text: 'So the team comes to the gate. Everything they have learned about each other gets spent here.' },
+      { art: 'images/story/m05-07-hold.jpg', who: 'Yuna — Eosinophil', text: 'It folds. I unfold. It can do this forever — fine. So can I. HOLD THE GATE!' },
+      { art: 'images/story/m05-08-engage.jpg', who: 'Mission 05 — Prion Gate', text: 'Nothing gets through. Not tonight, not ever. Engage.' },
+    ] },
 ];
 
 export const EVENTS = [
