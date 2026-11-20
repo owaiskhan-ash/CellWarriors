@@ -23,7 +23,7 @@ export function makeRng(seed) {
 
 const REWARDABLE = Object.keys(CARDS).filter((id) => {
   const c = CARDS[id];
-  return c.type !== 'curse' && c.type !== 'status';
+  return c.type !== 'curse' && c.type !== 'status' && !c.token;
 });
 
 export function createRun(team, seed = Date.now(), stats = {}) {
@@ -110,18 +110,18 @@ export function encounterFor(run, node) {
   const rng = makeRng(run.seed + f * 97 + node.lane * 13);
   if (node.type === 'boss') {
     const key = run.seed % 2 === 0 ? 'boss_a' : 'boss_b';
-    return { key, ...ENCOUNTERS[key], scale: 1 };
+    return { key, ...ENCOUNTERS[key], scale: 1.15 };
   }
   if (node.type === 'elite') {
     const pool = f < 6 ? ['elite_a'] : ['elite_a', 'elite_b', 'elite_c'];
     const key = pick(pool, rng);
-    return { key, ...ENCOUNTERS[key], scale: 1 + f * 0.02 };
+    return { key, ...ENCOUNTERS[key], scale: 1 + f * 0.06 };
   }
   const pool = ['skirmish_1', 'skirmish_2', 'skirmish_3'];
   if (f >= 3) pool.push('skirmish_4');
   if (f >= 5) pool.push('skirmish_5');
   const key = pick(pool, rng);
-  return { key, ...ENCOUNTERS[key], scale: 1 + f * 0.05 };
+  return { key, ...ENCOUNTERS[key], scale: 1 + f * 0.08 };
 }
 
 export const scaleCurrency = (run, amt) => (run.relics.includes('coffer') ? Math.round(amt * 1.3) : amt);
@@ -143,17 +143,19 @@ export function cardRewardChoices(run, teamOverride) {
   const team = teamOverride || run.team;
   const allowed = REWARDABLE.filter((id) => allowedForRun(run, id));
   const pool = allowed.filter((id) => team.includes(CARDS[id].owner));
+  const rarePool = pool.filter((id) => CARDS[id].rare);
   const offPool = allowed.filter((id) => !team.includes(CARDS[id].owner));
   const out = [];
   const used = new Set();
   for (let i = 0; i < 3; i++) {
-    const fromTeam = rng() < 0.78 || offPool.length === 0;
-    const src = (fromTeam ? pool : offPool).filter((id) => !used.has(id));
+    const wantRare = i === 0 && rarePool.some((id) => !used.has(id)) && rng() < 0.72;
+    const fromTeam = rng() < 0.82 || offPool.length === 0;
+    const src = (wantRare ? rarePool : (fromTeam ? pool : offPool)).filter((id) => !used.has(id));
     const list = src.length ? src : allowed.filter((id) => !used.has(id));
     if (!list.length) break;
     const id = pick(list, rng);
     used.add(id);
-    out.push({ id, upgraded: rng() < 0.14 });
+    out.push({ id, upgraded: rng() < 0.16 });
   }
   return out;
 }

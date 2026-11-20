@@ -4,7 +4,7 @@ import {
 } from './data.js';
 import {
   startBattle, playCard, endTurn, playEgo, useSands, canPlay, previewCard, intentOf,
-  computeSynergy, battleSummary, rankOf, MAX_EP, RECOVERY_PLAYS,
+  chooseEpiphany, computeSynergy, battleSummary, rankOf, MAX_EP, MAX_RESONANCE, BURST_COST, RECOVERY_PLAYS,
 } from './engine.js';
 import {
   makeRng, createRun, availableNodes, enterNode, markCleared, encounterFor,
@@ -43,6 +43,7 @@ let currentShop = null;
 let labCharId = 'kaito';
 let deckModalCtx = null; // { mode: 'view'|'remove'|'upgrade'|'pile', title, cards, onPick }
 let barkTimer = null;
+let exaltArmed = false;
 
 const VIEWS = ['title', 'roster', 'missions', 'story', 'map', 'event', 'shop', 'rest', 'reward', 'battle', 'rank'];
 const raf = (fn) => (typeof requestAnimationFrame !== 'undefined' ? requestAnimationFrame(fn) : fn());
@@ -644,8 +645,10 @@ function beginRunBattle(node, enc) {
 
 function enterBattleView(title, place) {
   cutBusy = false;
+  exaltArmed = false;
   closeDetail();
   $('cutin').classList.add('hidden');
+  $('epiphany-modal').classList.add('hidden');
   $('sands-menu').classList.add('hidden');
   $('bark-toast').classList.add('hidden');
   $('dmg-rail').innerHTML = '';
@@ -662,6 +665,7 @@ function enterBattleView(title, place) {
 function renderBattle() {
   if (!battle) return;
   flushFx();
+  if (battle.ep < MAX_EP) exaltArmed = false;
   renderTeam();
   renderEnemies();
   renderHand();
@@ -677,15 +681,46 @@ function renderBattle() {
   $('battle-relics').innerHTML = battle.relics.map((r) => `<span class="hpill" title="${r.text}">${r.glyph} ${r.name}</span>`).join('');
   $('battle-synergy').innerHTML = battle.synergy.map((s) => `<span class="hpill syn" title="${s.desc}">${s.name}</span>`).join('');
 
-  const tips = [`CARDS PLAYED <b>${battle.cardsPlayedThisTurn}</b>`];
+  const tips = [`RESONANCE <b>${battle.resonance}/${MAX_RESONANCE}</b>`];
+  if (battle.resonance >= BURST_COST) tips.push('<b style="color:#ffc94d">BURST READY ×1.6</b>');
+  if (battle.echoNext) tips.push('<b style="color:#b06bff">PRISM ECHO ×2</b>');
+  if (battle.ep >= MAX_EP) tips.push('<b style="color:#ffc94d">OVER-EXALT READY</b>');
   if (battle.epiphany) tips.push(`⚡ EPIPHANY <b>${CHARACTERS[battle.epiphany].name.toUpperCase()}</b>`);
   if (battle.freeFirstLeft > 0) tips.push('⟡ <b>FIRST CARD FREE</b>');
   if (battle.enemies.some((e) => e.ravaged)) tips.push('<b>RAVAGED</b> +30% DMG');
   tips.push('HOLD A CARD TO READ IT');
   $('battle-tips').innerHTML = tips.join('');
 
+  if (battle.pendingEpiphany && !battle.result) showEpiphanyModal();
+  else $('epiphany-modal').classList.add('hidden');
+
   if (battle.result) resolveBattleOutcome();
   else $('overlay').classList.add('hidden');
+}
+
+function showEpiphanyModal() {
+  const p = battle.pendingEpiphany;
+  if (!p) return;
+  $('epi-title').textContent = `EPIPHANY · ${p.charName.toUpperCase()}`;
+  const grid = $('epi-choices');
+  grid.innerHTML = '';
+  p.options.forEach((opt, idx) => {
+    const btn = el('div', 'epi-choice');
+    const { className, html } = cardHTML(opt.card, battle);
+    btn.innerHTML = `
+      <span class="epi-branch" style="color:${opt.color}">${opt.label}</span>
+      <div class="${className}" style="--rot:0deg;--lift:0px">${html}</div>
+      <span class="epi-desc">${opt.desc}</span>`;
+    btn.addEventListener('click', () => {
+      sfx('upgrade');
+      chooseEpiphany(battle, idx);
+      $('epiphany-modal').classList.add('hidden');
+      renderBattle();
+    });
+    grid.appendChild(btn);
+  });
+  if ($('epiphany-modal').classList.contains('hidden')) sfx('epiphany');
+  $('epiphany-modal').classList.remove('hidden');
 }
 
 function resolveBattleOutcome() {
@@ -758,6 +793,7 @@ function triggerBanner(text) {
 }
 
 function sizeClass(amt, isBreak = false) {
+  if (amt >= 100) return 'sz-mega';
   if (isBreak || amt >= 35) return 'sz-xl';
   if (amt >= 20) return 'sz-lg';
   if (amt >= 10) return 'sz-md';
@@ -768,15 +804,25 @@ function flushFx() {
   const rail = $('dmg-rail');
   if (!rail) { battle.fx.length = 0; return; }
   const events = battle.fx.splice(0, battle.fx.length);
-  let strongHit = false, broke = false, phased = false, playerHurt = false, brokeDown = false;
-  let celestial = false, didShield = false, didHeal = false, egoUsed = false;
+  let strongHit = false, megaAmt = 0, broke = false, phased = false, playerHurt = false, brokeDown = false;
+  let celestial = false, didShield = false, didHeal = false, egoUsed = false, exaltUsed = false, critHit = false;
 
-  events.slice(-8).forEach((ev) => {
+  events.slice(-9).forEach((ev) => {
     let main = '', label = '', cls = '';
     if (ev.kind === 'dmg') {
-      main = `-${ev.amt}`; label = ev.name;
+      main = `-${ev.amt}`; label = `${ev.name}${ev.crit ? ' CRIT!' : ''}`;
       cls = `${ev.weak ? 'weak' : 'dmg'}${ev.ravaged ? ' rav' : ''} ${sizeClass(ev.amt)}`;
+      if (ev.amt >= 100) megaAmt = Math.max(megaAmt, ev.amt);
+      if (ev.crit) critHit = true;
       if (ev.weak || ev.amt >= 16) strongHit = true;
+    } else if (ev.kind === 'bleed') {
+      main = `-${ev.amt}`; label = `${ev.name} BLEED`; cls = `dmg ${sizeClass(ev.amt)}`;
+    } else if (ev.kind === 'toxin') {
+      main = `-${ev.amt}`; label = `${ev.name} TOXIN`; cls = `heal ${sizeClass(ev.amt)}`;
+    } else if (ev.kind === 'counter') {
+      main = `⚡${ev.amt}`; label = `${ev.name} COUNTER`; cls = `weak ${sizeClass(ev.amt)}`;
+    } else if (ev.kind === 'chain') {
+      main = 'CHAIN'; label = `${ev.name} +1 RES`; cls = 'shield sz-sm';
     } else if (ev.kind === 'break') {
       main = 'BREAK'; label = `${ev.name} RAVAGED`; cls = 'break sz-xl'; broke = true;
     } else if (ev.kind === 'hurt') {
@@ -792,13 +838,15 @@ function flushFx() {
     } else if (ev.kind === 'recover') {
       main = 'RECOVER'; label = ev.name; cls = 'heal sz-md'; didHeal = true;
     } else if (ev.kind === 'phase') {
-      main = 'PHASE II'; label = ev.name; cls = 'break sz-xl'; phased = true;
+      main = 'PHASE SHIFT'; label = ev.name; cls = 'break sz-xl'; phased = true;
     } else if (ev.kind === 'celestial') {
       main = 'CELESTIAL'; label = ev.name; cls = 'shield sz-md'; celestial = true;
     } else if (ev.kind === 'curse') {
       main = 'FEVER'; label = `${ev.name} +CURSE`; cls = 'stress sz-sm';
     } else if (ev.kind === 'ego') {
       main = 'EGO'; label = ev.name; cls = 'break sz-lg'; egoUsed = true;
+    } else if (ev.kind === 'exalt') {
+      main = 'EXALT 2×'; label = ev.name; cls = 'break sz-mega'; exaltUsed = true;
     }
     if (!main) return;
     const line = el('div', `fx-line ${cls}`, `<b>${main}</b><span>${label}</span>`);
@@ -807,7 +855,17 @@ function flushFx() {
     setTimeout(() => line.remove(), 1800);
   });
 
-  if (broke) {
+  if (megaAmt >= 100) {
+    sfx('mega');
+    pulseStage('zoom', 420);
+    triggerFlash();
+    triggerBanner(megaAmt >= 250 ? `OVERKILL · ${megaAmt} DMG!` : `MEGA STRIKE · ${megaAmt} DMG!`);
+  } else if (exaltUsed) {
+    sfx('exalt');
+    pulseStage('zoom', 420);
+    triggerFlash();
+    triggerBanner('OVER-EXALT · 2× BURST!');
+  } else if (broke) {
     sfx('break');
     pulseStage('zoom', 380);
     triggerFlash();
@@ -821,6 +879,9 @@ function flushFx() {
     sfx('ego');
     pulseStage('zoom', 360);
     triggerFlash();
+  } else if (critHit) {
+    sfx('crit');
+    pulseStage('shake', 280);
   } else if (strongHit) {
     sfx('weak');
     pulseStage('shake', 260);
@@ -871,10 +932,18 @@ function renderTeam() {
     const tags = [
       c.fortitude > 0 ? `<span class="p-tag">FORT ${c.fortitude}</span>` : '',
       c.taunt > 0 ? '<span class="p-tag">TAUNT</span>' : '',
+      c.barricade > 0 ? '<span class="p-tag">KEEP</span>' : '',
+    ].join('');
+    const statsPills = [
+      c.str > 0 ? `<span class="p-stat str">STR +${c.str}</span>` : '',
+      c.fury > 0 ? `<span class="p-stat fury">FURY ${c.fury}</span>` : '',
+      c.counter > 0 ? `<span class="p-stat ctr">CTR ${c.counter}</span>` : '',
+      c.critNext ? '<span class="p-stat crit">CRIT</span>' : '',
     ].join('');
     p.innerHTML = `
       <img src="${c.art}" alt="${c.name}" />
       ${tags ? `<div class="p-tags">${tags}</div>` : ''}
+      ${statsPills ? `<div class="p-stats">${statsPills}</div>` : ''}
       ${c.shield > 0 ? `<span class="p-shield">◈${c.shield}</span>` : ''}
       <div class="p-stress"><i style="width:${Math.min(100, c.stress)}%"></i></div>
       <div class="p-hp"><i style="width:${(c.hp / c.maxHp) * 100}%"></i></div>
@@ -921,6 +990,9 @@ function renderEnemies() {
       if (m) modChips.push(`<span class="mod-chip" title="${m.desc}">${m.label}</span>`);
     });
     if (e.mark > 0) modChips.push(`<span class="mod-chip mark">MARK ×1.5 (${e.mark})</span>`);
+    if (e.vuln > 0) modChips.push(`<span class="mod-chip vuln">VULN ×1.35 (${e.vuln})</span>`);
+    if (e.bleed > 0) modChips.push(`<span class="mod-chip bleed">BLEED ${e.bleed}</span>`);
+    if (e.toxin > 0) modChips.push(`<span class="mod-chip toxin">TOXIN ${e.toxin}</span>`);
 
     node.innerHTML = `
       <div class="enemy-badges">
@@ -980,9 +1052,15 @@ function fxBadge(card, p, battleState) {
     return `<div class="card-fx status"><b>${ch ? ch.recovery : 0}/${need}</b><span>RECOVERY</span></div>`;
   }
   if (p.total > 0) {
-    const cls = p.weak ? 'weak' : 'dmg';
-    return `<div class="card-fx ${cls}${p.lethal ? ' lethal' : ''}">
-      <b>${p.total}</b><span>DMG${p.hits > 1 ? ` ×${p.hits}` : ''}${p.weak ? ' · WEAK' : ''}</span>
+    const cls = p.crit ? 'crit' : (p.weak ? 'weak' : 'dmg');
+    const tags = [
+      p.hits > 1 ? `×${p.hits}` : '',
+      p.weak ? 'WEAK' : '',
+      p.crit ? 'CRIT!' : '',
+      p.burst ? 'BURST' : '',
+    ].filter(Boolean).join(' · ');
+    return `<div class="card-fx ${cls}${p.burst ? ' burst' : ''}${p.lethal ? ' lethal' : ''}">
+      <b>${p.total}</b><span>DMG${tags ? ' · ' + tags : ''}</span>
       ${p.lethal ? '<i>LETHAL</i>' : ''}</div>`;
   }
   if (p.teamShield) return `<div class="card-fx shield"><b>+${p.teamShield}</b><span>SHIELD ALL</span></div>`;
@@ -1012,7 +1090,7 @@ function cardHTML(card, battleState = battle) {
   const p = previewOf(card, battleState);
   const playable = battleState ? (canPlay(battleState, card) && !battleState.result) : true;
   return {
-    className: `card ${card.type}${playable ? '' : ' unaffordable'}${card.glint ? ' glint' : ''}${card.upgraded ? ' upgraded' : ''}${cost === 0 ? ' card-free' : ''}`,
+    className: `card ${card.type}${playable ? '' : ' unaffordable'}${card.glint ? ' glint' : ''}${card.upgraded ? ' upgraded' : ''}${card.rare ? ' rare' : ''}${card.token ? ' token' : ''}${p.burst ? ' burst-ready' : ''}${cost === 0 ? ' card-free' : ''}`,
     html: `
       ${cardArtHTML(card, owner)}
       <div class="card-frame"></div>
@@ -1103,14 +1181,27 @@ function showDetailFor(card, battleState) {
 
   const rows = [];
   if (p.total > 0) {
-    const parts = [`${card.dmg} base`];
+    const parts = [`${card.dmg || 0} base`];
     const actor = battleState && battleState.characters.find((c) => c.id === card.owner);
-    if (actor && actor.buffAtk) parts.push(`+${actor.buffAtk} buff`);
+    if (actor && actor.str) parts.push(`+${actor.str} Strength`);
+    if (actor && actor.buffAtk) parts.push(`+${actor.buffAtk} turn ATK`);
+    if (card.shieldDmgPct && battleState) {
+      const ts = battleState.characters.reduce((n, c) => n + (c.hp > 0 ? c.shield : 0), 0);
+      parts.push(`+${Math.round(ts * card.shieldDmgPct)} Shield-Slam`);
+    }
+    if (card.consumeFury && actor && actor.fury) parts.push(`+${actor.fury * card.consumeFury} Fury`);
+    if (card.scaleFury && actor && actor.fury) parts.push(`+${actor.fury * card.scaleFury} Fury`);
+    if (card.scaleResonance && battleState) parts.push(`+${battleState.resonance * card.scaleResonance} Res`);
+    if (card.scaleExhaust && battleState) parts.push(`+${battleState.exhaust.length * card.scaleExhaust} Exhaust`);
     if (p.combo) parts.push(`+${p.combo} combo`);
     if (p.finale) parts.push(`+${p.finale} finale`);
-    if (p.weak) parts.push('×1.5 weakness');
+    if (p.isChain) parts.push('Chain');
+    if (p.weak) parts.push('×1.5+ weak');
     if (p.ravaged) parts.push('×1.3 ravaged');
     if (p.mark) parts.push('×1.5 marked');
+    if (p.vuln) parts.push('×1.35 vuln');
+    if (p.burst) parts.push('×1.6 BURST');
+    if (p.crit) parts.push('×1.75 CRIT');
     if (p.hits > 1) parts.push(`×${p.hits} hits`);
     if (p.targets > 1) parts.push(`×${p.targets} enemies`);
     rows.push(`<div class="math-row dmg"><b>${p.total}</b><span>DAMAGE</span><i>${parts.join(' ')}</i></div>`);
@@ -1175,27 +1266,40 @@ function renderResources() {
   $('sands-count').textContent = battle.sands;
   $('btn-sands').classList.toggle('empty', battle.sands <= 0);
 
+  if ($('res-num')) $('res-num').textContent = battle.resonance;
+  if ($('res-fill')) $('res-fill').style.width = `${(battle.resonance / MAX_RESONANCE) * 100}%`;
+  if ($('res-box')) $('res-box').classList.toggle('burst', battle.resonance >= BURST_COST);
+
+  const exBtn = $('btn-exalt');
+  if (exBtn) {
+    exBtn.classList.toggle('hidden', battle.ep < MAX_EP);
+    exBtn.classList.toggle('armed', exaltArmed && battle.ep === MAX_EP);
+    exBtn.textContent = exaltArmed ? 'EXALT ON!' : 'EXALT 7';
+  }
+
   const pips = $('ep-pips');
   pips.innerHTML = '';
   for (let i = 0; i < MAX_EP; i++) pips.appendChild(el('i', `ep-pip${i < battle.ep ? ' on' : ''}`));
 
   const list = $('ego-list');
   list.innerHTML = '';
+  const useExalt = exaltArmed && battle.ep === MAX_EP;
   battle.egoQueue.forEach((ego, i) => {
     const owner = battle.characters.find((c) => c.id === ego.owner);
     const disc = owner ? (owner.egoDiscount || 0) : 0;
-    const cost = owner && owner.egoFree ? 0 : Math.max(1, ego.cost - disc);
-    const b = el('button', `ego-btn${battle.ep >= cost && owner && !owner.broken ? ' ready' : ''}`);
+    const cost = useExalt ? MAX_EP : (owner && owner.egoFree ? 0 : Math.max(1, ego.cost - disc));
+    const b = el('button', `ego-btn${battle.ep >= cost && owner && !owner.broken ? ' ready' : ''}${useExalt ? ' exalt' : ''}`);
     b.innerHTML = `<img src="${owner ? owner.art : ''}" alt="${ego.name}" /><span class="ego-cost">${cost}</span>`;
-    b.title = `${ego.name} — ${cost} EP · ${ego.text}`;
+    b.title = useExalt && ego.exaltText ? `${ego.name} — ${ego.exaltText}` : `${ego.name} — ${cost} EP · ${ego.text}`;
     b.disabled = !!battle.result || !owner || owner.broken || battle.ep < cost;
     b.addEventListener('click', () => {
       if (cutBusy) return;
-      const res = playEgo(battle, i);
+      const res = playEgo(battle, i, { exalt: useExalt });
       if (!res.ok) return;
+      exaltArmed = false;
       showBark(ego.owner, 'ego');
       renderBattle();
-      if (!battle.result) showEgoCutIn(ego, owner);
+      if (!battle.result) showEgoCutIn(ego, owner, res.exalt);
     });
     list.appendChild(b);
   });
@@ -1213,12 +1317,12 @@ function renderResources() {
   });
 }
 
-function showEgoCutIn(ego, owner) {
+function showEgoCutIn(ego, owner, isExalt = false) {
   cutBusy = true;
   $('cutin-art').src = ACTION_ART[ego.owner] || (owner ? owner.art : 'images/action-kaito.jpg');
-  $('cutin-name').textContent = ego.name.toUpperCase();
-  $('cutin-type').textContent = `EGO SKILL · ${owner ? owner.name.toUpperCase() : ''}`;
-  $('cutin-fx').innerHTML = `<li>${ego.text}</li>`;
+  $('cutin-name').textContent = `${isExalt ? 'OVER-EXALT: ' : ''}${ego.name.toUpperCase()}`;
+  $('cutin-type').textContent = `${isExalt ? '7 EP BURST' : 'EGO SKILL'} · ${owner ? owner.name.toUpperCase() : ''}`;
+  $('cutin-fx').innerHTML = `<li>${isExalt && ego.exaltText ? ego.exaltText : ego.text}</li>`;
   $('cutin-card').innerHTML = '';
   $('cutin').classList.remove('hidden');
   setTimeout(() => {
@@ -1523,10 +1627,20 @@ function bind() {
 
   $('end-turn').addEventListener('click', () => {
     if (cutBusy || !battle || battle.result) return;
+    exaltArmed = false;
     sfx('turn');
     endTurn(battle);
     renderBattle();
   });
+
+  if ($('btn-exalt')) {
+    $('btn-exalt').addEventListener('click', () => {
+      if (!battle || battle.ep < MAX_EP) return;
+      exaltArmed = !exaltArmed;
+      sfx('click');
+      renderResources();
+    });
+  }
 
   $('btn-sands').addEventListener('click', (ev) => {
     ev.stopPropagation();
@@ -1586,6 +1700,7 @@ window.__cw = {
   get run() { return progress.run; },
   setMode, startNewRun, enterRunNode, renderMap,
   beginBattle, beginRunBattle, renderBattle, startBattle, playCard, endTurn, playEgo, useSands,
+  chooseEpiphany, setExalt(on) { exaltArmed = !!on; renderResources(); },
   showView, playFromUI, openDetail, closeDetail, openLab, openDeckModal, closeDeckModal,
   setTeam(ids) { progress.team = ids.slice(0, 3); saveProgress(progress); renderRoster(); },
   openMission(code) {

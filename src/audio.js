@@ -188,6 +188,37 @@ export function sfx(kind) {
       tone(294, 0.22, { type: 'sawtooth', gain: 0.08, slideTo: 220 });
       tone(220, 0.36, { type: 'sawtooth', gain: 0.08, slideTo: 146, delay: 0.18 });
       break;
+    case 'crit':
+      noiseBurst(0.18, { gain: 0.15, highpass: 1400 });
+      tone(587, 0.12, { type: 'sawtooth', gain: 0.1, slideTo: 1175 });
+      tone(880, 0.22, { type: 'triangle', gain: 0.11, delay: 0.05 });
+      break;
+    case 'mega':
+      noiseBurst(0.32, { gain: 0.18, highpass: 450 });
+      tone(196, 0.28, { type: 'sawtooth', gain: 0.13, slideTo: 65 });
+      tone(587, 0.24, { type: 'triangle', gain: 0.11, slideTo: 1175, delay: 0.04 });
+      tone(1175, 0.35, { type: 'sine', gain: 0.11, delay: 0.12 });
+      break;
+    case 'exalt':
+      noiseBurst(0.28, { gain: 0.15, highpass: 700 });
+      tone(330, 0.16, { type: 'triangle', gain: 0.1 });
+      tone(495, 0.18, { type: 'triangle', gain: 0.1, delay: 0.05 });
+      tone(660, 0.22, { type: 'triangle', gain: 0.11, delay: 0.10 });
+      tone(990, 0.38, { type: 'sine', gain: 0.12, delay: 0.16 });
+      break;
+    case 'chain':
+      tone(660, 0.09, { type: 'sine', gain: 0.06, slideTo: 880 });
+      break;
+    case 'bleed':
+    case 'counter':
+      noiseBurst(0.09, { gain: 0.07, highpass: 1200 });
+      tone(240, 0.1, { type: 'sawtooth', gain: 0.06, slideTo: 120 });
+      break;
+    case 'epiphany':
+      tone(523, 0.12, { type: 'sine', gain: 0.08 });
+      tone(784, 0.16, { type: 'sine', gain: 0.09, delay: 0.06 });
+      tone(1046, 0.24, { type: 'triangle', gain: 0.09, delay: 0.12 });
+      break;
     default:
       break;
   }
