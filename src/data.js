@@ -761,7 +761,7 @@ export const ENCOUNTERS = {
 };
 
 export const MISSIONS = [
-  { code: 'm01', name: 'Cutline', place: 'Left Forearm — Epidermis', threat: 'Low', rec: 'passion', reward: 40, enemies: ['strep'],
+  { code: 'm01', name: 'Cutline', place: 'Left Forearm — Epidermis', threat: 'Low', rec: 'passion', reward: 40, enemies: ['strep'], hero: 'kaito',
     // Scripted story beats: { art, who, text } — art lives in images/story/.
     story: [
       { art: 'images/story/m01-01-breach.jpg', who: 'Left Forearm — Epidermis', text: 'The scrape happened four hours ago. Skin tore, capillaries snapped, a doorway opened in the dark — and nobody told the body.' },
@@ -773,7 +773,7 @@ export const MISSIONS = [
       { art: 'images/story/m01-07-coil.jpg', who: 'Left Forearm — Epidermis', text: 'He plants himself between the cut and the bloodstream. One cell thick. That is all a wall has ever had to be.' },
       { art: 'images/story/m01-08-engage.jpg', who: 'Mission 01 — Cutline', text: 'The chain coils. Three dark eyes. No mouth. It has already answered. Hold the breach.' },
     ] },
-  { code: 'm02', name: 'Drain Line', place: 'Lymph Node 04', threat: 'Low', rec: 'order', reward: 50, enemies: ['toxin', 'spore'],
+  { code: 'm02', name: 'Drain Line', place: 'Lymph Node 04', threat: 'Low', rec: 'order', reward: 50, enemies: ['toxin', 'spore'], hero: 'momo',
     // Scripted story beats: { art, who, text } — art lives in images/story/.
     story: [
       { art: 'images/story/m02-01-node.jpg', who: 'Lymph Node 04', text: 'Lymph Node 04 runs hot and swollen — the body\'s filter, cooking in its own fever.' },
@@ -785,7 +785,7 @@ export const MISSIONS = [
       { art: 'images/story/m02-07-loom.jpg', who: 'Lymph Node 04', text: 'The blob swells to fill the drain. The spores turn, all at once, like seeds hearing rain.' },
       { art: 'images/story/m02-08-engage.jpg', who: 'Mission 02 — Drain Line', text: 'Kit down. Barrier up. Hold the corridor — nothing gets through Momo.' },
     ] },
-  { code: 'm03', name: 'The Thicket', place: 'Deep Tissue — Biofilm Bloom', threat: 'Medium', rec: 'justice', reward: 65, enemies: ['biofilm', 'strep'],
+  { code: 'm03', name: 'The Thicket', place: 'Deep Tissue — Biofilm Bloom', threat: 'Medium', rec: 'justice', reward: 65, enemies: ['biofilm', 'strep'], hero: 'goro',
     // Scripted story beats: { art, who, text } — art lives in images/story/.
     story: [
       { art: 'images/story/m03-01-city.jpg', who: 'Deep Tissue — Biofilm Bloom', text: 'A biofilm has grown over the wound bed like a city nobody planned — towers of shell, streets of slime.' },
@@ -797,9 +797,19 @@ export const MISSIONS = [
       { art: 'images/story/m03-07-wall.jpg', who: 'Goro — Macrophage', text: 'Plans are fine. I have one too: stand where the hitting happens. Do not move.' },
       { art: 'images/story/m03-08-engage.jpg', who: 'Mission 03 — The Thicket', text: 'Cleaver up. City ahead. Eat through it.' },
     ] },
-  { code: 'm04', name: 'Signal Rot', place: 'Spinal Relay — Night', threat: 'High', rec: 'void', reward: 80, enemies: ['strain', 'toxin'],
-    story: ['The signal rot reaches the relay at 03:12.', 'The relay starts telling the body the wrong things — heat, fear, pain, all at once.', 'Bibi can out-shout it. That is not the same as curing it.'] },
-  { code: 'm05', name: 'Prion Gate', place: 'The Blood-Brain Barrier', threat: 'Severe', rec: 'instinct', reward: 100, enemies: ['prion', 'strain', 'biofilm'],
+  { code: 'm04', name: 'Signal Rot', place: 'Spinal Relay — Night', threat: 'High', rec: 'void', reward: 80, enemies: ['strain', 'toxin'], hero: 'bibi',
+    // Scripted story beats: { art, who, text } — art lives in images/story/.
+    story: [
+      { art: 'images/story/m04-01-relay.jpg', who: 'Spinal Relay — Night', text: 'The signal rot reaches the relay at 03:12.' },
+      { art: 'images/story/m04-02-rot.jpg', who: 'Spinal Relay — Night', text: 'The relay starts telling the body the wrong things — heat, fear, pain, all at once.' },
+      { art: 'images/story/m04-03-strain.jpg', who: 'The Relay', text: 'A Mutant Strain has nested in the cables, chewing clean signals into static.' },
+      { art: 'images/story/m04-04-bibi.jpg', who: 'Bibi — Mast Cell', text: 'Ugh. EVERYTHING here is screaming. Move over — I scream louder.' },
+      { art: 'images/story/m04-05-flare.jpg', who: 'The Relay', text: 'Bibi does not cure the noise. She drowns it — one clean signal, louder than the rot. That is not the same as curing it. It is better: it is first.' },
+      { art: 'images/story/m04-06-toxin.jpg', who: 'The Relay', text: 'The rot calls its friends. Toxin in the cables, the Strain in the walls — everything rotten in the body, converging on one relay.' },
+      { art: 'images/story/m04-07-storm.jpg', who: 'Bibi — Mast Cell', text: 'If this relay goes down, the body forgets how to BE a body. Not tonight. Not on my watch!' },
+      { art: 'images/story/m04-08-engage.jpg', who: 'Mission 04 — Signal Rot', text: 'Vial up. Voice up. Out-shout the rot.' },
+    ] },
+  { code: 'm05', name: 'Prion Gate', place: 'The Blood-Brain Barrier', threat: 'Severe', rec: 'instinct', reward: 100, enemies: ['prion', 'strain', 'biofilm'], hero: 'yuna',
     story: ['The barrier is one cell thick and the prion knot is already folding through it.', 'Everything they have learned about each other gets spent here.', 'Hold the gate. Nothing gets through.'] },
 ];
 

@@ -753,6 +753,7 @@ function renderMissions() {
       <div>
         <div class="m-name">${m.name}${cleared ? ` <span style="color:#46e08a;font-size:11px">✓${bestRank ? ' · ' + bestRank : ''}</span>` : ''}</div>
         <div class="m-place">${m.place} · <span style="color:#ffc94d">◆ ${m.reward || 40}${cleared ? ' (claimed)' : ''}</span></div>
+        ${m.hero && CHARACTERS[m.hero] ? `<div class="m-hero">★ REQUIRES ${CHARACTERS[m.hero].name.toUpperCase()} — ${CHARACTERS[m.hero].full.split('—')[1].trim().toUpperCase()}</div>` : ''}
       </div>
       <div class="m-right">
         <div class="m-weak">WEAK TO <b style="color:${a.color}">${a.glyph} ${a.name}</b><br>
@@ -785,9 +786,28 @@ function showStoryBeat() {
   $('btn-story-next').textContent = storyIndex === mission.story.length - 1 ? 'ENGAGE' : 'NEXT';
 }
 
+// Every story mission has a mandatory hero (m.hero) — the character the
+// story is about must be in the deployed team. If they are missing, they
+// are swapped in (last slot) and the player is told via the story note.
+function ensureMissionHero(m) {
+  if (!m.hero || progress.team.includes(m.hero)) return false;
+  if (progress.team.length < 3) progress.team.push(m.hero);
+  else progress.team[progress.team.length - 1] = m.hero;
+  saveProgress(progress);
+  return true;
+}
+
 function openStory(m) {
   mission = m;
   storyIndex = 0;
+  const heroSwapped = ensureMissionHero(m);
+  const note = $('story-note');
+  if (note) {
+    note.textContent = heroSwapped && CHARACTERS[m.hero]
+      ? `${CHARACTERS[m.hero].name.toUpperCase()} ADDED TO YOUR TEAM — THIS STORY REQUIRES ${CHARACTERS[m.hero].name.toUpperCase()}`
+      : '';
+    note.classList.toggle('hidden', !heroSwapped);
+  }
   // Preload every beat's art so panel swaps never flash empty.
   m.story.forEach((s) => { const b = storyBeat(s); if (b.art && typeof Image !== 'undefined') { const im = new Image(); im.src = b.art; } });
   showStoryBeat();
