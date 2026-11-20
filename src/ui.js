@@ -1,182 +1,242 @@
-import { CHAPTERS, CARDS, CHARACTERS, ROLES } from './data.js';
+import { CHARACTERS, CARDS, MISSIONS, ROLES, ELEMENTS } from './data.js';
 import { startBattle, playCard, endTurn, damageOf } from './battle.js';
-import { loadProgress, saveProgress, resetProgress, chapterUnlocked } from './progress.js';
+import { loadProgress, saveProgress, resetProgress, missionUnlocked } from './progress.js';
 
 const $ = (id) => document.getElementById(id);
 
 let progress = loadProgress();
 let battle = null;
-let chapter = null;
-let storyChapter = null;
+let mission = null;
+let pendingMission = null;
 let storyIndex = 0;
 let settled = false;
 
-const VIEWS = ['title', 'story', 'map', 'battle'];
-function showView(name) {
-  for (const v of VIEWS) $('view-' + v).classList.toggle('hidden', v !== name);
-}
+const VIEWS = ['title', 'roster', 'missions', 'story', 'battle'];
+const showView = (name) => VIEWS.forEach((v) => $('view-' + v).classList.toggle('hidden', v !== name));
 
-function el(tag, cls, html) {
+const el = (tag, cls, html) => {
   const node = document.createElement(tag);
   if (cls) node.className = cls;
   if (html !== undefined) node.innerHTML = html;
   return node;
-}
+};
 
-/* ------------------------------------------------------------- map */
+/* ------------------------------------------------------------ roster */
 
-function renderMap() {
-  const grid = $('chapter-grid');
+function renderRoster() {
+  const grid = $('roster');
   grid.innerHTML = '';
 
-  CHAPTERS.forEach((ch, i) => {
-    const unlocked = chapterUnlocked(progress, i);
-    const cleared = progress.cleared.includes(ch.id);
-    const tile = el('button', `chapter${unlocked ? '' : ' locked'}${cleared ? ' cleared' : ''}`);
-    tile.innerHTML = `
-      <div class="chapter-art" style="--art:url('${CHARACTERS[ch.party[0]].art}')"></div>
-      <div class="chapter-title">${ch.title}</div>
-      <div class="chapter-place">${ch.place}${cleared ? ' · cleared' : ''}</div>
-      <div class="chapter-party">
-        ${ch.party.map((id) => `<span class="pip-face" style="--art:url('${CHARACTERS[id].art}')"></span>`).join('')}
-        <span class="pip-face" style="--art:url('${enemyArt(ch)}');border-color:#5b1420"></span>
+  for (const [id, c] of Object.entries(CHARACTERS)) {
+    const selected = progress.team.includes(id);
+    const elem = ELEMENTS[c.element];
+    const role = ROLES[c.role];
+
+    const card = el('button', `roster-card${selected ? ' selected' : ''}`);
+    card.innerHTML = `
+      <div class="roster-top">
+        <span class="lvl">LV <b>${c.level}</b></span>
+        <span class="elem" style="color:${elem.colour}">${elem.glyph}</span>
+      </div>
+      <div class="roster-art"><img src="${c.art}" alt="${c.name}" /></div>
+      <div class="roster-info">
+        <span class="roster-name">${c.name}</span>
+        <span class="roster-cell">${c.cell}</span>
+        <span class="role-chip ${role.cls}">${role.label}</span>
+        <div class="roster-stats">
+          <span>♥ <b>${c.hp}</b></span>
+          <span>⚔ <b>${c.atk}</b></span>
+        </div>
       </div>`;
+
+    card.addEventListener('click', () => toggleTeam(id));
+    grid.appendChild(card);
+  }
+
+  $('team-count').textContent = `${progress.team.length} / 3`;
+
+  const strip = $('team-strip');
+  strip.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    const id = progress.team[i];
+    const slot = el('div', 'team-slot');
+    if (id) slot.innerHTML = `<img src="${CHARACTERS[id].art}" alt="${CHARACTERS[id].name}" />`;
+    strip.appendChild(slot);
+  }
+
+  $('btn-deploy').disabled = progress.team.length !== 3;
+}
+
+function toggleTeam(id) {
+  const at = progress.team.indexOf(id);
+  if (at !== -1) {
+    progress.team.splice(at, 1);
+  } else {
+    if (progress.team.length >= 3) progress.team.shift();
+    progress.team.push(id);
+  }
+  saveProgress(progress);
+  renderRoster();
+}
+
+/* ---------------------------------------------------------- missions */
+
+function renderMissions() {
+  const list = $('mission-list');
+  list.innerHTML = '';
+  $('mission-team').textContent = `${progress.team.map((id) => CHARACTERS[id].name).join(' · ')}`;
+
+  MISSIONS.forEach((m, i) => {
+    const unlocked = missionUnlocked(progress, i);
+    const cleared = progress.cleared.includes(m.id);
+    const tile = el('button', `mission${unlocked ? '' : ' locked'}${cleared ? ' cleared' : ''}`);
+    tile.innerHTML = `
+      <div class="mission-art" style="--art:url('${CHARACTERS[MISSIONS[i].id === m.id ? progress.team[0] : 'kaito'].art}')"></div>
+      <div class="mission-code">${m.code}${cleared ? ' · CLEARED' : ''}</div>
+      <div class="mission-name">${m.name}</div>
+      <div class="mission-place">${m.place} · threat ${'▮'.repeat(m.threat)}</div>`;
     tile.addEventListener('click', () => {
       if (!unlocked) return;
-      openStory(ch, i);
+      openStory(m);
     });
-    grid.appendChild(tile);
+    list.appendChild(tile);
   });
 }
 
-function enemyArt(ch) {
-  const ids = { strep: './images/pathogen-strep.png', toxin: './images/pathogen-toxin.png', biofilm: './images/pathogen-biofilm.png', strain: './images/pathogen-strep.png' };
-  return ids[ch.enemies[0]];
-}
+/* ------------------------------------------------------------- story */
 
-/* ----------------------------------------------------------- story */
-
-function openStory(ch, index) {
-  storyChapter = ch;
+function openStory(m) {
+  pendingMission = m;
   storyIndex = 0;
-  renderStoryLine();
+  paintStory();
   showView('story');
 }
 
-function renderStoryLine() {
-  const line = storyChapter.story[storyIndex];
-  const speaker = line.art ? CHARACTERS[line.art] : null;
-  const fallback = CHARACTERS[storyChapter.party[0]];
-
-  $('story-art').style.setProperty('--art', `url('${(speaker || fallback).art}')`);
+function paintStory() {
+  const line = pendingMission.story[storyIndex];
+  const art = line.art ? CHARACTERS[line.art].art : CHARACTERS[progress.team[0]].art;
+  $('story-art').style.setProperty('--art', `url('${art}')`);
   $('story-who').textContent = line.who || '';
   $('story-text').textContent = line.text;
-  $('btn-story-next').textContent = storyIndex >= storyChapter.story.length - 1 ? 'FIGHT' : 'NEXT';
+  const last = storyIndex >= pendingMission.story.length - 1;
+  $('btn-story-next').textContent = last ? 'DEPLOY' : 'NEXT';
 }
 
-/* ---------------------------------------------------------- battle */
+/* ------------------------------------------------------------ battle */
 
-function openChapter(ch, index) {
-  chapter = ch;
-  battle = startBattle(ch);
+function openBattle(m) {
+  mission = m;
+  battle = startBattle(m, progress.team);
   settled = false;
   $('overlay').classList.add('hidden');
-  $('battle-title').textContent = ch.title.toUpperCase();
   showView('battle');
   renderBattle();
 }
 
-function fighterNode(unit, { enemy = false } = {}) {
-  const node = el('div', `fighter${enemy ? ' enemy' : ''}${unit.hp <= 0 ? ' down' : ''}`);
-  if (enemy && battle.target === unit.uid) node.classList.add('selected');
-
-  const role = ROLES[unit.role];
-  const pct = Math.max(0, (unit.hp / unit.maxHp) * 100);
-  const atk = enemy ? Math.max(0, unit.atk - unit.weaken) : unit.atk + unit.atkBuff + unit.tempAtk;
-
-  node.innerHTML = `
-    <div class="fighter-art" style="--art:url('${unit.art}')"></div>
-    <div class="fighter-shade"></div>
-    ${!enemy && unit.shield > 0 ? `<div class="shield-badge">⛨ ${unit.shield}</div>` : ''}
-    ${!enemy && unit.taunt > 0 ? '<div class="taunt-badge">TAUNT</div>' : ''}
-    <div class="fighter-info">
-      <div class="fighter-top">
-        <span class="fighter-name">${unit.name}</span>
-        ${role ? `<span class="role-chip role-${unit.role}">${role.label}</span>` : ''}
-      </div>
-      <div class="hpbar"><i style="width:${pct}%"></i></div>
-      <div class="fighter-stats">
-        <span>♥ <b>${Math.max(0, unit.hp)}</b>/${unit.maxHp}</span>
-        <span>⚔ <b>${atk}</b></span>
-      </div>
-    </div>`;
-
-  if (enemy) {
-    node.addEventListener('click', () => {
-      if (unit.hp <= 0) return;
-      battle.target = unit.uid;
-      renderBattle();
-    });
-  }
-  return node;
-}
-
 function renderBattle() {
-  const party = $('party');
-  party.innerHTML = '';
-  battle.party.forEach((p) => party.appendChild(fighterNode(p)));
-
-  const foes = $('foes');
-  foes.innerHTML = '';
-  battle.enemies.forEach((e) => foes.appendChild(fighterNode(e, { enemy: true })));
-
+  const totalMax = battle.party.reduce((n, p) => n + p.maxHp, 0);
+  const totalNow = battle.party.reduce((n, p) => n + Math.max(0, p.hp), 0);
+  $('hp-now').textContent = totalNow;
+  $('hp-max').textContent = totalMax;
+  $('hp-fill').style.width = `${(totalNow / totalMax) * 100}%`;
   $('turn').textContent = battle.turn;
 
-  const energy = $('energy');
-  energy.innerHTML = '<div class="energy-label">ATP</div><div class="energy-pips"></div>';
-  const pips = el('div', 'energy-pips');
-  for (let i = 0; i < Math.max(battle.maxEnergy, battle.energy); i++) {
-    pips.appendChild(el('span', `pip${i < battle.energy ? ' on' : ''}`));
+  const lineup = $('lineup');
+  lineup.innerHTML = '';
+  for (const p of battle.party) {
+    const node = el('div', `fighter${p.hp <= 0 ? ' down' : ''}`);
+    node.innerHTML = `
+      <img src="${p.art}" alt="${p.name}" />
+      ${p.shield > 0 ? `<span class="shield-dot">⛨ ${p.shield}</span>` : ''}
+      <div class="fighter-tag">
+        <div class="mini-hp"><i style="width:${Math.max(0, (p.hp / p.maxHp) * 100)}%"></i></div>
+        <span class="fighter-name">${p.name} ${p.hp > 0 ? p.hp : 'DOWN'}</span>
+      </div>`;
+    lineup.appendChild(node);
   }
-  energy.appendChild(pips);
+
+  const row = $('enemies');
+  row.innerHTML = '';
+  for (const e of battle.enemies) {
+    const node = el('div', `enemy${e.hp <= 0 ? ' dead' : ''}${battle.target === e.uid ? ' selected' : ''}`);
+    node.innerHTML = `
+      <div class="enemy-hud">
+        <div class="enemy-hp"><i style="width:${Math.max(0, (e.hp / e.maxHp) * 100)}%"></i></div>
+        <div class="enemy-stats"><span>♥ ${Math.max(0, e.hp)}</span><span>⚔ ${Math.max(0, e.atk - e.weaken)}</span></div>
+      </div>
+      <div class="enemy-frame">
+        <img src="${e.art}" alt="${e.name}" />
+        <span class="atk-badge">${Math.max(0, e.atk - e.weaken)}</span>
+        <span class="enemy-name">${e.name}</span>
+      </div>`;
+    node.addEventListener('click', () => {
+      if (e.hp <= 0) return;
+      battle.target = e.uid;
+      renderBattle();
+    });
+    row.appendChild(node);
+  }
+
+  const pips = $('ep-pips');
+  pips.innerHTML = '';
+  for (let i = 0; i < battle.maxEnergy; i++) {
+    pips.appendChild(el('i', i < battle.energy ? 'on' : ''));
+  }
+  $('ep').textContent = battle.energy;
 
   const hand = $('hand');
   hand.innerHTML = '';
   battle.hand.forEach((id, i) => {
     const card = CARDS[id];
     const owner = battle.party.find((p) => p.id === card.owner);
-    const down = !owner || owner.hp <= 0;
-    const playable = !down && card.cost <= battle.energy && !battle.result;
+    const playable = owner && owner.hp > 0 && card.cost <= battle.energy && !battle.result;
+    const dmg = card.dmg ? damageOf(card, owner) : 0;
 
     const node = el('div', `card${playable ? '' : ' unplayable'}`);
-    const dmg = card.dmg ? damageOf(card, owner) : 0;
+    node.dataset.type = card.type;
     node.innerHTML = `
-      <div class="card-art" style="--art:url('${CHARACTERS[card.owner].art}')"></div>
-      <span class="card-cost">${card.cost}</span>
-      <span class="card-caster">${CHARACTERS[card.owner].name}</span>
-      <div class="card-body">
-        <div class="card-name">${card.name}</div>
-        ${dmg ? `<div class="card-dmg">⚔ ${dmg}${card.hits ? ` ×${card.hits}` : ''}</div>` : ''}
-        <div class="card-text">${card.text}</div>
-      </div>`;
+      <div class="card-head">
+        <span class="card-cost">${card.cost}</span>
+        <span class="card-title">
+          <span class="card-name">${card.name}</span>
+          <span class="card-type">${card.type === 'Attack' ? '✖ Attack' : '◈ Skill'} · ${CHARACTERS[card.owner].name}</span>
+        </span>
+      </div>
+      <div class="card-art" style="--art:url('${card.art}')">
+        ${dmg ? `<span class="card-dmg">⚔ ${dmg}${card.hits ? ` ×${card.hits}` : ''}</span>` : ''}
+      </div>
+      <div class="card-foot"><div class="card-text">${describe(card)}</div></div>`;
+
     node.addEventListener('click', () => {
+      if (!playable) return;
       const res = playCard(battle, i, battle.target);
-      if (!res.ok) return;
-      renderBattle();
+      if (res.ok) renderBattle();
     });
     hand.appendChild(node);
   });
 
-  const box = $('battle-log');
-  box.innerHTML = '';
-  battle.log.slice(-2).forEach((entry) => box.appendChild(el('div', entry.kind, entry.text)));
+  const logBox = $('combat-log');
+  logBox.innerHTML = '';
+  battle.log.slice(-2).forEach((entry) => logBox.appendChild(el('div', entry.kind, entry.text)));
 
   renderResult();
 }
 
+function describe(card) {
+  const bits = [];
+  if (card.dmg) bits.push(`${card.dmg} dmg${card.hits ? ` ×${card.hits}` : ''}${card.target === 'allEnemies' ? ' to all' : ''}`);
+  if (card.heal) bits.push(`heal ${card.heal}${card.target === 'allAllies' ? ' (squad)' : ''}`);
+  if (card.shield) bits.push(`shield ${card.shield}${card.target === 'allAllies' ? ' (squad)' : ''}`);
+  if (card.tempAtk) bits.push(`+${card.tempAtk} ATK this turn`);
+  if (card.energy) bits.push(`+${card.energy} EP`);
+  if (card.taunt) bits.push(`taunt ${card.taunt}`);
+  if (card.selfDamage) bits.push(`self −${card.selfDamage}`);
+  return bits.join(' · ') || '—';
+}
+
 function renderResult() {
   const overlay = $('overlay');
-  if (!battle || !battle.result) {
+  if (!battle.result) {
     overlay.classList.add('hidden');
     return;
   }
@@ -184,60 +244,70 @@ function renderResult() {
 
   if (!settled) {
     settled = true;
-    if (battle.result === 'win' && !progress.cleared.includes(chapter.id)) {
-      progress.cleared.push(chapter.id);
+    if (battle.result === 'win' && !progress.cleared.includes(mission.id)) {
+      progress.cleared.push(mission.id);
       saveProgress(progress);
     }
   }
 
   const won = battle.result === 'win';
-  $('overlay-title').textContent = won ? 'BODY HELD' : 'SQUAD LOST';
+  $('overlay-title').textContent = won ? 'MISSION CLEAR' : 'SQUAD WIPED';
   $('overlay-sub').textContent = won
-    ? `${chapter.title} cleared in ${battle.turn} turns.`
-    : `${chapter.title} — the squad went down in ${battle.turn} turns.`;
-  $('overlay-btn').textContent = won ? 'BACK TO MAP' : 'RETRY';
+    ? `${mission.code} ${mission.name} — cleared in ${battle.turn} turns.`
+    : `${mission.name} — the squad went down in ${battle.turn} turns.`;
+  $('overlay-btn').textContent = won ? 'BACK TO MISSIONS' : 'RETRY';
   $('overlay-retry').classList.toggle('hidden', won);
 }
 
-/* ---------------------------------------------------------- events */
+/* ------------------------------------------------------------ events */
 
 $('btn-start').addEventListener('click', () => {
-  renderMap();
-  showView('map');
+  renderRoster();
+  showView('roster');
 });
 
-$('btn-title').addEventListener('click', () => showView('title'));
+$('btn-deploy').addEventListener('click', () => {
+  if (progress.team.length !== 3) return;
+  renderMissions();
+  showView('missions');
+});
+
+$('btn-missions-back').addEventListener('click', () => {
+  renderRoster();
+  showView('roster');
+});
 
 $('btn-reset').addEventListener('click', () => {
   progress = resetProgress();
-  renderMap();
+  renderRoster();
 });
 
 $('btn-story-next').addEventListener('click', () => {
-  if (storyIndex < storyChapter.story.length - 1) {
+  if (storyIndex < pendingMission.story.length - 1) {
     storyIndex += 1;
-    renderStoryLine();
+    paintStory();
     return;
   }
-  openChapter(storyChapter, CHAPTERS.indexOf(storyChapter));
+  openBattle(pendingMission);
 });
 
 $('end-turn').addEventListener('click', () => {
+  if (battle.result) return;
   endTurn(battle);
   renderBattle();
 });
 
 $('overlay-btn').addEventListener('click', () => {
   if (battle.result === 'win') {
-    renderMap();
-    showView('map');
+    renderMissions();
+    showView('missions');
   } else {
-    openChapter(chapter, CHAPTERS.indexOf(chapter));
+    openBattle(mission);
   }
 });
 
-$('overlay-retry').addEventListener('click', () => openChapter(chapter, CHAPTERS.indexOf(chapter)));
+$('overlay-retry').addEventListener('click', () => openBattle(mission));
 
-/* ------------------------------------------------------------ boot */
+/* -------------------------------------------------------------- boot */
 
 showView('title');

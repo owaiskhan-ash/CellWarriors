@@ -1,150 +1,120 @@
-// Cell Warriors — cast, card sets, enemies, chapters.
-// Four roles: DPS · SHIELD · HEALER · SUPPORT DPS.
-// Every character owns their own card set — if they fall, their cards are dead weight.
+// Cell Warriors — roster, card sets, enemies, missions.
+// Four characters, one per role. Every character owns their own cards.
 
 export const ROLES = {
-  dps: { label: 'DPS', colour: 'crimson' },
-  shield: { label: 'SHIELD', colour: 'teal' },
-  healer: { label: 'HEALER', colour: 'amber' },
-  support: { label: 'SUPPORT DPS', colour: 'violet' },
+  dps: { label: 'DPS', cls: 'dps' },
+  shield: { label: 'SHIELD', cls: 'shield' },
+  healer: { label: 'HEALER', cls: 'healer' },
+  support: { label: 'SUPPORT', cls: 'support' },
+};
+
+export const ELEMENTS = {
+  blood: { label: 'BLOOD', glyph: '✹', colour: '#c2183a' },
+  tide: { label: 'TIDE', glyph: '❋', colour: '#35d0c0' },
+  ember: { label: 'EMBER', glyph: '✦', colour: '#f0a63c' },
+  void: { label: 'VOID', glyph: '◆', colour: '#b79bd8' },
 };
 
 export const CHARACTERS = {
   kaito: {
-    name: 'Kaito', cell: 'Neutrophil', role: 'dps', hp: 30, atk: 3,
-    art: './images/char-neutrophil-celshade.png',
-    cards: ['k_blade', 'k_lastshift', 'k_firstin'],
-  },
-  rin: {
-    name: 'Rin', cell: 'Killer T', role: 'dps', hp: 26, atk: 4,
-    art: './images/char-killert.png',
-    cards: ['r_twin', 'r_exec', 'r_show'],
+    name: 'Kaito', cell: 'Neutrophil', role: 'dps', element: 'blood',
+    level: 30, hp: 30, atk: 3,
+    art: './images/cut-kaito-cut.png',
+    bio: 'Arrives first. Dies first. Does it anyway.',
+    cards: ['k_blade', 'k_last', 'k_first'],
   },
   momo: {
-    name: 'Momo', cell: 'Platelet', role: 'shield', hp: 34, atk: 1,
-    art: './images/char-platelet.png',
-    cards: ['p_patch', 'p_stand', 'p_firstaid'],
+    name: 'Momo', cell: 'Platelet', role: 'shield', element: 'tide',
+    level: 28, hp: 34, atk: 1,
+    art: './images/cut-momo-cut.png',
+    bio: 'Scared of everything. Still stands in front of it.',
+    cards: ['m_patch', 'm_stand', 'm_aid'],
   },
   goro: {
-    name: 'Goro', cell: 'Macrophage', role: 'healer', hp: 40, atk: 2,
-    art: './images/char-macrophage.png',
+    name: 'Goro', cell: 'Macrophage', role: 'healer', element: 'ember',
+    level: 32, hp: 40, atk: 2,
+    art: './images/cut-goro-cut.png',
+    bio: 'Speaks in three words. Holds the wall in one.',
     cards: ['g_cleave', 'g_devour', 'g_wall'],
   },
   bibi: {
-    name: 'Bibi', cell: 'Mast Cell', role: 'support', hp: 24, atk: 1,
-    art: './images/char-mast.png',
+    name: 'Bibi', cell: 'Mast Cell', role: 'support', element: 'void',
+    level: 26, hp: 24, atk: 1,
+    art: './images/cut-bibi-cut.png',
+    bio: 'Starts the fire. Then charges into it.',
     cards: ['b_hist', 'b_flare', 'b_over'],
-  },
-  ivo: {
-    name: 'Ivo', cell: 'B Cell', role: 'support', hp: 26, atk: 2,
-    art: './images/char-bcell.png',
-    cards: ['i_anti', 'i_bolt', 'i_stock'],
-  },
-  noor: {
-    name: 'Noor', cell: 'Dendritic', role: 'support', hp: 24, atk: 0,
-    art: './images/char-dendritic.png',
-    cards: ['n_recon', 'n_expose', 'n_lantern'],
   },
 };
 
 export const CARDS = {
-  // ── Kaito · Neutrophil · DPS ──────────────────────────────────────────
-  k_blade: { id: 'k_blade', owner: 'kaito', name: 'Blade Rush', cost: 2, target: 'enemy', dmg: 7, text: '7 dmg to one pathogen.' },
-  k_lastshift: { id: 'k_lastshift', owner: 'kaito', name: 'Last Shift', cost: 3, target: 'enemy', dmg: 12, selfDamage: 3, text: '12 dmg. Kaito loses 3 HP.' },
-  k_firstin: { id: 'k_firstin', owner: 'kaito', name: 'First In', cost: 1, target: 'enemy', dmg: 4, selfShield: 3, text: '4 dmg. Gain 3 shield.' },
+  // Kaito — DPS
+  k_blade: { id: 'k_blade', owner: 'kaito', name: 'Blade Rush', type: 'Attack', cost: 1, target: 'enemy', dmg: 6, art: './images/card-k1.png' },
+  k_last: { id: 'k_last', owner: 'kaito', name: 'Last Shift', type: 'Attack', cost: 3, target: 'enemy', dmg: 12, selfDamage: 3, art: './images/card-k2.png' },
+  k_first: { id: 'k_first', owner: 'kaito', name: 'First In', type: 'Skill', cost: 1, target: 'enemy', dmg: 4, selfShield: 4, art: './images/card-k3.png' },
 
-  // ── Rin · Killer T · DPS ──────────────────────────────────────────────
-  r_twin: { id: 'r_twin', owner: 'rin', name: 'Twin Blades', cost: 2, target: 'enemy', dmg: 4, hits: 2, text: 'Two hits of 4.' },
-  r_exec: { id: 'r_exec', owner: 'rin', name: 'Execution', cost: 4, target: 'enemy', dmg: 16, text: '16 dmg. Rin shows off.' },
-  r_show: { id: 'r_show', owner: 'rin', name: 'Show Off', cost: 1, target: 'enemy', dmg: 2, tempAtk: 3, text: '2 dmg. +3 ATK this turn.' },
+  // Momo — SHIELD
+  m_patch: { id: 'm_patch', owner: 'momo', name: 'Patch Up', type: 'Skill', cost: 1, target: 'allAllies', shield: 6, art: './images/card-m1.png' },
+  m_stand: { id: 'm_stand', owner: 'momo', name: 'Stand Firm', type: 'Skill', cost: 2, target: 'self', shield: 12, taunt: 2, art: './images/card-m2.png' },
+  m_aid: { id: 'm_aid', owner: 'momo', name: 'First Aid', type: 'Skill', cost: 1, target: 'lowestAlly', heal: 8, art: './images/card-m3.png' },
 
-  // ── Momo · Platelet · SHIELD ──────────────────────────────────────────
-  p_patch: { id: 'p_patch', owner: 'momo', name: 'Patch Up', cost: 1, target: 'allAllies', shield: 6, text: '6 shield to the whole squad.' },
-  p_stand: { id: 'p_stand', owner: 'momo', name: 'Stand Firm', cost: 2, target: 'self', shield: 10, taunt: 2, text: '10 shield. Taunts for 2 turns.' },
-  p_firstaid: { id: 'p_firstaid', owner: 'momo', name: 'First Aid', cost: 2, target: 'lowestAlly', heal: 8, text: 'Heal 8 on the weakest ally.' },
+  // Goro — HEALER (card art pending — using cutout)
+  g_cleave: { id: 'g_cleave', owner: 'goro', name: 'Cleave', type: 'Attack', cost: 2, target: 'enemy', dmg: 8, art: './images/cut-goro-cut.png', artPending: true },
+  g_devour: { id: 'g_devour', owner: 'goro', name: 'Devour', type: 'Skill', cost: 3, target: 'allAllies', heal: 7, art: './images/cut-goro-cut.png', artPending: true },
+  g_wall: { id: 'g_wall', owner: 'goro', name: 'The Wall', type: 'Skill', cost: 2, target: 'self', shield: 14, taunt: 2, art: './images/cut-goro-cut.png', artPending: true },
 
-  // ── Goro · Macrophage · HEALER ────────────────────────────────────────
-  g_cleave: { id: 'g_cleave', owner: 'goro', name: 'Cleave', cost: 2, target: 'enemy', dmg: 8, text: '8 dmg. No ceremony.' },
-  g_devour: { id: 'g_devour', owner: 'goro', name: 'Devour', cost: 3, target: 'allAllies', heal: 7, text: 'Heal 7 to the whole squad.' },
-  g_wall: { id: 'g_wall', owner: 'goro', name: 'The Wall', cost: 2, target: 'self', shield: 12, taunt: 2, text: '12 shield. Taunts for 2 turns.' },
-
-  // ── Bibi · Mast Cell · SUPPORT DPS ────────────────────────────────────
-  b_hist: { id: 'b_hist', owner: 'bibi', name: 'Histamine', cost: 1, target: 'allAllies', tempAtk: 2, text: '+2 ATK to the squad this turn.' },
-  b_flare: { id: 'b_flare', owner: 'bibi', name: 'Flare', cost: 2, target: 'allEnemies', dmg: 4, text: '4 dmg to every pathogen.' },
-  b_over: { id: 'b_over', owner: 'bibi', name: 'Overdrive', cost: 3, target: 'none', energy: 3, text: '+3 ATP right now.' },
-
-  // ── Ivo · B Cell · SUPPORT DPS ────────────────────────────────────────
-  i_anti: { id: 'i_anti', owner: 'ivo', name: 'Antibody', cost: 1, target: 'allAllies', atkBuff: 1, text: '+1 ATK to the squad. Permanent.' },
-  i_bolt: { id: 'i_bolt', owner: 'ivo', name: 'Crossbow', cost: 2, target: 'enemy', dmg: 5, text: '5 dmg at range.' },
-  i_stock: { id: 'i_stock', owner: 'ivo', name: 'Stockpile', cost: 2, target: 'none', draw: 2, text: 'Draw 2 cards.' },
-
-  // ── Noor · Dendritic · SUPPORT DPS ────────────────────────────────────
-  n_recon: { id: 'n_recon', owner: 'noor', name: 'Recon', cost: 1, target: 'none', draw: 2, energy: 1, text: 'Draw 2. +1 ATP.' },
-  n_expose: { id: 'n_expose', owner: 'noor', name: 'Expose', cost: 2, target: 'enemy', weaken: 4, text: 'Target pathogen loses 4 ATK permanently.' },
-  n_lantern: { id: 'n_lantern', owner: 'noor', name: 'Lantern', cost: 2, target: 'allAllies', heal: 4, shield: 2, text: 'Heal 4 and 2 shield to the squad.' },
+  // Bibi — SUPPORT DPS (card art pending — using cutout)
+  b_hist: { id: 'b_hist', owner: 'bibi', name: 'Histamine', type: 'Skill', cost: 1, target: 'allAllies', tempAtk: 2, art: './images/cut-bibi-cut.png', artPending: true },
+  b_flare: { id: 'b_flare', owner: 'bibi', name: 'Flare', type: 'Attack', cost: 2, target: 'allEnemies', dmg: 4, art: './images/cut-bibi-cut.png', artPending: true },
+  b_over: { id: 'b_over', owner: 'bibi', name: 'Overdrive', type: 'Skill', cost: 2, target: 'none', energy: 3, art: './images/cut-bibi-cut.png', artPending: true },
 };
 
 export const ENEMIES = {
-  strep: { id: 'strep', name: 'Strep', hp: 24, atk: 5, art: './images/pathogen-strep.png' },
-  toxin: { id: 'toxin', name: 'Toxin Blob', hp: 20, atk: 4, art: './images/pathogen-toxin.png' },
-  biofilm: { id: 'biofilm', name: 'Biofilm', hp: 34, atk: 7, art: './images/pathogen-biofilm.png' },
-  strain: { id: 'strain', name: 'Mutant Strain', hp: 28, atk: 6, art: './images/pathogen-strep.png' },
+  strep: { id: 'strep', name: 'Strep', hp: 26, atk: 5, art: './images/pathogen-strep.png' },
+  toxin: { id: 'toxin', name: 'Toxin', hp: 22, atk: 4, art: './images/pathogen-toxin.png' },
+  biofilm: { id: 'biofilm', name: 'Biofilm', hp: 38, atk: 7, art: './images/pathogen-biofilm.png' },
+  strain: { id: 'strain', name: 'Strain', hp: 30, atk: 6, art: './images/pathogen-strep.png' },
 };
 
-// ── Chapters: story → battle. The squad is fixed by the story. ──────────
-export const CHAPTERS = [
+export const MISSIONS = [
   {
-    id: 'throat', title: 'I · The Throat', place: 'Tonsils',
-    party: ['kaito'], enemies: ['strep'],
+    id: 'm01', code: 'M-01', name: 'Tonsil Breach', place: 'Throat', threat: 1,
+    enemies: ['strep'],
     story: [
       { who: '', text: 'Day one. It starts as a scratch.' },
-      { who: 'Kaito', art: 'kaito', text: 'Tonsils are swollen. Something got in.' },
-      { who: 'Kaito', art: 'kaito', text: 'No backup. No time. Someone has to go first.' },
+      { who: 'Kaito', art: 'kaito', text: 'Something got in. No backup, no time.' },
+      { who: 'Kaito', art: 'kaito', text: 'Someone has to go first.' },
     ],
   },
   {
-    id: 'lungs', title: 'II · The Lungs', place: 'Alveoli',
-    party: ['kaito', 'momo'], enemies: ['strep', 'strep', 'toxin'],
+    id: 'm02', code: 'M-02', name: 'Alveolar Flood', place: 'Lungs', threat: 2,
+    enemies: ['strep', 'toxin'],
     story: [
-      { who: 'Kaito', art: 'kaito', text: 'It reached the alveoli. Every breath feeds it.' },
       { who: 'Momo', art: 'momo', text: 'I-I\'m here! Where do you need me?!' },
       { who: 'Kaito', art: 'kaito', text: 'Behind me. Patch what I miss.' },
     ],
   },
   {
-    id: 'gut', title: 'III · The Gut', place: 'Intestinal wall',
-    party: ['kaito', 'momo', 'noor'], enemies: ['toxin', 'strain', 'strep'],
-    story: [
-      { who: 'Noor', art: 'noor', text: 'I have seen this strain before. Page forty.' },
-      { who: 'Kaito', art: 'kaito', text: 'Did the page say how to kill it?' },
-      { who: 'Noor', art: 'noor', text: 'No. But it said who died learning.' },
-    ],
-  },
-  {
-    id: 'wound', title: 'IV · The Wound', place: 'Cut site',
-    party: ['kaito', 'momo', 'goro'], enemies: ['strep', 'strain', 'toxin'],
+    id: 'm03', code: 'M-03', name: 'Gut Wall', place: 'Intestine', threat: 3,
+    enemies: ['biofilm', 'toxin'],
     story: [
       { who: 'Goro', art: 'goro', text: '...Leave it to me.' },
-      { who: 'Momo', art: 'momo', text: 'He\'s not even breathing hard. That\'s terrifying.' },
       { who: 'Kaito', art: 'kaito', text: 'That\'s the only reason we\'re alive.' },
     ],
   },
   {
-    id: 'blood', title: 'V · The Bloodstream', place: 'Whole system',
-    party: ['kaito', 'momo', 'goro', 'bibi'], enemies: ['biofilm', 'strain', 'toxin'],
+    id: 'm04', code: 'M-04', name: 'Bloodstream Break', place: 'Whole system', threat: 4,
+    enemies: ['strain', 'toxin', 'strep'],
     story: [
       { who: 'Bibi', art: 'bibi', text: 'Let\'s make it LOUD.' },
       { who: 'Kaito', art: 'kaito', text: 'That\'s what I was afraid of.' },
-      { who: 'Goro', art: 'goro', text: 'Stay behind the shield.' },
     ],
   },
   {
-    id: 'meninges', title: 'VI · The Meninges', place: 'Blood-brain barrier',
-    party: ['rin', 'goro', 'ivo'], enemies: ['biofilm', 'strain', 'toxin'],
+    id: 'm05', code: 'M-05', name: 'Meninges', place: 'Blood-brain barrier', threat: 5,
+    enemies: ['biofilm', 'strain', 'biofilm'],
     story: [
-      { who: 'Rin', art: 'rin', text: 'Took you long enough to call me.' },
-      { who: 'Ivo', art: 'ivo', text: 'I already made one for this.' },
-      { who: 'Goro', art: 'goro', text: 'Then stop talking and hold the wall.' },
+      { who: 'Goro', art: 'goro', text: 'The last wall. Behind it, everything he is.' },
+      { who: 'Kaito', art: 'kaito', text: 'Then it doesn\'t get through.' },
     ],
   },
 ];

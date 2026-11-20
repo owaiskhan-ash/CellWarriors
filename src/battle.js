@@ -28,8 +28,8 @@ function draw(s, n) {
   }
 }
 
-export function startBattle(chapter, startingEnergy = 4) {
-  const party = chapter.party.map((id, i) => {
+export function startBattle(mission, partyIds, startingEnergy = 4) {
+  const party = partyIds.map((id, i) => {
     const c = CHARACTERS[id];
     return {
       uid: `p${i}`, id, name: c.name, cell: c.cell, role: c.role, art: c.art,
@@ -37,7 +37,7 @@ export function startBattle(chapter, startingEnergy = 4) {
     };
   });
 
-  const enemies = chapter.enemies.map((id, i) => {
+  const enemies = mission.enemies.map((id, i) => {
     const e = ENEMIES[id];
     return { uid: `e${i}`, id, name: e.name, art: e.art, hp: e.hp, maxHp: e.hp, atk: e.atk, weaken: 0 };
   });
@@ -45,13 +45,13 @@ export function startBattle(chapter, startingEnergy = 4) {
   const deck = shuffle(party.flatMap((p) => CHARACTERS[p.id].cards));
 
   const s = {
-    chapter, turn: 1, energy: startingEnergy, maxEnergy: startingEnergy,
+    mission, turn: 1, energy: startingEnergy, maxEnergy: startingEnergy,
     party, enemies, deck, hand: [], discard: [], log: [], result: null,
     target: enemies[0]?.uid || null,
   };
 
   draw(s, 4);
-  log(s, `${chapter.title} · hold the line.`, 'warn');
+  log(s, `${mission.code} ${mission.name} · hold the line.`, 'warn');
   return s;
 }
 
