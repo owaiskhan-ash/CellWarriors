@@ -6,6 +6,7 @@
   "description": "Cell Warriors \u2014 a tactical card RPG inside a human body.",
   "scripts": {
     "dev": "python3 -m http.server 5173 --bind 0.0.0.0",
-    "sim:missions": "node scripts/sim-missions.mjs 300"
+    "sim:missions": "node scripts/sim-missions.mjs 300",
+    "test:e2e": "node scripts/e2e.mjs"
   }
 }
