@@ -415,3 +415,21 @@ changes again — names are how the audience remembers the cast.
 
 **Adding a new character:** update \`docs/characters.json\` first, run
 \`node scripts/prompt.mjs <id>\` to generate, and only then write prose here.
+
+
+---
+
+## Assets added (v1.1)
+
+| File | What |
+| --- | --- |
+| `images/action-kaito.jpg` | Kaito mid-lunge, cyan blade arc — attack cut-in |
+| `images/action-momo.jpg` | Momo bracing behind a hex barrier — guard cut-in |
+| `images/action-goro.jpg` | Goro overhead cleaver slam — heavy cut-in |
+| `images/action-bibi.jpg` | Bibi casting a violet vial storm — skill cut-in |
+| `images/card-g1..g3.jpg` | Goro: Scalpel, Cleave, Devour |
+| `images/card-b1..b3.jpg` | Bibi: Signal Ping, Flare, Histamine |
+| `images/card-k1..k3.jpg`, `card-m1..m3.jpg` | Kaito / Momo sets, re-encoded at card resolution |
+
+All card art is 660 px wide JPEG (q82); action panels are 700 px wide JPEG (q84).
+`card-b2` was blocked by moderation once and currently reuses `card-b3` for Flare.

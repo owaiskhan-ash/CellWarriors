@@ -81,8 +81,19 @@ domCards[atkIdx >= 0 ? atkIdx : 0].dispatchEvent(new window.MouseEvent('click', 
 ok('character cut-in shown', !$('cutin').classList.contains('hidden'));
 ok('cut-in has character art', !!$('cutin-art').getAttribute('src'), String($('cutin-art').getAttribute('src')));
 ok('cut-in names the card', $('cutin-name').textContent.length > 1, $('cutin-name').textContent);
-ok('card played from UI', cw.battle.hand.length === before - 1, `${before} → ${cw.battle.hand.length}`);
+ok('card played from UI', cw.battle.cardsPlayed > 0, `played ${cw.battle.cardsPlayed}`);
+ok('live numbers on cards', $('hand').querySelectorAll('.card-fx').length > 0, `${$('hand').querySelectorAll('.card-fx').length} badges`);
+ok('big damage readout', $('dmg-rail').children.length > 0, `${$('dmg-rail').children.length} lines`);
 ok('card hits enemy', cw.battle.enemies[0].hp < cw.battle.enemies[0].maxHp || cw.battle.enemies[0].tenacity < cw.battle.enemies[0].maxTenacity);
+
+// long press detail
+cw.openDetail(0);
+ok('detail opens', !$('detail').classList.contains('hidden'));
+ok('detail shows name', $('detail-head').textContent.length > 1, $('detail-head').textContent);
+ok('detail shows the maths', $('detail-math').querySelectorAll('.math-row').length > 0);
+ok('detail shows rules text', $('detail-text').textContent.length > 0);
+cw.closeDetail();
+ok('detail closes', $('detail').classList.contains('hidden'));
 
 // play out the fight with the bot
 let turns = 0;
