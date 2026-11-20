@@ -14,6 +14,11 @@ export const BURST_COST = 5;
 export const STRESS_MAX = 100;
 export const RECOVERY_PLAYS = [5, 6, 8, 10, 12];
 export const SANDS_CHARGES = 3;
+// POISON scaling: every Poison stack deals this much damage per End-Turn tick.
+// Poison Potency (Yuna's upgrades) adds +damage PER STACK on top of this, so
+// ticks scale multiplicatively with stacking: tick = stacks x (3 + Potency).
+export const POISON_PER_STACK = 3;
+export const POISON_CAP = 20; // hard stack cap so Incubate/CATALYST can't snowball forever
 
 function makeRng(seed) {
   let s = seed >>> 0 || 1;
@@ -168,7 +173,7 @@ export function startBattle(opts, partyIds, seed) {
   };
   state.has = has;
 
-  if (leadId === 'yuna') enemies.forEach((e) => { e.poison += 4; });
+  if (leadId === 'yuna') enemies.forEach((e) => { e.poison += 3; });
   if (startShield) characters.forEach((c) => { c.shield += startShield; });
   if (has('plate')) characters.forEach((c) => { c.counter += 3; });
   if (has('adrenal') && characters[0]) characters[0].fury += 2;
@@ -360,6 +365,9 @@ function computeAttackPlan(state, card, target, actor, { simulate = false } = {}
   if (card.scaleExhaust) bonus += state.exhaust.length * card.scaleExhaust;
   if (card.scaleTurnPlays) bonus += state.cardsPlayedThisTurn * card.scaleTurnPlays;
   if (card.scaleResonance) bonus += state.resonance * card.scaleResonance;
+  // Poison-scaled attacks (Yuna): the more Poison on the target, the harder she hits.
+  let poisonBonus = 0;
+  if (card.dmgPerPoison && target) { poisonBonus = (target.poison || 0) * card.dmgPerPoison; bonus += poisonBonus; }
 
   let combo = 0;
   const prevType = simulate ? state.lastTypePlayed : (state.cardsPlayedThisTurn > 1 ? state.lastTypePlayed : null);
@@ -397,7 +405,7 @@ function computeAttackPlan(state, card, target, actor, { simulate = false } = {}
   const perHit = Math.max(1, Math.round(per));
   const hits = card.hits || 1;
   return {
-    perHit, hits, dmg: perHit * hits,
+    perHit, hits, dmg: perHit * hits, poisonBonus,
     weak, ravaged, mark, vuln, crit, burst: canBurst, isChain, combo, finale,
     echoCount: state.echoNext ? state.echoNext.count : 0,
   };
@@ -407,13 +415,18 @@ function applyStatusStacks(state, enemy, { bleed = 0, toxin = 0, poison = 0 }) {
   const cascade = state.synergy && state.synergy.some((s) => s.id === 'catalyst') ? 1 : 0;
   if (bleed > 0) enemy.bleed += bleed + cascade;
   if (toxin > 0) enemy.toxin += toxin + cascade;
-  if (poison > 0) enemy.poison += poison + cascade;
+  if (poison > 0) enemy.poison = Math.min(POISON_CAP, enemy.poison + poison + cascade);
 }
 
 // POISON — Damage over Time. Stacks collect during the turn; at End Turn the
-// enemy takes damage equal to its stacks (+ Potency), then Poison -1.
+// enemy takes stacks x (POISON_PER_STACK + Potency) damage, then Poison -1.
+// e.g. 10 Poison = 30 damage, then 9 stacks = 27, then 24... Potency is
+// per-stack, so Incubate (x2 stacks) and Potency upgrades multiply together.
+export function poisonPerStack(state) {
+  return POISON_PER_STACK + ((state && state.passives.poisonPotency) || 0);
+}
 function poisonTickDamage(state, enemy) {
-  return Math.max(0, (enemy.poison || 0) + (state.passives.poisonPotency || 0));
+  return Math.max(0, (enemy.poison || 0) * poisonPerStack(state));
 }
 function tickPoison(state, enemy, { consumeAll = false } = {}) {
   if (!enemy || enemy.hp <= 0 || (enemy.poison || 0) <= 0) return 0;
@@ -423,7 +436,7 @@ function tickPoison(state, enemy, { consumeAll = false } = {}) {
   state.stats.damage += dmg;
   enemy.poison = consumeAll ? 0 : Math.max(0, enemy.poison - 1);
   pushFx(state, { kind: 'poison', uid: enemy.uid, name: enemy.name, amt: dmg });
-  log(state, `  POISON — ${enemy.name} takes ${dmg} DoT damage (${stacks} stack${stacks === 1 ? '' : 's'}${consumeAll ? ', consumed' : ', -1 stack'}).`, 'weak');
+  log(state, `  POISON — ${enemy.name} takes ${dmg} DoT damage (${stacks} stack${stacks === 1 ? '' : 's'} x ${poisonPerStack(state)}/stack${consumeAll ? ', consumed' : ', -1 stack'}).`, 'weak');
   if (state.passives.onPoisonTickRes) addResonance(state, state.passives.onPoisonTickRes);
   if (state.passives.onPoisonTickHeal) {
     const y = state.characters.find((c) => c.id === 'yuna') || state.characters[0];
@@ -825,7 +838,8 @@ export function playCard(state, handIndex, targetUid = null) {
   if (card.bleed && !(card.dmg > 0) && target && target.hp > 0) applyStatusStacks(state, target, { bleed: card.bleed });
   if (card.vulnAll) state.enemies.forEach((e) => { if (e.hp > 0) e.vuln = Math.max(e.vuln, card.vulnAll); });
   if (card.doublePoison && target && target.hp > 0) {
-    target.poison *= 2;
+    // Incubate doubles the stack, but gains at most +6 — no exponential snowball.
+    target.poison = Math.min(POISON_CAP, target.poison + Math.min(target.poison, 6));
     log(state, `  INCUBATE — ${target.name} Poison DOUBLED to ${target.poison}!`, 'epiphany');
   }
   if (card.triggerPoisonTick && target) tickPoison(state, target);
@@ -886,7 +900,7 @@ export function playCard(state, handIndex, targetUid = null) {
     list.forEach((e) => {
       e.bleed *= 2;
       e.toxin *= 2;
-      e.poison = (e.poison || 0) * 2;
+      e.poison = Math.min(POISON_CAP, (e.poison || 0) * 2);
       log(state, `CATALYST — ${e.name} Bleed (${e.bleed}), Toxin (${e.toxin}) & Poison (${e.poison}) DOUBLED!`, 'epiphany');
     });
   }
@@ -1260,7 +1274,7 @@ export function previewCard(state, card, targetUid = null) {
     crit: false, burst: false, isChain: hasEdgeChain(state, card), lethal: false,
     shield: 0, teamShield: 0, heal: 0, teamHeal: 0,
     stressHeal: 0, teamStressHeal: 0, ap: 0, draw: 0, targets: 1, combo: 0, finale: 0,
-    poison: 0, poisonAll: 0,
+    poison: 0, poisonAll: 0, poisonPerStack: POISON_PER_STACK, poisonBonus: 0,
   };
   const alive = state.enemies.filter((e) => e.hp > 0);
   out.targets = card.aoe ? Math.max(1, alive.length) : (target ? 1 : 0);
@@ -1281,6 +1295,7 @@ export function previewCard(state, card, targetUid = null) {
     out.burst = plan.burst;
     out.combo = plan.combo;
     out.finale = plan.finale;
+    out.poisonBonus = plan.poisonBonus || 0;
     out.lethal = out.dmg >= target.hp;
   }
 
@@ -1306,7 +1321,8 @@ export function previewCard(state, card, targetUid = null) {
   out.poison = card.poison || 0;
   out.poisonAll = card.poisonAll || 0;
   if (target) {
-    out.poisonNextTick = (target.poison || 0) + out.poison + (card.poisonAll || 0) + (state.passives.poisonPotency || 0);
+    out.poisonPerStack = poisonPerStack(state);
+    out.poisonNextTick = ((target.poison || 0) + out.poison + out.poisonAll) * out.poisonPerStack;
     out.poisonStacks = target.poison || 0;
   }
   return out;
