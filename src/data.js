@@ -762,7 +762,17 @@ export const ENCOUNTERS = {
 
 export const MISSIONS = [
   { code: 'm01', name: 'Cutline', place: 'Left Forearm — Epidermis', threat: 'Low', rec: 'passion', reward: 40, enemies: ['strep'],
-    story: ['The scrape happened four hours ago. Nobody told the skin.', 'A breach in the left forearm. Strepto is already inside the cut, and the alarm has not been rung.', 'Kaito reaches it first. He always does.'] },
+    // Scripted story beats: { art, who, text } — art lives in images/story/.
+    story: [
+      { art: 'images/story/m01-01-breach.jpg', who: 'Left Forearm — Epidermis', text: 'The scrape happened four hours ago. Skin tore, capillaries snapped, a doorway opened in the dark — and nobody told the body.' },
+      { art: 'images/story/m01-02-strep.jpg', who: 'The Breach', text: 'Something violet and patient slides through the cut. Strepto. It does not knock. It never knocks. It just starts counting your cells.' },
+      { art: 'images/story/m01-03-kaito.jpg', who: 'Kaito — Neutrophil', text: 'One chain. One cut. Four hours of head start. …Huh. Almost a fair fight. For you.' },
+      { art: 'images/story/m01-04-lash.jpg', who: 'The Breach', text: 'It answers the only way it knows how: all at once, whip-fast, straight down the vessel. Anything slower than Kaito would already be seeding.' },
+      { art: 'images/story/m01-05-momo.jpg', who: 'Momo — Platelet', text: 'Kaito! Scanner says the breach is STILL OPEN! If it seeds any deeper, this stops being a scrape and starts being a war!' },
+      { art: 'images/story/m01-06-stand.jpg', who: 'Kaito — Neutrophil', text: 'Then it stops here. Get your seal ready, Momo. I only need one minute.' },
+      { art: 'images/story/m01-07-coil.jpg', who: 'Left Forearm — Epidermis', text: 'He plants himself between the cut and the bloodstream. One cell thick. That is all a wall has ever had to be.' },
+      { art: 'images/story/m01-08-engage.jpg', who: 'Mission 01 — Cutline', text: 'The chain coils. Three dark eyes. No mouth. It has already answered. Hold the breach.' },
+    ] },
   { code: 'm02', name: 'Drain Line', place: 'Lymph Node 04', threat: 'Low', rec: 'order', reward: 50, enemies: ['toxin', 'spore'],
     story: ['Lymph Node 04 runs hot and swollen.', 'Endotoxin moved in through the drain and brought its own spores.', 'Momo holds the corridor. Nobody else fits.'] },
   { code: 'm03', name: 'The Thicket', place: 'Deep Tissue — Biofilm Bloom', threat: 'Medium', rec: 'justice', reward: 65, enemies: ['biofilm', 'strep'],

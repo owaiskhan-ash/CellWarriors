@@ -744,13 +744,29 @@ function renderMissions() {
 }
 
 /* =============================================================== story */
+// Story beats are plain strings (older missions) or scripted beats
+// { art, who, text } with per-beat art (Mission 01+). Normalise here.
+function storyBeat(s) { return typeof s === 'string' ? { text: s } : s; }
+
+function showStoryBeat() {
+  const beat = storyBeat(mission.story[storyIndex]);
+  const art = $('story-art');
+  art.style.opacity = '0';
+  setTimeout(() => {
+    art.style.backgroundImage = `url(${beat.art || 'images/cell-warriors-battle.png'})`;
+    art.style.opacity = '1';
+  }, 170);
+  $('story-who').textContent = (beat.who || mission.place).toUpperCase();
+  typewriter($('story-text'), beat.text);
+  $('btn-story-next').textContent = storyIndex === mission.story.length - 1 ? 'ENGAGE' : 'NEXT';
+}
+
 function openStory(m) {
   mission = m;
   storyIndex = 0;
-  $('story-art').style.backgroundImage = 'url(images/cell-warriors-battle.png)';
-  $('story-who').textContent = m.place.toUpperCase();
-  typewriter($('story-text'), m.story[0]);
-  $('btn-story-next').textContent = 'NEXT';
+  // Preload every beat's art so panel swaps never flash empty.
+  m.story.forEach((s) => { const b = storyBeat(s); if (b.art) { const im = new Image(); im.src = b.art; } });
+  showStoryBeat();
   showView('story');
 }
 
@@ -758,8 +774,7 @@ function advanceStory() {
   sfx('click');
   storyIndex += 1;
   if (storyIndex >= mission.story.length) { beginBattle(mission); return; }
-  typewriter($('story-text'), mission.story[storyIndex]);
-  if (storyIndex === mission.story.length - 1) $('btn-story-next').textContent = 'ENGAGE';
+  showStoryBeat();
 }
 
 /* ============================================================ chaos map */
@@ -1943,7 +1958,6 @@ function renderHand() {
         node.classList.remove('drag-draw');
         const drew = startDraw(battle, 1);
         renderHand();
-        if (!battle.result) showCutIn(node);
         void drew;
         return;
       }
@@ -2087,7 +2101,8 @@ function playFromUI(index, ev) {
   if (cardNode && rect) launchPlayArc(cardNode, rect, card);
   apFlash(battle.ap);
   touchFlash();
-  if (!battle.result) showCutIn(card);
+  // No character cut-in on card plays (removed by request) — the play arc,
+  // barks, damage numbers and SFX carry the moment. Ego cut-ins remain.
 }
 
 /* Game-feel: the played card arcs off the hand onto its target. */
@@ -2313,24 +2328,6 @@ function autoStepOnce() {
   endTurn(battle);
   renderBattle();
   return 'endturn';
-}
-
-function showCutIn(card) {
-  const owner = CHARACTERS[card.owner];
-  cutBusy = true;
-  $('cutin-art').src = ACTION_ART[card.owner] || (owner ? owner.art : 'images/action-kaito.jpg');
-  $('cutin-name').textContent = card.name.toUpperCase();
-  $('cutin-type').textContent = `${owner ? owner.name.toUpperCase() + ' · ' : ''}${card.type.toUpperCase()} · ${card.zeroCost ? 0 : card.cost} AP`;
-  $('cutin-fx').innerHTML = '';
-  const slot = $('cutin-card');
-  const { className, html } = cardHTML(card, battle);
-  slot.innerHTML = `<div class="${className}" style="--rot:0deg;--lift:0px">${html}</div>`;
-  $('cutin').classList.remove('hidden');
-  setTimeout(() => {
-    $('cutin').classList.add('hidden');
-    cutBusy = false;
-    renderBattle();
-  }, 820);
 }
 
 /* --- resources --- */
