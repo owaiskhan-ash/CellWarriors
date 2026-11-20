@@ -18,6 +18,10 @@ import fs from 'fs';
 import { execFileSync } from 'child_process';
 import { JSDOM, VirtualConsole } from '/home/user/CellWarriors/node_modules/jsdom/lib/api.js';
 
+/* ROOT below is the *unpacked* copy inside the temp dir; the repo itself is
+   needed to reach scripts/ and the committed releases/ directory. */
+const REPO = '/home/user/CellWarriors';
+
 const APK = process.argv[2] || execFileSync('bash', ['-lc',
   "ls -1 dist/CellWarriors-*.apk 2>/dev/null | tail -1"], { encoding: 'utf8' }).trim();
 if (!APK || !fs.existsSync(APK)) {
@@ -103,6 +107,18 @@ ok('no @import left in styles.css', !/@import/.test(fs.readFileSync(`${ROOT}/sty
 const imgs = [...new Set([...fs.readFileSync(`${ROOT}/src/ui.js`, 'utf8').matchAll(/(images\/[A-Za-z0-9_./-]+\.(?:jpg|png|webp))/g)].map((m) => m[1]))];
 const missing = imgs.filter((i) => !fs.existsSync(`${ROOT}/${i}`));
 ok(`all ${imgs.length} images referenced by ui.js ship in the APK`, missing.length === 0, missing.join(','));
+/* --- installability: the checks a real device makes before the app runs ------
+   1.0.0 shipped with a DEFLATED resources.arsc, which Android 11+ rejects
+   outright (INSTALL_PARSE_FAILED_RESOURCES_ARSC_COMPRESSED). Simulating the web
+   app could never catch that, so assert on the archive itself. */
+try {
+  const out = execFileSync('python3', [`${REPO}/scripts/check-apk.py`, APK], { encoding: 'utf8' });
+  ok('APK is installable on Android 11+ (resources.arsc stored + aligned)', /installable/.test(out), out.trim());
+} catch (e) {
+  ok('APK is installable on Android 11+ (resources.arsc stored + aligned)', false,
+    String(e.stdout || e.message).trim().split('\n').slice(0, 3).join(' | '));
+}
+
 /* A stale committed APK would make the release link point at an old build. */
 const repoCopy = `releases/${APK.split('/').pop()}`;
 if (fs.existsSync(repoCopy)) {
@@ -111,6 +127,9 @@ if (fs.existsSync(repoCopy)) {
 } else {
   ok('no stale copy in releases/ (nothing to compare)', true);
 }
+const staleOthers = execFileSync('bash', ['-lc', `ls -1 releases/*.apk 2>/dev/null | grep -v -F "${repoCopy}" || true`], { encoding: 'utf8' })
+  .trim().split('\n').filter(Boolean);
+ok('no superseded APK left in releases/', staleOthers.length === 0, staleOthers.join(', '));
 
 fs.rmSync(WORK, { recursive: true, force: true });
 console.log(fails ? `\n${fails} FAILURE(S)` : '\nWEBVIEW SIMULATION OK');
