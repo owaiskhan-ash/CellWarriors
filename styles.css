@@ -980,3 +980,57 @@ body.cb-palette .fx-line.poison b { color:#67e8f9; text-shadow:0 4px 18px #000, 
 .auto-btn:hover { background:rgba(53,208,192,.2); }
 .auto-btn.on { background:var(--teal); color:#03211d; box-shadow:0 0 18px rgba(53,208,192,.55); }
 .auto-plan { width:64px; margin-top:6px; font:700 7.5px var(--font-display); letter-spacing:.06em; line-height:1.5; color:#a9f5ea; text-align:center; text-shadow:0 1px 3px #000; word-break:break-word; }
+
+/* ====================================================================
+   GAME-FEEL UPSHAKE — v3.5
+   Smooth ease-out timing everywhere, tactical-anime tone
+   (no bounce, no spring — see docs/design-system.md §5).
+   reduce-motion: every animation-duration collapses (top of file).
+   ==================================================================== */
+
+/* ---------- A. Title — arrival choreography ---------- */
+.title-top { animation: titleIn 0.7s ease-out 0.05s both; }
+.title-logo { animation: titleGlowPulse 7s ease-in-out infinite, titleIn 0.9s ease-out 0.15s both; }
+.title-tag { animation: titleIn 0.55s ease-out 0.35s both; }
+.title-fake { animation: titleIn 0.5s ease-out 0.45s both; }
+.title-actions { animation: titleIn 0.55s ease-out 0.55s both; }
+.title-sub-actions { animation: titleIn 0.55s ease-out 0.65s both; }
+.title-ver { animation: titleIn 0.5s ease-out 0.8s both; }
+@keyframes titleIn { 0% { opacity:0; transform: translateY(16px) scale(.97); } 55% { transform: translateY(-2px); } 100% { opacity:1; transform: none; } }
+@keyframes titleGlowPulse { 0%, 100% { filter: drop-shadow(0 18px 44px rgba(0,0,0,.6)); } 50% { filter: drop-shadow(0 18px 44px rgba(0,0,0,.6)) brightness(1.2); } }
+
+/* ---------- B. Roster — entry stagger + selection pulse ---------- */
+.roster-card.picked { animation: rosterPickPulse .5s ease-out both; }
+@keyframes rosterPickPulse { 0%,100% { transform: translateY(-4px) scale(1.02); } 50% { transform: translateY(-4px) scale(1.045); box-shadow: 0 14px 32px rgba(26,15,20,.16); } }
+
+/* ---------- C. Hand — hover states + played-card arc ---------- */
+.hand .card.hovering { transform: translateY(-38px) scale(1.08) rotate(0deg); box-shadow: 0 22px 46px rgba(0,0,0,.58), 0 0 0 2px var(--gold); }
+.arc-card { position:absolute; z-index:50; pointer-events:none; margin:0; animation: none; }
+
+/* ---------- D. Enemy idle breathe while it's your turn ---------- */
+.enemy.idle .enemy-art img { animation: enemyBreathe 2.9s ease-in-out infinite alternate; }
+@keyframes enemyBreathe { from { transform: translateY(1px); } to { transform: translateY(-3px); } }
+
+/* ---------- E. Map — floor burst when entering ---------- */
+.map-node.entered { animation: mapNodeEnter 0.6s ease-out, nodePulse 2s ease-in-out infinite; }
+@keyframes mapNodeEnter { 0% { opacity:0; transform: translateY(6px) scale(.8) rotate(-4deg); } 40% { transform: translateY(-6px) scale(1.06); } 100% { opacity:1; transform: none; } }
+
+/* ---------- F. End-turn — sparkle when committing ---------- */
+#end-turn.sparkle { animation: endTurnSparkle .5s ease-out; }
+@keyframes endTurnSparkle { 0% { box-shadow: 0 0 30px rgba(194,24,58,.9); } 40% { box-shadow: 0 0 34px rgba(194,24,58,.9), 0 0 24px rgba(240,166,60,.85); } 100% { box-shadow: 0 0 30px rgba(194,24,58,.6); } }
+
+/* ---------- G. Stage — floating dust particles (subtle) ---------- */
+.stage-particles { position:absolute; inset:0; pointer-events:none; }
+.stage-particle { position:absolute; width:7px; height:7px; border-radius:50%; background:var(--cyan-pale); box-shadow: 0 0 8px 2px rgba(53,208,192,.45); animation: dustDrift 21s ease-in-out infinite; }
+@keyframes dustDrift { 0% { transform: translateY(112%) rotate(0deg) scale(.4); opacity:0; } 22% { opacity:.85; } 50% { transform: translateY(0) rotate(8deg) scale(1.2); } 100% { transform: translateY(-112%) rotate(20deg) scale(.35); opacity:0; } }
+
+/* ---------- H. Rank — stagger in ---------- */
+.rxp-card { animation: rxpIn .5s ease-out both; }
+.rxp-card:nth-child(2) { animation-delay: .07s; }
+.rxp-card:nth-child(3) { animation-delay: .14s; }
+@keyframes rxpIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
+
+/* ---------- I. Bars — tween to new values ---------- */
+.map-char-bars i { transition: width 300ms ease-out; }
+.ed-bar i { transition: width 300ms ease-out; }
+.res-track i { transition: width 250ms ease-out; }
