@@ -93,7 +93,7 @@ export function startBattle(missionOrCode, partyIds, seed = Date.now()) {
     ep: 0, egoQueue: shuffle(partyIds.map((p) => ({ ...EGOS[p], owner: p })), rng),
     sands: SANDS_CHARGES, cardsPlayed: 0, cardsPlayedThisTurn: 0, cardsUsedThisTurn: 0,
     epiphany: null, extraDraw: 0, turnShield: 0, startShields: 0,
-    log: [], result: null, rng, seed,
+    log: [], fx: [], result: null, rng, seed,
     turnStartSnapshot: null, lastCardSnapshot: null,
     targetUid: enemies[0] ? enemies[0].uid : null,
     lastPlayed: null,
@@ -115,6 +115,11 @@ export function startBattle(missionOrCode, partyIds, seed = Date.now()) {
 function log(state, text, kind = 'info') {
   state.log.push({ text, kind, turn: state.turn });
   if (state.log.length > 200) state.log.shift();
+}
+
+function pushFx(state, ev) {
+  state.fx.push(ev);
+  if (state.fx.length > 80) state.fx.shift();
 }
 
 function clone(state) {
@@ -191,6 +196,7 @@ function beginTurn(state, first = false, opening = []) {
 function addShield(state, ch, amount) {
   const total = amount + (ch.blockBonus || 0) + state.startShields;
   ch.shield += total;
+  pushFx(state, { kind: 'shield', id: ch.id, name: ch.name, amt: total });
   return total;
 }
 
@@ -211,6 +217,7 @@ function damageEnemy(state, enemy, raw, { attr = null, cost = 1, tenacityScale =
   dmg = Math.max(1, Math.round(dmg));
 
   enemy.hp = Math.max(0, enemy.hp - dmg);
+  pushFx(state, { kind: 'dmg', uid: enemy.uid, name: enemy.name, amt: dmg, weak: matched && !ignoreWeak, ravaged: enemy.ravaged });
   let broke = false;
   if (!enemy.ravaged && enemy.tenacity > 0) {
     const ten = Math.round((3 + cost * 2) * tenacityScale * (matched && !ignoreWeak ? 2.5 : 1));
@@ -227,6 +234,7 @@ function damageEnemy(state, enemy, raw, { attr = null, cost = 1, tenacityScale =
 
 function breakEnemy(state, enemy) {
   enemy.ravaged = true;
+  pushFx(state, { kind: 'break', uid: enemy.uid, name: enemy.name });
   enemy.counter = Math.min(6, enemy.counter + 1);
   state.ap += 1;
   state.characters.forEach((c) => { c.stress = Math.max(0, c.stress - 10); });
@@ -251,6 +259,7 @@ function damageCharacter(state, ch, raw) {
   ch.hp = Math.max(locked, ch.hp - remaining);
   const lost = before - ch.hp;
   const stress = Math.max(6, Math.round(remaining * 1.5) + 4);
+  pushFx(state, { kind: 'hurt', id: ch.id, name: ch.name, amt: lost });
   addStress(state, ch, stress);
   log(state, `${ch.name} takes ${lost} damage (+${stress} Stress).`, 'hurt');
   return { hpLost: lost, absorbed: raw - remaining };
@@ -258,7 +267,9 @@ function damageCharacter(state, ch, raw) {
 
 function addStress(state, ch, amount) {
   if (ch.broken) return;
+  const before = ch.stress;
   ch.stress = Math.min(STRESS_MAX, ch.stress + amount);
+  if (ch.stress > before) pushFx(state, { kind: 'stress', id: ch.id, name: ch.name, amt: ch.stress - before });
   if (ch.stress >= STRESS_MAX) triggerBreakdown(state, ch);
 }
 
@@ -283,14 +294,16 @@ function recover(state, ch) {
   ch.lockedHp = 0;
   ch.hp = ch.maxHp;
   ch.egoFree = true;
+  pushFx(state, { kind: 'recover', id: ch.id, name: ch.name });
   state.characters.forEach((c) => { if (c.hp > 0) c.hp = Math.min(c.maxHp - (c.lockedHp || 0), c.hp + Math.ceil(ch.maxHp / 2)); });
   log(state, `${ch.name} recovers. Stress cleared, HP restored, Ego cost −4.`, 'recover');
 }
 
 function healCharacter(state, ch, amount, stressHeal = 0) {
   const cap = ch.maxHp - (ch.lockedHp || 0);
-  const healed = Math.min(amount, cap - ch.hp);
+  const healed = Math.max(0, Math.min(amount, cap - ch.hp));
   ch.hp += healed;
+  if (healed > 0) pushFx(state, { kind: 'heal', id: ch.id, name: ch.name, amt: healed });
   if (healed > 0 && stressHeal > 0) ch.stress = Math.max(0, ch.stress - stressHeal);
   else if (healed === 0 && stressHeal > 0) ch.stress = Math.max(0, ch.stress - Math.round(stressHeal * 0.5));
   return healed;
@@ -548,6 +561,54 @@ function checkResult(state) {
 }
 
 export const canPlay = (state, card) => !!card && !card.unplayable && (card.zeroCost ? 0 : card.cost) <= state.ap;
+
+// Live numbers for the card face: what this card will actually do right now.
+export function previewCard(state, card, targetUid = null) {
+  const target = state.enemies.find((e) => e.uid === targetUid && e.hp > 0)
+    || state.enemies.find((e) => e.hp > 0) || null;
+  const actor = state.characters.find((c) => c.id === card.owner) || state.characters[0];
+  const out = {
+    dmg: 0, per: 0, hits: card.hits || 1, total: 0, weak: false, ravaged: false,
+    lethal: false, shield: 0, teamShield: 0, heal: 0, teamHeal: 0,
+    stressHeal: 0, teamStressHeal: 0, ap: 0, draw: 0, heads: 0, targets: 1,
+  };
+  if (!target && !card.shield && !card.heal && !card.teamShield && !card.teamHeal) return out;
+
+  const alive = state.enemies.filter((e) => e.hp > 0);
+  out.targets = card.aoe ? alive.length : (target ? 1 : 0);
+  if (card.dmg > 0 && target) {
+    const bonus = actor ? actor.buffAtk : 0;
+    let per = (card.dmg + bonus) * (card.glint ? 1.4 : 1);
+    out.weak = card.attr === target.weakness;
+    if (out.weak) per *= 1.5;
+    out.ravaged = !!target.ravaged;
+    if (out.ravaged) per *= 1.3;
+    out.per = Math.max(1, Math.round(per));
+    out.dmg = out.per * out.hits;
+    out.total = out.dmg * Math.max(1, out.targets);
+    out.lethal = out.per * out.hits >= target.hp;
+  }
+  const mult = card.glint ? 1.4 : 1;
+  const blockBonus = actor ? (actor.blockBonus || 0) + (state.startShields || 0) : 0;
+  if (card.shield) out.shield = Math.round(card.shield * mult) + blockBonus;
+  if (card.teamShield) out.teamShield = Math.round(card.teamShield * mult) + blockBonus;
+  if (card.heal && actor) {
+    const cap = actor.maxHp - (actor.lockedHp || 0);
+    out.heal = Math.min(Math.round(card.heal * mult), Math.max(0, cap - actor.hp));
+  }
+  if (card.teamHeal) {
+    out.teamHeal = state.characters.reduce((n, c) => {
+      if (c.hp <= 0) return n;
+      const cap = c.maxHp - (c.lockedHp || 0);
+      return n + Math.min(Math.round(card.teamHeal * mult), Math.max(0, cap - c.hp));
+    }, 0);
+  }
+  out.stressHeal = card.stressHeal || 0;
+  out.teamStressHeal = card.teamStressHeal || 0;
+  out.ap = card.apGain || card.maxAp || 0;
+  out.draw = card.draw || 0;
+  return out;
+}
 
 export function intentOf(enemy) {
   return enemy.intents[enemy.intentIndex % enemy.intents.length];

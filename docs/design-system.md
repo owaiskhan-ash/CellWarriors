@@ -239,3 +239,31 @@ Rules that make it read as CZN:
 6. **Playing a card triggers a cut-in**: the owning character's full-body art sweeps in from the
    left over speed lines, the card is echoed at the right, and the effects land as a bullet list.
 7. Damage floats on the enemy it hit; weakness and Tenacity breaks float in gold.
+
+---
+
+## 13. Card information design
+
+Every card states **what it will do right now**, recomputed on every render (target, buffs,
+weakness, Ravage, Epiphany all change the number):
+
+| Card | Face badge |
+| --- | --- |
+| Attack | big damage number, `×hits` when multi-hit, `WEAK` when the attribute matches, `LETHAL` when it kills |
+| Skill (shield) | `+N SHIELD` / `+N SHIELD ALL` |
+| Skill (heal) | `+N HEAL` (already capped to missing HP) |
+| Skill (AP / draw) | `+1 AP`, `+1 DRAW` |
+| Upgrade | `∞ THIS FIGHT` |
+| Breakdown | `n / need` recovery counter |
+| Curse | `UNPLAYABLE` |
+
+**Long press** (320 ms) on any card opens the detail sheet: large card, full rules text, tags, and
+the damage maths spelled out (`8 base +3 buff ×1.5 weakness ×1.3 ravaged`). Releasing or tapping
+closes it; a long press never plays the card.
+
+**Damage readout** lives on the right edge, not on the enemy: numbers are `clamp(30px, 5.2vh, 58px)`
+in white (gold for weakness, red for team damage, green heal, blue shield, violet stress) with a
+small caps label under each. Five at a time, each fades after 1.8 s.
+
+**Action art** — `images/action-<char>.jpg` — is the cut-in backdrop: a full-bleed action panel of
+the character mid-strike, swept in from the left over speed lines with a soft right-edge mask.
