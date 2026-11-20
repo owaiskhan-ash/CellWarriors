@@ -39,7 +39,7 @@ import java.io.InputStream;
  */
 public class MainActivity extends Activity {
 
-    private static final String GAME_URL = "file:///android_asset/game/index.html";
+    private static final String GAME_URL = "file:///android_asset/index.html";
     private static final String TAG = "CellWarriors";
 
     private WebView web;
@@ -126,14 +126,14 @@ public class MainActivity extends Activity {
                 Uri uri = request.getUrl();
                 if (!"file".equals(uri.getScheme())) return null;
                 String path = uri.getPath();
-                if (path == null || !path.startsWith("/android_asset/game/")) return null;
+                if (path == null || !path.startsWith("/android_asset/")) return null;
                 // Serve .mjs-less ES modules as JavaScript on old WebViews and
                 // make sure JSON/woff2/audio get sane content types.
-                String rel = path.substring("/android_asset/game/".length());
+                String rel = path.substring("/android_asset/".length());
                 String mime = guessMime(rel);
                 if (mime == null) return null;
                 try {
-                    InputStream in = getAssets().open("game/" + rel);
+                    InputStream in = getAssets().open(rel);
                     String enc = mime.equals("font/woff2") || mime.startsWith("image/") ? null : "UTF-8";
                     return new WebResourceResponse(mime, enc, in);
                 } catch (IOException e) {
@@ -142,10 +142,14 @@ public class MainActivity extends Activity {
             }
 
             @Override
-            public void onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
+            public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
                 // The renderer died (low memory). Recreate the activity so the
                 // player lands back on the title screen instead of a white box.
-                recreate();
+                if (Build.VERSION.SDK_INT >= 26) {
+                    recreate();
+                    return true;
+                }
+                return super.onRenderProcessGone(view, detail);
             }
         });
 
@@ -182,7 +186,7 @@ public class MainActivity extends Activity {
 
     private boolean handleUrl(String url) {
         if (url == null) return true;
-        if (url.startsWith("file:///android_asset/game/")) return false; // keep inside the game
+        if (url.startsWith("file:///android_asset/")) return false; // keep inside the game
         // Anything the game links out to (docs, GitHub) opens in the browser.
         try {
             startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
@@ -243,8 +247,11 @@ public class MainActivity extends Activity {
             backPending = true;
             web.evaluateJavascript(
                     "(function(){try{return window.__cwAndroidBack?window.__cwAndroidBack():false;}catch(e){return false;}})()",
-                    value -> {
-                        backPending = false;
+                    new android.webkit.ValueCallback<String>() {
+                        @Override
+                        public void onReceiveValue(String value) {
+                            backPending = false;
+                        }
                     });
             return;
         }
