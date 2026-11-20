@@ -126,28 +126,29 @@ Numbers are always bold and always tabular. Nothing is smaller than 9px.
 
 ## 6. Card anatomy (the most important component)
 
-Size **96 × 140** in hand (2:3). Board cards are 1/3 of the row width, same proportions.
+Size **118 × 150** in hand. Board units are 1/3 of the row width, ~128px tall.
 
 ```
 ┌─────────────────────┐
-│ (cost gem)  [TYPE]  │   cost gem 18px circle, teal fill, near-black number
-│                     │
-│   NAME              │   11.5px / 700
-│   ⚔ 3   ♥ 3         │   attack amber, hp teal
-│                     │
-│   rules text        │   9px, muted, max 3 lines
-│                     │
-│   rarity border     │   1px, colour from §3
-└─────────────────────┘
+│ (cost)      [TYPE]  │  cost gem 22px, top-left, over the art
+│                     │  type tag top-right, 7px, dark pill
+│   CHARACTER ART     │  76px tall, background-size: cover,
+│   50% 8% crop       │  background-position: 50% 8% — locked
+├─────────────────────┤
+│   NAME              │  11px / 700 display font
+│   ⚔ 3   ♥ 3         │  attack amber, hp teal
+│   rules text        │  8.5px, clamped at 3 lines
+└─────────────────────┘   rarity border (§3)
 ```
 
 Rules:
-- Cells have attack + HP. Cytokines **never** show stats — their cost gem sits alone.
-- Long rules text is cut at 3 lines; full text appears on long-press. Never shrink the font.
-- Unaffordable cards: `opacity .38`, no hover, and the tap returns a short reason.
-- A card is legible as a silhouette: cost gem top-left, stats bottom-left.
-
----
+- **Every cell card shows its character portrait.** A cell card without art is a bug.
+- Cytokines have no portrait: they get a sigil on a cyan radial glow (`✹ ❄ ✦ ✸ ✜ ✷ ✧ ⚡`).
+- Cytokines never show stats — the cost gem sits alone.
+- Long rules text clamps at 3 lines; full text on long-press later. Never shrink the font.
+- Unaffordable: `opacity .38`, no hover, tap returns a short reason.
+- Board units are the same language: portrait, name, stats, 4px HP bar, and for pathogens a
+  `SPREAD +n%` line in crimson.
 
 ## 7. Components
 

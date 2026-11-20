@@ -140,6 +140,63 @@
         "catchphrase": "I've seen this one before.",
         "inBattle": "Draws cards and reduces infection — no direct attacks."
       }
+    },
+    "nkCell": {
+      "name": "Vey",
+      "role": "Site assassin · core bypass",
+      "identity": "Female, apparent age 22, 174 cm, lean and still. Hair #16121A black, cropped short with cyan #35D0C0 tips. Skin #8A6A55 dark brown. Eyes pale cyan #7FF3EA, narrow, unimpressed, never blinking first.",
+      "costume": "Sleek black bodysuit #121014 with thin cyan #35D0C0 seams, no armour plating, forearms wrapped in pale bandages, no pouches, no coat, no insignia.",
+      "prop": "No weapon at all. Both hands glow with pale cyan #7FF3EA energy.",
+      "pose": "Standing completely still, head slightly tilted, hands loose at the sides, energy bleeding off the fingers.",
+      "never": "weapon, blade, armour, smile, busy pose, coat",
+      "personality": {
+        "core": "The one who goes straight for the throat while everyone else fights the crowd.",
+        "want": "To end it in one move.",
+        "fear": "Arriving too late — again.",
+        "flaw": "Ignores the field, so the field bites her from behind.",
+        "humour": "None. She finds other people's jokes mildly interesting.",
+        "speech": "Blunt, flat, three words.",
+        "catchphrase": "Move. Or be moved.",
+        "inBattle": "Bypasses every pathogen and hits the infection site directly. Fragile, precise, no patience."
+      }
+    },
+    "eosinophil": {
+      "name": "Dax",
+      "role": "Armour breaker · anti-parasite",
+      "identity": "Male, apparent age 32, 178 cm, wiry and irritable. Hair #F0A63C amber, messy, pushed back. Skin #C99A78 tan. Eyes bloodshot behind red-rimmed goggles pushed up on his forehead; nose permanently red and blocked.",
+      "costume": "White coat with amber #F0A63C glowing seams and cyan cuffs, sleeves rolled to the elbow, stained collar, harness of small tool vials.",
+      "prop": "A pair of short hooked crescent blades, 35 cm each, held low at his sides.",
+      "pose": "Sneering, shoulders forward, blades hanging low, sniffing through a blocked nose.",
+      "never": "clean and tidy, smiling, single blade, goggles over the eyes",
+      "personality": {
+        "core": "The specialist who is always irritated and always right about the armour.",
+        "want": "To be pointed at the right problem.",
+        "fear": "Being fought over by the others and wasted.",
+        "flaw": "Spiteful — he keeps score, and it costs him position.",
+        "humour": "Sarcastic, nasal, aimed at everyone.",
+        "speech": "Complains first, explains second.",
+        "catchphrase": "Point me at the shell, not the crowd.",
+        "inBattle": "+2 damage against armoured pathogens. Useless against soft targets."
+      }
+    },
+    "memoryB": {
+      "name": "Sable",
+      "role": "Legendary · returns with knowledge",
+      "identity": "Female, apparent age 45, 176 cm, composed and still. Hair #1B1418 dark with silver streaks pulled back tight. Skin #5E4033 deep brown. Eyes sharp dark amber, calm, reading the room.",
+      "costume": "Long white coat with amber #F0A63C glowing seams and fine gold trim, high collar, no armour. A heavy worn leather ledger chained to her belt.",
+      "prop": "The ledger — closed, one hand resting on it. No weapon.",
+      "pose": "Standing with absolute stillness, one hand on the ledger, faint knowing smile, chin level.",
+      "never": "running, weapon, shouting, youth, open ledger",
+      "personality": {
+        "core": "The veteran who has already survived this exact infection and wrote it down.",
+        "want": "For the record to be complete.",
+        "fear": "A strain she has no entry for.",
+        "flaw": "Certainty — she trusts the ledger over what is actually in front of her.",
+        "humour": "Almost none; a raised eyebrow at most.",
+        "speech": "Measured, final, never repeats herself.",
+        "catchphrase": "This one I've written down.",
+        "inBattle": "On play: Infection -8%. The expensive card that buys the run."
+      }
     }
   },
   "pathogens": {

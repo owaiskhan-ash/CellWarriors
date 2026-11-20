@@ -3,12 +3,16 @@
 A tactical card RPG that takes place inside a 17-year-old human body. You command the immune
 system. The pathogens are the enemy deck. The host's own inflammation is the trap.
 
-**Status:** grey-box combat prototype. Numbers and rules are real; art is not.
+**Status:** playable adventure loop. Six regions, stem-cell progression, saves. Grey-box UI.
 
 ```bash
-npm run dev     # http://localhost:5173
-npm run sim     # balance check: 500 bot games, prints win rate
+npm run dev          # http://localhost:5173
+npm run sim          # balance check: 500 bot games, prints win rate
+npm run sim:regions  # difficulty curve per region
 ```
+
+**Loop:** menu → The Body (6 regions) → fight → stem cells → Stem Cell Lab → better deck.
+Progress saves to `localStorage`. Details and economy rules: **[docs/progression.md](docs/progression.md)**.
 
 No build step, no dependencies. Plain ES modules, so the engine can be lifted onto a server later
 without rewriting it.
@@ -77,10 +81,26 @@ Cool down → you lose tempo → infection climbs. There is no free turn.
 `npm run sim` runs 500 games with a greedy bot: **~56% win rate over ~11 turns**.
 A human who plays well should land well above that — which is the point.
 
+## Adventure
+
+| # | Region | Site HP | Clock | Spawn | Reward |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Throat | 30 | +2 | every 2 turns | ◈ 40 |
+| 2 | Lungs | 38 | +3 | every 2 turns | ◈ 55 |
+| 3 | Gut | 44 | +3 | every 2 turns | ◈ 70 |
+| 4 | Skin Wound | 40 | +4 | every turn | ◈ 85 |
+| 5 | Bloodstream | 46 | +3 | every turn | ◈ 105 |
+| 6 | Meninges | 56 | +3 | every turn | ◈ 150 |
+
+Six unlockable cards in the lab (NK Cell, Memory B, Complement, IL-2, Eosinophil, Adrenaline).
+**You cannot buy stem cells** — no ads, no purchases, no timers. Deck stays at 19: buying a card
+swaps out the weakest duplicated basic.
+
 ## Next
 
-- 6 body regions (adventure map), stem-cell currency, card unlocks
-- PvP: async raids on a friend's body map
+- Deck builder (pick 19 from everything owned)
+- Screenshots for the store
+- PvP: async raids on a friend's body map — needs server authority first
 - Then the art pass, then the APK
 
 ---
