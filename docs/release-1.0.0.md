@@ -48,8 +48,8 @@ phone held sideways — instead of assuming a desktop window:
 | Suite | Checks | What it covers |
 | --- | --- | --- |
 | `npm run test:e2e` | 162 | whole game flow, rules, save migration |
-| `npm run test:phone` | 134 | phone layout contract, touch gestures, safe areas, offline graph |
-| `npm run test:apk` | 19 | boots the **shipped APK's** web app in a simulated WebView |
+| `npm run test:phone` | 144 | phone layout contract, touch gestures, safe areas, offline graph |
+| `npm run test:apk` | 20 | boots the **shipped APK's** web app in a simulated WebView |
 | `npm run test:run` | 5 | plays a complete 11-floor expedition through the phone UI |
 | `npm run apk` | 30+ | builds, signs, then smoke-verifies the artifact |
 

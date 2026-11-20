@@ -1,7 +1,7 @@
 # Cell Warriors on a phone
 
 Cell Warriors is a **landscape, touch-first** game. Everything in this document
-is enforced by `node scripts/phone-check.mjs` (106 checks) and by the APK smoke
+is enforced by `node scripts/phone-check.mjs` (144 checks) and by the APK smoke
 verification inside `android/build.sh` — if this file and those checks ever
 disagree, the checks win and this file is the bug.
 
@@ -177,11 +177,18 @@ mints its own. Passwords/aliases are overridable via `CW_KEYSTORE`,
 ## 7. Verifying a change
 
 ```bash
-node scripts/phone-check.mjs      # 106 phone/touch/offline checks
+node scripts/phone-check.mjs      # 144 phone/touch/offline/layout checks
 node scripts/e2e.mjs              # 162 game-logic checks
+node scripts/full-run.mjs         # plays a whole 11-floor run through the phone UI
+node scripts/apk-sim.mjs          # boots the built APK's web app in a fake WebView
 node scripts/sim-missions.mjs 40  # balance simulation
 android/build.sh                  # APK + artifact smoke verification
 ```
+
+`scripts/layout-preview.py` renders each screen's real geometry at 892×412 into
+`docs/layout/*.png`. It is a wireframe, not a screenshot, but it is computed from
+the same numbers the CSS uses — it found three layout bugs (card sizing, boss-bar
+placement, roster overflow) that the DOM probes alone could not see.
 
 `phone-check.mjs` is in two halves:
 
