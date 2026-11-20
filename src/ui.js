@@ -18,7 +18,7 @@ import {
   levelOf, xpIntoLevel, charStats, addXp, canAwaken, awaken, AWAKEN_COST,
   canSkillUp, skillUp, SKILL_COST,
 } from './progress.js';
-import { sfx, bark, isMuted, toggleMute } from './audio.js';
+import { sfx, bark, isMuted, toggleMute, setSfxVolume } from './audio.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, html) => {
@@ -35,7 +35,7 @@ let battle = null;
 let battleCtx = null; // { kind: 'story', mission } | { kind: 'run', node, encounter }
 let mission = null;
 let storyIndex = 0;
-let logOpen = false;
+let logMode = 0; // battle log: 0 hidden · 1 mini (last 3) · 2 full (last 8)
 let cutBusy = false;
 let longPressed = false;
 let pressTimer = null;
@@ -46,6 +46,7 @@ let detailCharId = 'kaito';
 let charReturnView = 'roster';
 let guideCat = 'all';
 let guideQuery = '';
+let rosterFilter = 'all';
 let simCharId = 'kaito';
 let simLoadout = 'arsenal';
 let simBehaviour = 'training';
@@ -58,6 +59,28 @@ function applySimHudVisibility() {
   if (hud) hud.classList.toggle('hidden', !isSim || simHudHidden);
   if (pill) pill.classList.toggle('hidden', !isSim || !simHudHidden);
 }
+/* ---------------- UI settings (minimal, game-style, persisted) ---------------- */
+let settings = { volume: 90, fxSize: 'm', shake: true, motion: true, cb: false, uiScale: 100 };
+try { Object.assign(settings, JSON.parse(window.localStorage.getItem('cw_settings') || '{}')); } catch { /* fresh */ }
+function saveSettings() { try { window.localStorage.setItem('cw_settings', JSON.stringify(settings)); } catch { /* ignore */ } }
+function applySettings() {
+  document.body.classList.toggle('reduce-motion', !settings.motion);
+  document.body.classList.toggle('cb-palette', !!settings.cb);
+  document.body.classList.toggle('fx-sm', settings.fxSize === 's');
+  document.body.classList.toggle('fx-lg', settings.fxSize === 'l');
+  const app = $('app'); if (app) app.style.zoom = settings.uiScale && settings.uiScale !== 100 ? String(settings.uiScale / 100) : '';
+  setSfxVolume((settings.volume == null ? 90 : settings.volume) / 100);
+  const sync = (id, fn) => { const n = $(id); if (n) fn(n); };
+  sync('set-volume', (n) => { n.value = settings.volume; $('set-volume-val').textContent = `${settings.volume}%`; });
+  sync('set-uiscale', (n) => { n.value = settings.uiScale; $('set-uiscale-val').textContent = `${settings.uiScale}%`; });
+  sync('set-fxsize', (n) => { n.value = settings.fxSize; });
+  sync('set-shake', (n) => { n.checked = !!settings.shake; });
+  sync('set-motion', (n) => { n.checked = !!settings.motion; });
+  sync('set-cb', (n) => { n.checked = !!settings.cb; });
+}
+function openSettings() { applySettings(); $('settings-modal').classList.remove('hidden'); }
+function closeSettings() { $('settings-modal').classList.add('hidden'); saveSettings(); }
+
 function setSimHudHidden(hidden) {
   simHudHidden = !!hidden;
   try { window.localStorage.setItem('cw_sim_hud_hidden', simHudHidden ? '1' : '0'); } catch { /* private mode */ }
@@ -155,6 +178,12 @@ function setMode(nextMode) {
 }
 
 function renderRoster() {
+  const rf = $('roster-filters');
+  if (rf) {
+    rf.innerHTML = [['all', 'ALL'], ...Object.entries(CLASSES).map(([k, v]) => [k, v.name.toUpperCase()])]
+      .map(([k, label]) => `<button class="chip-btn${rosterFilter === k ? ' active' : ''}" data-rfilter="${k}">${label}</button>`).join('');
+    rf.querySelectorAll('[data-rfilter]').forEach((b) => b.addEventListener('click', () => { sfx('click'); rosterFilter = b.dataset.rfilter; renderRoster(); }));
+  }
   const grid = $('roster');
   grid.innerHTML = '';
   const stats = charStats(progress);
@@ -166,6 +195,7 @@ function renderRoster() {
     const xpPct = xpIntoLevel(rec.xp);
     const st = stats[id];
     const card = el('div', `roster-card${inTeam ? ' selected' : ''}`);
+    if (rosterFilter !== 'all' && c.cls !== rosterFilter) card.style.display = 'none';
     card.style.setProperty('--skin', c.skin);
     card.setAttribute('role', 'button');
     card.setAttribute('tabindex', '0');
@@ -380,6 +410,7 @@ function renderCharacter() {
           <div><b>+${st.skillLv}</b><span>SKILL POTENCY</span></div>
           <div><b>-${st.egoDiscount} EP</b><span>EGO DISCOUNT</span></div>
         </div>
+        <div class="char-hpbar"><i style="width:${Math.min(100, ((ch.hp + st.hp) / 140) * 100)}%"></i><span>HP ${ch.hp + st.hp}</span></div>
         <div class="char-leader"><b>LEADER SKILL — ${ch.leader ? ch.leader.name : ''}.</b> ${ch.leader ? ch.leader.desc : ''}<br/><span style="color:var(--ink-dim)">Only active when ${ch.name} is in team Slot 1. Class: ${CLASSES[ch.cls].desc}</span></div>
         <div class="char-actions">
           <button class="btn-primary" id="char-sim">${ico('i-target')} TEST SOLO IN SIMULATION</button>
@@ -390,17 +421,19 @@ function renderCharacter() {
       </div>
     </div>
 
-    <h3 class="char-section-title">${ico('i-sword')} HOW TO PLAY ${ch.name.toUpperCase()} <small>${guide.difficulty || ''} — ${guide.fantasy || ''}</small></h3>
+    <div class="char-tabs"><button data-sec="char-sec-play">PLAYBOOK</button><button data-sec="char-sec-cards">CARDS</button><button data-sec="char-sec-ego">EGO — TAP TO PREVIEW</button></div>
+
+    <h3 class="char-section-title" id="char-sec-play">${ico('i-sword')} HOW TO PLAY ${ch.name.toUpperCase()} <small>${guide.difficulty || ''} — ${guide.fantasy || ''}</small></h3>
     <div class="char-playbook">
       <div class="char-mini"><span>THE LOOP</span><ol>${(guide.loop || []).map((x) => `<li>${x}</li>`).join('')}</ol></div>
       <div class="char-mini"><span>SIGNATURE COMBO ROUTE</span><ol>${(guide.combo || []).map((x) => `<li>${x}</li>`).join('')}</ol></div>
       <div class="char-mini"><span>PRO TIPS & SYNERGY</span><ul>${(guide.tips || []).map((x) => `<li>${x}</li>`).join('')}<li><b>Partners:</b> ${guide.partners || ''}</li><li><b>Simulation goal:</b> ${guide.simGoal || ''}</li></ul></div>
     </div>
 
-    <h3 class="char-section-title">${ico('i-eye')} CARDS (${cards.length}) <small>Tap any card for its full damage maths, upgrade text and keyword breakdown. Starter cards appear in a normal deck; build-around cards are drafted in runs or used in Full Arsenal simulation.</small></h3>
+    <h3 class="char-section-title" id="char-sec-cards">${ico('i-eye')} CARDS (${cards.length}) <small>Tap any card for its full damage maths, upgrade text and keyword breakdown. Starter cards appear in a normal deck; build-around cards are drafted in runs or used in Full Arsenal simulation.</small></h3>
     <div class="char-cards">${cardSlots}</div>
 
-    <h3 class="char-section-title">${ico('i-star')} EGO SKILLS <small>4 EP normally · arm EXALT at 7 EP for the Over-Exalt version. Broken-down combatants cannot use Ego.</small></h3>
+    <h3 class="char-section-title" id="char-sec-ego">${ico('i-star')} EGO SKILLS <small>4 EP normally · arm EXALT at 7 EP for the Over-Exalt version. Broken-down combatants cannot use Ego.</small></h3>
     <div class="char-ego-grid">
       ${(EGOS[detailCharId] || []).map((e) => `<div class="char-ego"><b style="color:${a.color}">${e.name}</b> <span class="tag">${e.cost} EP</span><p>${e.text}</p><p class="exalt">${e.exaltText}</p></div>`).join('')}
     </div>`;
@@ -408,10 +441,39 @@ function renderCharacter() {
   $('char-main').querySelectorAll('[data-char-card]').forEach((node) => {
     node.addEventListener('click', () => { sfx('click'); openStaticDetail(makeStaticCard(node.dataset.charCard, false)); });
   });
+  // section tabs remember where you left off on this page
+  try { window.localStorage.setItem('cw_last_char', detailCharId); } catch { /* ignore */ }
+  $('char-main').querySelectorAll('.char-tabs button').forEach((b) => b.addEventListener('click', () => {
+    sfx('click');
+    try { window.localStorage.setItem('cw_char_sec', b.dataset.sec); } catch { /* ignore */ }
+    const target = document.getElementById(b.dataset.sec);
+    if (target && target.scrollIntoView) target.scrollIntoView({ block: 'start' });
+  }));
+  try {
+    const sec = window.localStorage.getItem('cw_char_sec');
+    const target = sec && document.getElementById(sec);
+    if (target && target.scrollIntoView) setTimeout(() => target.scrollIntoView({ block: 'start' }), 30);
+  } catch { /* ignore */ }
+  // tap an Ego = cut-in preview
+  $('char-main').querySelectorAll('.char-ego').forEach((node, i) => node.addEventListener('click', () => previewEgo(ch, (EGOS[detailCharId] || [])[i])));
   $('char-sim').addEventListener('click', () => { sfx('click'); openSim(detailCharId); });
   $('char-lab').addEventListener('click', () => { sfx('click'); openLab(detailCharId); });
   $('char-guide-btn').addEventListener('click', () => { sfx('click'); openGuide('scaling'); });
   $('char-team').addEventListener('click', () => { sfx('click'); toggleTeam(detailCharId); renderCharacter(); renderRoster(); });
+}
+
+let egoPreviewTimer = null;
+function previewEgo(ch, ego) {
+  const box = $('ego-preview'); if (!box || !ego) return;
+  $('ego-preview-img').src = ch.art;
+  $('ego-preview-name').textContent = ego.name.toUpperCase();
+  $('ego-preview-name').style.color = ch.skin || '';
+  $('ego-preview-text').textContent = ego.text;
+  box.classList.remove('hidden');
+  box.classList.remove('play'); void box.offsetWidth; box.classList.add('play');
+  sfx('ego');
+  clearTimeout(egoPreviewTimer);
+  egoPreviewTimer = setTimeout(() => box.classList.add('hidden'), 2600);
 }
 
 /* ========================================================= SIMULATION CHAMBER */
@@ -797,11 +859,15 @@ function renderShop() {
 
   const cardsBox = $('shop-cards');
   cardsBox.innerHTML = '';
-  shop.cards.forEach((item) => {
+  shop.cards.forEach((item, idx) => {
+    const isNew = !(progress.run && progress.run.deck.some((c) => c.id === item.id));
     const wrap = el('div', 'shop-item');
     const card = makeStaticCard(item.id, item.upgraded);
     const { className, html } = cardHTML(card, null);
     const cNode = el('div', className, html);
+    cNode.classList.add('reward-in');
+    cNode.style.animationDelay = `${idx * 90}ms`;
+    if (isNew) cNode.insertAdjacentHTML('beforeend', '<span class="new-badge">NEW</span>');
     cNode.addEventListener('contextmenu', (ev) => { ev.preventDefault(); openStaticDetail(card); });
     cNode.addEventListener('click', () => openStaticDetail(card));
     const btn = el('button', 'shop-buy', item.sold ? 'SOLD' : `BUY · ◆ ${item.cost}`);
@@ -900,10 +966,14 @@ function openReward(node, summary, gained) {
   const choices = cardRewardChoices(run);
   const grid = $('reward-cards');
   grid.innerHTML = '';
-  choices.forEach((item) => {
+  choices.forEach((item, idx) => {
+    const isNew = !(progress.run && progress.run.deck.some((c) => c.id === item.id));
     const card = makeStaticCard(item.id, item.upgraded);
     const { className, html } = cardHTML(card, null);
     const cNode = el('div', className, html);
+    cNode.classList.add('reward-in');
+    cNode.style.animationDelay = `${idx * 90}ms`;
+    if (isNew) cNode.insertAdjacentHTML('beforeend', '<span class="new-badge">NEW</span>');
     cNode.addEventListener('contextmenu', (ev) => { ev.preventDefault(); openStaticDetail(card); });
     cNode.addEventListener('click', () => {
       sfx('upgrade');
@@ -1072,6 +1142,7 @@ function renderBattle() {
   renderEnemies();
   renderHand();
   renderResources();
+  renderTopBar();
   renderLog();
   if (battleCtx && battleCtx.kind === 'sim') renderSimHud();
   $('b-turn').textContent = battle.turn;
@@ -1261,6 +1332,10 @@ function flushFx() {
     setTimeout(() => line.remove(), 1800);
   });
 
+  if (megaAmt >= 100 && settings.shake && settings.motion) {
+    const st = $('battle-stage');
+    if (st) { st.classList.remove('shake'); void st.offsetWidth; st.classList.add('shake'); setTimeout(() => st.classList.remove('shake'), 340); }
+  }
   if (megaAmt >= 100) {
     sfx('mega');
     pulseStage('zoom', 420);
@@ -1347,8 +1422,8 @@ function renderTeam() {
     ].join('');
     const statsPills = [
       c.str > 0 ? `<span class="p-stat str">STR +${c.str}</span>` : '',
-      c.fury > 0 ? `<span class="p-stat fury">FURY ${c.fury}</span>` : '',
-      c.counter > 0 ? `<span class="p-stat ctr">CTR ${c.counter}</span>` : '',
+      c.fury > 0 ? `<span class="p-stat fury">${c.fury}× FURY</span>` : '',
+      c.counter > 0 ? `<span class="p-stat ctr">${c.counter}× CTR</span>` : '',
       c.critNext ? '<span class="p-stat crit">CRIT</span>' : '',
     ].join('');
     p.innerHTML = `
@@ -1377,15 +1452,15 @@ function enemyStatuses(e, battleState = battle) {
   const potency = battleState ? (battleState.passives.poisonPotency || 0) : 0;
   const buffs = [], debuffs = [];
   if (e.atkBuff > 0) buffs.push({ key: 'atkbuff', icon: 'i-buff', cls: 'buff', label: 'ATK UP', value: `+${e.atkBuff}`, title: 'Attack Up', desc: `This enemy's attacks deal +${e.atkBuff} more damage. Gained from its Buff intent. It does not expire on its own.` });
-  if (e.charging) buffs.push({ key: 'charging', icon: 'i-bolt', cls: 'buff charge', label: 'CHARGING', value: `${e.charging.turns}T`, title: `Charging — ${e.charging.value} damage`, desc: `In ${e.charging.turns} enemy action(s) it unleashes ${e.charging.value} damage on your weakest combatant. Kill it, Break its Tenacity, or Shield the target first.` });
+  if (e.charging) buffs.push({ key: 'charging', icon: 'i-bolt', cls: 'buff charge', label: 'CHARGING', value: `${e.charging.turns}T`, turns: e.charging.turns, title: `Charging — ${e.charging.value} damage`, desc: `In ${e.charging.turns} enemy action(s) it unleashes ${e.charging.value} damage on your weakest combatant. Kill it, Break its Tenacity, or Shield the target first.` });
   (e.mods || []).forEach((mKey) => { const m = MOD_INFO[mKey]; if (m) buffs.push({ key: `mod-${mKey}`, icon: 'i-star', cls: 'buff', label: m.label, value: '', title: m.label, desc: m.desc + ' (innate passive — cannot be removed).' }); });
   if (e.tenacity >= e.maxTenacity && e.maxTenacity > 0) buffs.push({ key: 'tenacityfull', icon: 'i-shield', cls: 'buff', label: 'TENACITY', value: `${e.tenacity}`, title: 'Tenacity (guard bar)', desc: `Amber guard bar at ${e.tenacity}/${e.maxTenacity}. Damaging cards reduce it (Weakness hits ×2.5); at 0 the enemy is Ravaged: +30% damage taken, +1 AP for you. 0-AP cards do not reduce Tenacity.` });
-  if ((e.poison || 0) > 0) { const perStack = poisonPerStack(battleState); debuffs.push({ key: 'poison', icon: 'i-poison', cls: 'poison', label: 'POISON', value: `${e.poison}`, title: `Poison ${e.poison} — DoT`, desc: `Damage over Time that scales: at the end of YOUR turn it takes ${e.poison * perStack} damage (${e.poison} stacks x ${perStack} per stack${potency ? ` — includes +${potency} Potency` : ''}), then Poison falls by 1 stack. Yuna's Venom Sting also deals +1 damage per stack on this target. Stack it, Incubate (double) it, or Detonate it with Necrotic Feast.` }); }
-  if (e.bleed > 0) debuffs.push({ key: 'bleed', icon: 'i-drop', cls: 'bleed', label: 'BLEED', value: `${e.bleed}`, title: `Bleed ${e.bleed}`, desc: `Whenever this enemy takes an Attack hit, it ruptures for ${e.bleed} damage, then loses 1 Bleed. Multi-hit attacks trigger it repeatedly.` });
-  if (e.toxin > 0) debuffs.push({ key: 'toxin', icon: 'i-flask', cls: 'toxin', label: 'TOXIN', value: `${e.toxin}`, title: `Toxin ${e.toxin}`, desc: `Whenever this enemy ACTS (its counter hits 0), it takes ${e.toxin} damage and chews Tenacity, then Toxin decays by 25%. Different from Poison, which ticks at End Turn.` });
-  if (e.mark > 0) debuffs.push({ key: 'mark', icon: 'i-target', cls: 'mark', label: 'MARK', value: `${e.mark}T`, title: `Mark — ${e.mark} action(s) left`, desc: 'Takes ×1.5 damage from all direct hits while Marked. Duration ticks down each time this enemy acts. Apply before your big finisher.' });
-  if (e.vuln > 0) debuffs.push({ key: 'vuln', icon: 'i-debuff', cls: 'vuln', label: 'VULNERABLE', value: `${e.vuln}T`, title: `Vulnerable — ${e.vuln} action(s) left`, desc: 'Takes ×1.35 damage from all direct hits. Stacks multiplicatively with Mark (×1.5), Weakness (×1.5) and Ravaged (×1.3).' });
-  if (e.weaken > 0) debuffs.push({ key: 'weaken', icon: 'i-debuff', cls: 'weaken', label: 'WEAKEN', value: `${e.weaken}T`, title: `Weaken — ${e.weaken} action(s) left`, desc: 'This enemy deals 35% less damage while Weakened.' });
+  if ((e.poison || 0) > 0) { const perStack = poisonPerStack(battleState); debuffs.push({ key: 'poison', icon: 'i-poison', cls: 'poison', label: 'POISON', value: `${e.poison}×`, title: `Poison ${e.poison}× — DoT`, desc: `Damage over Time that scales: at the end of YOUR turn it takes ${e.poison * perStack} damage (${e.poison} stacks x ${perStack} per stack${potency ? ` — includes +${potency} Potency` : ''}), then Poison falls by 1 stack. Yuna's Venom Sting also deals +1 damage per stack on this target. Stack it, Incubate (double) it, or Detonate it with Necrotic Feast.` }); }
+  if (e.bleed > 0) debuffs.push({ key: 'bleed', icon: 'i-drop', cls: 'bleed', label: 'BLEED', value: `${e.bleed}×`, title: `Bleed ${e.bleed}×`, desc: `Whenever this enemy takes an Attack hit, it ruptures for ${e.bleed} damage, then loses 1 Bleed. Multi-hit attacks trigger it repeatedly.` });
+  if (e.toxin > 0) debuffs.push({ key: 'toxin', icon: 'i-flask', cls: 'toxin', label: 'TOXIN', value: `${e.toxin}×`, title: `Toxin ${e.toxin}×`, desc: `Whenever this enemy ACTS (its counter hits 0), it takes ${e.toxin} damage and chews Tenacity, then Toxin decays by 25%. Different from Poison, which ticks at End Turn.` });
+  if (e.mark > 0) debuffs.push({ key: 'mark', icon: 'i-target', cls: 'mark', label: 'MARK', value: `${e.mark}T`, turns: e.mark, title: `Mark — ${e.mark} action(s) left`, desc: 'Takes ×1.5 damage from all direct hits while Marked. Duration ticks down each time this enemy acts. Apply before your big finisher.' });
+  if (e.vuln > 0) debuffs.push({ key: 'vuln', icon: 'i-debuff', cls: 'vuln', label: 'VULNERABLE', value: `${e.vuln}T`, turns: e.vuln, title: `Vulnerable — ${e.vuln} action(s) left`, desc: 'Takes ×1.35 damage from all direct hits. Stacks multiplicatively with Mark (×1.5), Weakness (×1.5) and Ravaged (×1.3).' });
+  if (e.weaken > 0) debuffs.push({ key: 'weaken', icon: 'i-debuff', cls: 'weaken', label: 'WEAKEN', value: `${e.weaken}T`, turns: e.weaken, title: `Weaken — ${e.weaken} action(s) left`, desc: 'This enemy deals 35% less damage while Weakened.' });
   if (e.ravaged) debuffs.push({ key: 'ravaged', icon: 'i-bolt', cls: 'ravaged', label: 'RAVAGED', value: '×1.3', title: 'RAVAGED (Tenacity broken)', desc: 'Tenacity is broken: takes +30% damage from all direct hits until it recovers Tenacity. Breaking it granted your team +1 AP and -10 Stress.' });
   return { buffs, debuffs, potency };
 }
@@ -1393,7 +1468,7 @@ function statusIconsHTML(e) {
   const { buffs, debuffs } = enemyStatuses(e);
   const all = [...buffs, ...debuffs];
   if (!all.length) return '<div class="enemy-status empty"><span>NO STATUS</span></div>';
-  return `<div class="enemy-status">${all.map((s) => `<span class="status-icon ${s.cls}" data-status="${s.key}" title="${s.title}: ${s.desc}">${ico(s.icon)}<b>${s.label}</b>${s.value ? `<i>${s.value}</i>` : ''}</span>`).join('')}</div>`;
+  return `<div class="enemy-status">${all.map((s) => `<span class="status-icon ${s.cls}" data-status="${s.key}" title="${s.title}: ${s.desc}">${ico(s.icon)}<b>${s.label}</b>${s.value ? `<i>${s.value}</i>` : ''}${s.turns ? `<u class="pips">${'<u></u>'.repeat(Math.min(5, s.turns))}</u>` : ''}</span>`).join('')}</div>`;
 }
 function openEnemyDetail(uid) {
   if (!battle) return;
@@ -1493,6 +1568,56 @@ function renderEnemies() {
     });
     row.appendChild(node);
   });
+}
+
+/* --- boss HP bar, objective tracker, action timeline, end-turn danger --- */
+function renderTopBar() {
+  const bar = $('boss-bar'); if (!bar || !battle) return;
+  const alive = battle.enemies.filter((e) => e.hp > 0);
+  const pri = alive.find((e) => e.boss) || alive.find((e) => e.elite) || alive.find((e) => e.uid === battle.targetUid) || alive[0];
+  const showBoss = !!(pri && (pri.boss || pri.elite || (battleCtx && battleCtx.kind === 'sim')));
+  bar.classList.toggle('hidden', !showBoss);
+  if (showBoss) {
+    $('boss-bar-name').textContent = `${pri.boss ? 'BOSS · ' : pri.elite ? 'ELITE · ' : ''}${pri.name.toUpperCase()}`;
+    $('boss-bar-hp').textContent = `${pri.hp.toLocaleString()} / ${pri.maxHp.toLocaleString()} · ${Math.max(0, Math.ceil((pri.hp / pri.maxHp) * 100))}%`;
+    $('boss-bar-fill').style.width = `${(pri.hp / pri.maxHp) * 100}%`;
+    $('boss-bar-tenfill').style.width = `${pri.maxTenacity ? (pri.tenacity / pri.maxTenacity) * 100 : 0}%`;
+    $('boss-bar-status').innerHTML = statusIconsHTML(pri);
+  }
+  const obj = $('objective-bar');
+  if (obj) {
+    if (battleCtx && battleCtx.kind === 'sim' && simTracker) {
+      const trials = simTrialsFor(battleCtx.charId);
+      const done = trials.filter((x) => x.check(battle, simTracker)).length;
+      const next = trials.find((x) => !x.check(battle, simTracker));
+      obj.innerHTML = `OBJECTIVE — TRIALS <b>${done}/${trials.length}</b>${next ? ` · NEXT: ${next.label}` : ' · ALL TRIALS CLEAR!'}`;
+    } else if (battleCtx && battleCtx.kind === 'run') {
+      obj.innerHTML = `OBJECTIVE — CLEAR THIS NODE · <b>${alive.length} HOSTILE${alive.length === 1 ? '' : 'S'} LEFT</b> · TURN ${battle.turn}`;
+    } else {
+      obj.innerHTML = `OBJECTIVE — DEFEAT ALL HOSTILES · <b>${alive.length} LEFT</b> · TURN ${battle.turn}`;
+    }
+  }
+  const tl = $('action-timeline');
+  if (tl) {
+    tl.innerHTML = alive.slice().sort((a, b) => a.counter - b.counter).map((e) => {
+      const it = intentOf(e);
+      const lbl = it.type === 'attack' || it.type === 'charge' ? `${it.value || ''} DMG` : it.type.toUpperCase();
+      return `<div class="tl-chip${e.counter <= 1 ? ' soon' : ''}${e.uid === battle.targetUid ? ' sel' : ''}"><b>${e.name.split(' ')[0].toUpperCase()}</b><span>${lbl}</span><i>${e.counter <= 0 ? 'ACTS NOW' : `IN ${e.counter}`}</i></div>`;
+    }).join('');
+  }
+  const et = $('end-turn');
+  if (et) {
+    const weakest = Math.min(...battle.characters.filter((c) => c.hp > 0).map((c) => c.hp + c.shield), Infinity);
+    const danger = !battle.result && alive.some((e) => {
+      if (e.counter > 1) return false;
+      const it = intentOf(e);
+      if (it.type !== 'attack' && it.type !== 'charge') return false;
+      const dmg = Math.round(((it.value || 0) + (e.atkBuff || 0)) * (e.weaken > 0 ? 0.65 : 1));
+      return weakest !== Infinity && dmg >= weakest * 0.5;
+    });
+    et.classList.toggle('danger', danger);
+    et.title = danger ? 'DANGER — an enemy acts next and can badly hurt your weakest combatant. Shield, Break or finish it first!' : 'End turn';
+  }
 }
 
 /* --- card markup --- */
@@ -1826,15 +1951,26 @@ function showEgoCutIn(ego, owner, isExalt = false) {
 
 function renderLog() {
   const log = $('battle-log');
-  log.classList.toggle('hidden', !logOpen);
-  log.innerHTML = battle.log.slice(-8).map((l) => `<div class="${l.kind}">${l.text}</div>`).join('');
+  log.classList.toggle('hidden', logMode === 0);
+  log.classList.toggle('mini', logMode === 1);
+  log.innerHTML = battle.log.slice(logMode === 1 ? -3 : -8).map((l) => `<div class="${l.kind}">${l.text}</div>`).join('');
 }
 
 /* ========================================================= deck modal */
+function applyDeckFilter() {
+  const active = document.querySelector('#deck-filters button.active');
+  const type = active ? active.dataset.dtype : 'all';
+  document.querySelectorAll('#deck-modal-grid .deck-item').forEach((item) => {
+    const card = item.querySelector('.card');
+    item.style.display = (type === 'all' || (card && card.classList.contains(type))) ? '' : 'none';
+  });
+}
 function openDeckModal({ modalMode, title, sub, cards, onPick }) {
   deckModalCtx = { mode: modalMode, title, sub, cards, onPick };
   $('deck-modal-title').textContent = title;
   $('deck-modal-sub').textContent = sub;
+  const df = $('deck-filters');
+  if (df) { df.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.dtype === 'all')); }
   const grid = $('deck-modal-grid');
   grid.innerHTML = '';
 
@@ -1856,6 +1992,7 @@ function openDeckModal({ modalMode, title, sub, cards, onPick }) {
     grid.appendChild(wrap);
   });
   $('deck-modal').classList.remove('hidden');
+  applyDeckFilter();
 }
 
 function closeDeckModal() {
@@ -2157,8 +2294,9 @@ function bind() {
   });
 
   $('log-toggle').addEventListener('click', () => {
-    logOpen = !logOpen;
-    $('log-toggle').style.color = logOpen ? '#fff' : '';
+    logMode = (logMode + 1) % 3; // hidden -> mini (last 3) -> full -> hidden
+    $('log-toggle').style.color = logMode ? '#fff' : '';
+    $('log-toggle').title = logMode === 1 ? 'Battle log: mini (click for full)' : logMode === 2 ? 'Battle log: full (click to hide)' : 'Battle log';
     renderLog();
   });
 
@@ -2175,6 +2313,20 @@ function bind() {
     else if (battleCtx && battleCtx.kind === 'sim') { renderSimSetup(); showView('sim'); }
     else { renderMissions(); showView('missions'); }
   });
+  document.querySelectorAll('#deck-filters button').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('#deck-filters button').forEach((x) => x.classList.toggle('active', x === b));
+    applyDeckFilter();
+  }));
+  if ($('btn-open-settings-title')) $('btn-open-settings-title').addEventListener('click', () => { sfx('click'); openSettings(); });
+  if ($('pause-settings')) $('pause-settings').addEventListener('click', () => { sfx('click'); $('pause').classList.add('hidden'); openSettings(); });
+  if ($('settings-close')) $('settings-close').addEventListener('click', () => { sfx('click'); closeSettings(); });
+  if ($('settings-modal')) $('settings-modal').addEventListener('click', (e) => { if (e.target.id === 'settings-modal') closeSettings(); });
+  if ($('set-volume')) $('set-volume').addEventListener('input', (e) => { settings.volume = Number(e.target.value); $('set-volume-val').textContent = `${settings.volume}%`; setSfxVolume(settings.volume / 100); saveSettings(); });
+  if ($('set-uiscale')) $('set-uiscale').addEventListener('input', (e) => { settings.uiScale = Number(e.target.value); $('set-uiscale-val').textContent = `${settings.uiScale}%`; applySettings(); saveSettings(); });
+  if ($('set-fxsize')) $('set-fxsize').addEventListener('change', (e) => { settings.fxSize = e.target.value; applySettings(); saveSettings(); });
+  if ($('set-shake')) $('set-shake').addEventListener('change', (e) => { settings.shake = e.target.checked; saveSettings(); });
+  if ($('set-motion')) $('set-motion').addEventListener('change', (e) => { settings.motion = e.target.checked; applySettings(); saveSettings(); });
+  if ($('set-cb')) $('set-cb').addEventListener('change', (e) => { settings.cb = e.target.checked; applySettings(); saveSettings(); });
   if ($('btn-sim-hud-hide')) $('btn-sim-hud-hide').addEventListener('click', () => { sfx('click'); setSimHudHidden(true); });
   if ($('sim-hud-pill')) $('sim-hud-pill').addEventListener('click', () => { sfx('click'); setSimHudHidden(false); });
   if ($('btn-sim-end')) $('btn-sim-end').addEventListener('click', () => { sfx('click'); endSimTest(true); });
@@ -2215,6 +2367,7 @@ function bind() {
 }
 
 bind();
+applySettings();
 renderRoster();
 syncMeta();
 showView('title');
