@@ -14,11 +14,29 @@ game uses, so what you see is what ships).
 **Tagline (optional):** *The body is the battlefield.*
 **One-line pitch:** A tactical card RPG fought inside a seventeen-year-old's immune system.
 
-**Logo rules**
-- The mark works alone at 48px and at 1024px. Never add effects, never rotate it, never outline it.
-- Clear space around the mark = 25% of its width. Nothing crosses that.
-- On dark backgrounds only (the palette has no light mode). Never place on white.
-- App icon: 512×512, mark centred at 84% of the frame, `#0B0507` background, no text.
+### Logo (locked)
+
+| Asset | File | Use |
+| --- | --- | --- |
+| **Wordmark** | `images/logo-anime-title.png` | Title screens, store feature graphic, key art |
+| **App icon** | `images/app-icon-512.png` | Play Store 512×512 icon, launcher icon, favicon |
+
+**Construction:** chunky anime display lettering, crimson `#C2183A` → `#6D0F22` gradient,
+heavy bone-white `#F2F4F5` outline, one cyan `#35D0C0` speed slash across both lines, and the
+cell emblem (pale blue-white cell, dark violet nucleus) sitting above the first word.
+The emblem alone is the icon; the type is never used inside the icon.
+
+**Rules**
+- Minimum sizes: wordmark 120px wide on screen / 30mm in print. Icon 48px.
+- Clear space = 25% of the mark's width on every side. Nothing crosses it.
+- Dark backgrounds only. Never place on white, never invert, never re-colour.
+- Never re-type the name in a font and call it the logo — the lettering is the brand.
+- Never stretch, add shadows, add particles, or crop the slash.
+- Icon must survive at 48px: if you can't read it as a silhouette, simplify before shipping.
+
+**Action required before launch:** these are raster exports. Redraw both as clean SVG
+(trace in Figma) so they scale for the feature graphic, splash screens and any print.
+Ship the traced originals in `design/svg/`, and treat the PNGs as the canon reference.
 
 **Fonts (both SIL Open Font License — free to ship, self-host later)**
 - **Display / UI:** `Chakra Petch` — weights 600, 700. Angular, technical, reads as anime-game.
@@ -181,6 +199,8 @@ Infection: gradient crimson. Inflammation: cyan → amber → crimson with a tic
 | --- | --- |
 | `styles.css` | tokens + all components (single source of truth for the game) |
 | `design/card-lab.html` | living spec: every component rendered |
+| `images/logo-anime-title.png` | locked wordmark (raster canon) |
+| `images/app-icon-512.png` | locked app icon (raster canon) |
 | `docs/design-system.md` | this file — the rules |
 | `docs/character-bible.md` | characters, art style, image prompts |
 | `docs/store-listing.md` | icon, screenshots, listing copy, age rating |
