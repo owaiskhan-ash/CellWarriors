@@ -238,10 +238,13 @@ function renderRoster() {
       sfx('click');
       openLab(id);
     });
+    card.dataset.rid = id;
     card.addEventListener('click', () => { sfx('click'); toggleTeam(id); });
     grid.appendChild(card);
+    card.style.animationDelay = `${grid.children.length * 45}ms`;
   }
   $('team-count').textContent = `${progress.team.length} / 3`;
+
   const strip = $('team-strip');
   strip.innerHTML = '';
   for (let i = 0; i < 3; i++) {
@@ -632,12 +635,20 @@ function endSimTest(manual = true) {
   $('overlay-retry').onclick = () => beginSimBattle(battleCtx.charId);
 }
 
+function applyTeamPulse(id) {
+  const card = $('roster')?.querySelector(`.roster-card[data-rid="${id}"]`);
+  if (card) {
+    card.classList.add('picked');
+    setTimeout(() => card.classList.remove('picked'), 620);
+  }
+}
 function toggleTeam(id) {
   const i = progress.team.indexOf(id);
   if (i >= 0) progress.team.splice(i, 1);
   else if (progress.team.length < 3) progress.team.push(id);
   saveProgress(progress);
   renderRoster();
+  applyTeamPulse(id);
 }
 
 /* ============================================================ missions */
@@ -742,7 +753,8 @@ function renderMap() {
       const meta = NODE_META[node.type] || NODE_META.battle;
       const isAvail = avail.has(node.id);
       const isCur = run.floor === node.floor && run.lane === node.lane;
-      const cls = `map-node ${node.type}${isAvail ? ' avail' : (node.cleared ? ' cleared' : ' locked')}${isCur ? ' current' : ''}`;
+      const isNew = node.__entered && Date.now() - node.__entered < 1600;
+      const cls = `map-node ${node.type}${isAvail ? ' avail' : (node.cleared ? ' cleared' : ' locked')}${isCur ? ' current' : ''}${isNew ? ' entered' : ''}`;
       const btn = el('button', cls, `<span class="n-ico">${ico(meta.ico)}</span><span class="n-lbl">${node.cleared ? '✓ ' : ''}${meta.lbl}</span>`);
       btn.dataset.nid = node.id;
       btn.disabled = !isAvail;
@@ -802,6 +814,7 @@ function enterRunNode(lane) {
   const run = progress.run;
   const node = enterNode(run, lane);
   if (!node) return null;
+  node.__entered = Date.now();
   saveProgress(progress);
   if (node.type === 'battle' || node.type === 'elite' || node.type === 'boss') {
     const enc = encounterFor(run, node);
@@ -1129,9 +1142,23 @@ function showTargetLine(fromEl, toEl) {
   svg.classList.remove('hidden');
 }
 
+function ensureStageParticles() {
+  const pp = $('stage-particles');
+  if (!pp || pp.querySelector('.stage-particle')) return;
+  for (let i = 0; i < 34; i++) {
+    const p = document.createElement('i');
+    p.classList.add('stage-particle');
+    p.style.left = `${Math.random() * 100}%`;
+    p.style.top = `${50 + Math.random() * 70}%`;
+    p.style.animationDelay = `${-Math.random() * 30}s`;
+    pp.appendChild(p);
+  }
+}
+
 function renderBattle() {
   if (!battle) return;
   flushFx();
+  ensureStageParticles();
   if (battle.turn !== lastTurnShown) { lastTurnShown = battle.turn; showTurnBanner(battle.turn); }
   const broken = battle.characters.find((c) => c.broken);
   const bKey = broken ? broken.id + broken.breakdownCount : '';
@@ -1501,6 +1528,8 @@ function renderEnemies() {
     const intent = intentOf(e);
     const isSel = battle.targetUid === e.uid && e.hp > 0;
     const node = el('div', `enemy enemy-${e.id}${e.hp <= 0 ? ' dead' : ''}${isSel ? ' selected' : ''}${e.ravaged ? ' ravaged' : ''}`);
+    e._dom = node;
+    node.classList.toggle('idle', e.hp > 0 && e.counter > 0);
 
     const isAttack = intent.type === 'attack';
     const isCharge = intent.type === 'charge';
@@ -1733,6 +1762,7 @@ function renderHand() {
     const rot = battle.hand.length > 1 ? (i - mid) * 1.8 : 0;
     node.style.setProperty('--rot', `${rot.toFixed(2)}deg`);
     node.style.setProperty('--lift', `${(Math.abs(i - mid) * 2.5).toFixed(1)}px`);
+    node.classList.toggle('hoverable', canPlay(battle, card));
 
     let startX = 0, startY = 0;
     node.addEventListener('pointerdown', (ev) => {
@@ -1750,17 +1780,18 @@ function renderHand() {
     node.addEventListener('pointerleave', () => { clearTimeout(pressTimer); hideTargetLine(); });
     node.addEventListener('pointercancel', () => { clearTimeout(pressTimer); hideTargetLine(); });
     node.addEventListener('mouseenter', () => {
+      if (node.classList.contains('hoverable')) node.classList.add('hovering');
       if (card.dmg > 0 && !card.aoe) {
         const target = document.querySelector(`.enemy[data-uid="${battle.targetUid}"]`);
         if (target) showTargetLine(node, target);
       }
     });
-    node.addEventListener('mouseleave', hideTargetLine);
+    node.addEventListener('mouseleave', () => { node.classList.remove('hovering'); hideTargetLine(); });
     node.addEventListener('contextmenu', (ev) => { ev.preventDefault(); openDetail(i); });
     node.addEventListener('click', (ev) => {
       ev.stopPropagation();
       if (longPressed) { longPressed = false; return; }
-      playFromUI(i);
+      playFromUI(i, ev);
     });
     hand.appendChild(node);
   });
@@ -1844,16 +1875,45 @@ function closeDetail() {
 }
 
 /* --- play --- */
-function playFromUI(index) {
+function playFromUI(index, ev) {
   if (cutBusy || !battle || battle.result) return;
   const card = battle.hand[index];
   if (!card || !canPlay(battle, card)) return;
+  const cardNode = ev && ev.target ? ev.target.closest('.card') : null;
+  const rect = cardNode ? cardNode.getBoundingClientRect() : null;
   const res = playCard(battle, index, card.dmg > 0 && !card.aoe ? battle.targetUid : undefined);
   if (!res.ok) return;
   if (card.owner) showBark(card.owner, 'attack');
   else if (card.type === 'attack') sfx('slash');
   renderBattle();
+  if (cardNode && rect) launchPlayArc(cardNode, rect, card);
   if (!battle.result) showCutIn(card);
+}
+
+/* Game-feel: the played card arcs off the hand onto its target. */
+function launchPlayArc(cardNode, rect, card) {
+  const stage = $('battle-stage');
+  const target = battle && battle.enemies.find((e) => e.hp > 0);
+  if (!stage || !target || !target._dom) return;
+  const arc = cardNode.cloneNode(true);
+  arc.className = `${arc.className || ''} arc-card`;
+  arc.style.position = 'absolute';
+  arc.style.margin = '0';
+  arc.style.left = `${rect.left}px`;
+  arc.style.top = `${rect.top}px`;
+  arc.style.width = `${rect.width}px`;
+  arc.style.height = `${rect.height}px`;
+  stage.appendChild(arc);
+  const t = target._dom.getBoundingClientRect();
+  const endX = t.left + t.width / 2 - rect.width / 2;
+  const endY = t.top + t.height * 0.35 - rect.height / 2;
+  arc.style.transitionProperty = 'transform';
+  arc.style.transitionDuration = '650ms';
+  arc.style.transitionTimingFunction = 'cubic-bezier(0.16,0.9,0.3,1)';
+  raf(() => {
+    arc.style.transform = `translate(${endX - rect.left}px, ${endY - rect.top}px)`;
+  });
+  setTimeout(() => arc.remove(), 850);
 }
 
 /* ============================================================ AUTOPLAY
@@ -2468,6 +2528,9 @@ function bind() {
 
   $('end-turn').addEventListener('click', () => {
     if (cutBusy || !battle || battle.result) return;
+    const btn = $('end-turn');
+    btn.classList.add('sparkle');
+    clearTimeout(btn._sp); btn._sp = setTimeout(() => btn.classList.remove('sparkle'), 560);
     exaltArmed = false;
     sfx('turn');
     endTurn(battle);
@@ -2587,7 +2650,13 @@ window.__cw = {
   showView, playFromUI, openDetail, closeDetail, openLab, openDeckModal, closeDeckModal,
   openGuide, renderGuide, openCharacter, renderCharacter, openSim, renderSimSetup, beginSimBattle, endSimTest,
   openEnemyDetail, closeEnemyDetail, enemyStatuses,
-  setTeam(ids) { progress.team = ids.slice(0, 3); saveProgress(progress); renderRoster(); },
+  setTeam(ids) {
+    const t = ids.slice(0, 3);
+    progress.team = t;
+    saveProgress(progress);
+    renderRoster();
+    t.forEach((id) => applyTeamPulse(id));
+  },
   openMission(code) {
     const m = MISSIONS.find((x) => x.code === code);
     beginBattle(m);

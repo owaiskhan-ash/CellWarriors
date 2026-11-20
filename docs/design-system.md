@@ -267,3 +267,29 @@ small caps label under each. Five at a time, each fades after 1.8 s.
 
 **Action art** — `images/action-<char>.jpg` — is the cut-in backdrop: a full-bleed action panel of
 the character mid-strike, swept in from the left over speed lines with a soft right-edge mask.
+
+---
+
+## 14. Game-feel animations (v3)
+
+The feel of an actual game: arrival choreography, hover life, and ambient motion — all
+smooth ease-out, tactical-anime tone. **No bounce, no spring, no confetti.** Ticker rule of
+thumb: an animation that draws the eye out is more than a transition.
+
+| Where | Effect | Timing |
+| --- | --- | --- |
+| Title | Logo glow-pulse loop + staged entrance of tagline/frame/buttons (45 ms stagger) | ease-out |
+| Roster | Card entry stagger (45 ms); pick pulse on the selected cards (620 ms) | ease-out |
+| Hand | Hover lift + gold border glow on playable cards (`hoverable`) | 150 ms ease |
+| Play | Card arcs off the hand onto its target (Cubic-bezier flight) | 650 ms ease |
+| Enemy | Idle breathe pulse while waiting on your move (`counter > 0`) | 2.9 s infinite |
+| Bars | Tween to new HP/stress/EP values (width transitions) | 250–350 ms ease-out |
+| Map | Floor burst pulse on entry (`entered`), 600 ms | ease-out |
+| End turn | Sparkle pulse on the check button when committing a turn | 500 ms ease-out |
+| Stage | 34 floating dust particles (`--cyan-pale`, glow, drift) | 21 s loop |
+| Rank | Staggered card fly-ins on CLEAR screen | 350–500 ms ease-out |
+
+Rules:
+- All animations respect `body.reduce-motion` (settings toggle + OS preference); durations collapse.
+- Game feel must never change data readback order: textContent sets are synchronous; CSS is for visuals.
+- `motion: false` users get zero behavioural motion (all keyframes are visual-only).

@@ -35,6 +35,7 @@ ok('mute restores', $('btn-mute-title').querySelector('use')?.getAttribute('href
 click('btn-start');
 ok('roster shown', !$('view-roster').classList.contains('hidden'));
 ok('5 combatants', $('roster').querySelectorAll('.roster-card').length === 5);
+ok('roster entry stagger applied', [...$('roster').querySelectorAll('.roster-card')].every((n) => n.style.animationDelay !== ''));
 ok('default team of 3', $('team-strip').querySelectorAll('.team-slot.filled').length === 3);
 ok('leader badge on slot 1', !!$('team-strip').querySelector('.slot-lead'));
 ok('synergy + weakness preview shown', $('synergy-preview').querySelectorAll('.syn-pill').length >= 1 && $('synergy-preview').querySelectorAll('.wpill').length === 5);
@@ -43,6 +44,7 @@ ok('synergy + weakness preview shown', $('synergy-preview').querySelectorAll('.s
 window.__cw.setTeam(['kaito', 'goro', 'bibi']);
 ok('team count updates', $('team-count').textContent.trim() === '3 / 3', $('team-count').textContent);
 ok('edge synergy detected', /EDGE/.test($('synergy-preview').textContent));
+ok('team pick pulse on roster cards', !!$('roster').querySelector('.roster-card[data-rid="kaito"]')?.classList.contains('picked'));
 
 // 3. Chaos Run Map
 click('btn-deploy');
@@ -74,6 +76,10 @@ ok('stress dots', $('team-stress').querySelectorAll('.sdot').length === 3);
 ok('EP pips', $('ep-pips').querySelectorAll('.ep-pip').length === 7);
 ok('6 ego portraits', $('ego-list').querySelectorAll('.ego-btn').length === 6);
 ok('synergy pills in battle HUD', $('battle-synergy').querySelectorAll('.hpill').length >= 1);
+ok('stage dust particles exist', !!$('stage-particles').querySelector('.stage-particle'));
+const b0 = cw.battle; b0.enemies[0].counter = 2; cw.renderBattle();
+ok('idle breathe markers on enemies', $('enemies').querySelectorAll('.enemy.idle').length >= 1);
+b0.enemies[0].counter = 0; cw.renderBattle();
 
 // Sands menu
 click('btn-sands');
@@ -94,8 +100,12 @@ domCards[atkIdx >= 0 ? atkIdx : 0].dispatchEvent(new window.MouseEvent('click', 
 ok('character cut-in shown', !$('cutin').classList.contains('hidden'));
 ok('bark toast shown', !$('bark-toast').classList.contains('hidden'));
 ok('card played from UI', cw.battle.cardsPlayed > 0);
+ok('played card arc animation on stage', !!$('battle-stage').querySelector('.arc-card'));
 ok('live numbers on cards', $('hand').querySelectorAll('.card-fx').length > 0);
 ok('big damage readout', $('dmg-rail').children.length > 0);
+await new Promise((r) => setTimeout(r, 950)); // wait out the play cut-in
+$('end-turn').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+ok('end-turn sparkles on commit', $('end-turn').classList.contains('sparkle'));
 
 // Long press / detail + pile modal
 cw.openDetail(0);
