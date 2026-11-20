@@ -51,6 +51,18 @@ let simLoadout = 'arsenal';
 let simBehaviour = 'training';
 let simTracker = null;
 let simReported = false;
+let simHudHidden = (() => { try { return window.localStorage.getItem('cw_sim_hud_hidden') === '1'; } catch { return false; } })();
+function applySimHudVisibility() {
+  const isSim = !!(battleCtx && battleCtx.kind === 'sim' && battle);
+  const hud = $('sim-hud'), pill = $('sim-hud-pill');
+  if (hud) hud.classList.toggle('hidden', !isSim || simHudHidden);
+  if (pill) pill.classList.toggle('hidden', !isSim || !simHudHidden);
+}
+function setSimHudHidden(hidden) {
+  simHudHidden = !!hidden;
+  try { window.localStorage.setItem('cw_sim_hud_hidden', simHudHidden ? '1' : '0'); } catch { /* private mode */ }
+  applySimHudVisibility();
+}
 let deckModalCtx = null; // { mode: 'view'|'remove'|'upgrade'|'pile', title, cards, onPick }
 let barkTimer = null;
 let exaltArmed = false;
@@ -527,7 +539,13 @@ function renderSimHud() {
   const hud = $('sim-hud');
   if (!hud || !battle || !battleCtx || battleCtx.kind !== 'sim') return;
   updateSimTracker();
+  applySimHudVisibility();
   $('sim-hud-char').textContent = CHARACTERS[battleCtx.charId].name.toUpperCase();
+  if ($('sim-pill-dmg')) $('sim-pill-dmg').textContent = `${battle.stats.damage.toLocaleString()} DMG`;
+  if ($('sim-pill-trials')) {
+    const trials = simTrialsFor(battleCtx.charId);
+    $('sim-pill-trials').textContent = `· ${trials.filter((x) => x.check(battle, simTracker)).length}/${trials.length} TRIALS`;
+  }
   $('sim-dmg').textContent = battle.stats.damage.toLocaleString();
   $('sim-dpt').textContent = Math.round(battle.stats.damage / Math.max(1, battle.turn)).toLocaleString();
   $('sim-maxhit').textContent = battle.stats.maxHit.toLocaleString();
@@ -1002,7 +1020,7 @@ function enterBattleView(title, place) {
   $('b-place').textContent = place || '';
   const isSim = battleCtx && battleCtx.kind === 'sim';
   if ($('battle-bg-img')) $('battle-bg-img').src = isSim ? './images/bg-sim.jpg' : './images/bg-battle.jpg';
-  if ($('sim-hud')) $('sim-hud').classList.toggle('hidden', !isSim);
+  applySimHudVisibility();
   $('pause-restart').style.display = battleCtx && battleCtx.kind === 'run' ? 'none' : 'block';
   $('pause-restart').textContent = isSim ? 'RESTART SIMULATION' : 'RESTART FIGHT';
   $('pause-quit').textContent = isSim ? 'EXIT SIMULATION' : (battleCtx && battleCtx.kind === 'run' ? 'ABANDON TO MAP' : 'QUIT TO MISSIONS');
@@ -2157,6 +2175,8 @@ function bind() {
     else if (battleCtx && battleCtx.kind === 'sim') { renderSimSetup(); showView('sim'); }
     else { renderMissions(); showView('missions'); }
   });
+  if ($('btn-sim-hud-hide')) $('btn-sim-hud-hide').addEventListener('click', () => { sfx('click'); setSimHudHidden(true); });
+  if ($('sim-hud-pill')) $('sim-hud-pill').addEventListener('click', () => { sfx('click'); setSimHudHidden(false); });
   if ($('btn-sim-end')) $('btn-sim-end').addEventListener('click', () => { sfx('click'); endSimTest(true); });
   if ($('btn-sim-restart')) $('btn-sim-restart').addEventListener('click', () => { sfx('click'); if (battleCtx && battleCtx.kind === 'sim') beginSimBattle(battleCtx.charId); });
   document.querySelectorAll('[data-sim-act]').forEach((b) => b.addEventListener('click', () => {
@@ -2182,6 +2202,7 @@ function bind() {
     if (!$('lab-modal').classList.contains('hidden')) { if (e.key === 'Escape') $('lab-modal').classList.add('hidden'); return; }
     if ($('view-battle').classList.contains('hidden') || !battle) return;
     if (e.key === 'Escape') { $('pause').classList.toggle('hidden'); return; }
+    if ((e.key === 'h' || e.key === 'H') && battleCtx && battleCtx.kind === 'sim' && !/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')) { setSimHudHidden(!simHudHidden); return; }
     if (battle.result || cutBusy) return;
     if (e.key === ' ') { e.preventDefault(); sfx('turn'); endTurn(battle); renderBattle(); return; }
     const n = Number(e.key);
@@ -2205,7 +2226,7 @@ window.__cw = {
   get progress() { return progress; },
   get run() { return progress.run; },
   setMode, startNewRun, enterRunNode, renderMap,
-  beginBattle, beginRunBattle, renderBattle, startBattle, playCard, endTurn, playEgo, useSands, previewCard, POISON_PER_STACK, poisonPerStack,
+  beginBattle, beginRunBattle, renderBattle, startBattle, playCard, endTurn, playEgo, useSands, previewCard, POISON_PER_STACK, poisonPerStack, setSimHudHidden,
   chooseEpiphany, setExalt(on) { exaltArmed = !!on; renderResources(); },
   showView, playFromUI, openDetail, closeDetail, openLab, openDeckModal, closeDeckModal,
   openGuide, renderGuide, openCharacter, renderCharacter, openSim, renderSimSetup, beginSimBattle, endSimTest,

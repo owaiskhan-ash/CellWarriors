@@ -248,7 +248,7 @@
       <section id="view-battle" class="view view-dark hidden">
         <div class="battle-bg"><img id="battle-bg-img" src="./images/bg-battle.jpg" alt="" /><div class="battle-bg-shade"></div></div>
         <div class="sim-hud hidden" id="sim-hud">
-          <div class="sim-hud-head"><svg class="ico"><use href="#i-chart"/></svg><b>SIMULATION</b><span id="sim-hud-char">—</span></div>
+          <div class="sim-hud-head"><svg class="ico"><use href="#i-chart"/></svg><b>SIMULATION</b><span id="sim-hud-char">—</span><button class="sim-hud-toggle" id="btn-sim-hud-hide" title="Hide this panel (H) — your DAMAGE keeps tracking on the mini-pill"><svg class="ico"><use href="#i-eye"/></svg>HIDE</button></div>
           <div class="sim-stats">
             <div><b id="sim-dmg">0</b><span>DAMAGE</span></div>
             <div><b id="sim-dpt">0</b><span>DMG / TURN</span></div>
@@ -269,6 +269,7 @@
             <button class="btn-primary" id="btn-sim-end">END TEST &amp; REPORT</button>
           </div>
         </div>
+        <button class="sim-hud-pill hidden" id="sim-hud-pill" title="Show simulation panel (H)"><svg class="ico"><use href="#i-chart"/></svg><b>SIM</b><span id="sim-pill-dmg">0 DMG</span><span class="sim-pill-trials" id="sim-pill-trials"></span><span class="sim-pill-show">SHOW ▸</span></button>
         <div class="turn-banner hidden" id="turn-banner"><span id="turn-banner-text">TURN 1</span><span class="turn-banner-sub" id="turn-banner-sub">ENGAGE</span></div>
         <div class="breakdown-overlay hidden" id="breakdown-overlay"><span>MENTAL BREAKDOWN</span><small id="breakdown-name">—</small></div>
         <svg class="target-line hidden" id="target-line"><line id="target-line-el" x1="0" y1="0" x2="0" y2="0" /></svg>
