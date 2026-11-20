@@ -11,11 +11,18 @@ lines), thick black outlines, flat two-tone cel shading, no text/watermark.
 Output: `images/cards/<card-id>.jpg`, then add the id to `CARD_ART` in
 `src/ui.js`. Generator limit: 10 images per turn — batch by character.
 
-## Done (19/70)
+## Done (29/70)
 - [x] Kaito complete (15): k_jab, k_brace, k_rush, k_first, k_last, k_up,
   k_flurry, k_berserk, k_reap, k_execute, k_rally, k_feint, k_supply,
   tok_cut, breakdown_kaito
-- [x] Momo (4): m_strike, m_guard, m_patch, m_stand
+- [x] Momo complete (13): m_strike, m_guard, m_patch, m_stand, m_triage,
+  m_up, m_bash, m_bastion, m_aegis, m_reflect, m_formation, m_splint,
+  breakdown_momo
+- [x] Bibi (1): b_up (Cross-talk)
+
+Fallback fix: cards without dedicated art now use the owner's full-bleed
+action art (`.card-art-fallback`, slightly darkened) instead of the
+transparent cutout — no card renders a floating cutout anymore.
 
 Recheck notes (2026-11-20): all Kaito/Momo art verified on-model — locked hair,
 costume, props and vessel backgrounds match the bible. Minor tolerated
@@ -35,8 +42,8 @@ g_symbiosis, g_feast_up, g_tonic, g_broth, breakdown_goro.
 Locked: 198cm hulking, shaved grey stubble, heavy long white coat, brown
 cross-straps, 120cm chipped cleaver on shoulder, calm half-lidded eyes.
 
-## Pending — Bibi / Mast Cell (14)
-b_ping, b_fuzz, b_flare, b_hist, b_over, b_up, b_cascade, b_prism, b_swarm,
+## Pending — Bibi / Mast Cell (13)
+b_ping, b_fuzz, b_flare, b_hist, b_over, b_cascade, b_prism, b_swarm,
 b_nexus, b_static, b_veil, tok_spark (tiny violet neuro-spark creature of light),
 breakdown_bibi.
 Locked: pink bob, left side shaved, amber eyes, white coat with PINK seam glow,
