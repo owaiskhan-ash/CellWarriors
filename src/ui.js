@@ -1998,7 +1998,15 @@ function renderHand() {
   // A phone hand is a bottom strip: the card height comes from the space the
   // stage leaves over, and the width follows the 0.74 art ratio. Whatever the
   // height allows, the cards must still fit side by side.
-  const hCap = compact ? Math.max(88, Math.min(156, Math.round(window.innerHeight * 0.34))) : 200;
+  // The cap must come from the space the strip ACTUALLY has. Using a fraction
+  // of the viewport ignored the AP row and the tips line underneath, so cards
+  // could be taller than their own strip and hang out of the bottom of the
+  // screen. The mobile CSS pins .hand-zone to a fixed height, so measuring it
+  // here is stable (and no longer depends on the cards themselves).
+  const stripH = (hand.clientHeight || 0) - 2;  // padding-top: 2px
+  const hCap = compact
+    ? Math.max(88, Math.min(156, stripH > 20 ? stripH : Math.round(window.innerHeight * 0.34)))
+    : 200;
   // The real footprint of n cards is w*n - overlap*(n-1) — negative margins pull
   // neighbours together. A phone hand must fit BOTH budgets: the strip width and
   // the height left under the stage. Whichever is tighter wins, and the result
@@ -2024,11 +2032,31 @@ function renderHand() {
   let w = compact
     ? Math.max(40, Math.min(wFromHeight, wFromWidth))
     : Math.max(104, Math.min(158, wFromWidth));
+  // Overlap is what makes a fan look like a fan — but it is also what hides the
+  // card text, because a neighbour's frame is painted over it. On a phone the
+  // cards are height-capped, so there is usually spare *width*: spend it. Use
+  // the smallest overlap that still fits, never more than the design ratio.
+  const maxGap = 2 * Math.floor((w * overlapRatio) / 2);
+  const minGap = Math.ceil((w * n - avail) / Math.max(1, n - 1));
+  const gap = compact ? Math.min(maxGap, Math.max(4, minGap)) : maxGap;
+  // --card-m is what CSS actually applies, so derive the visible gap from the
+  // integer margin that will be set (2*floor(m)) and never let the row exceed
+  // the strip: that is the bug that made a 7-card hand overlap its text.
+  const margin = -Math.floor(gap / 2);
+  const footprint = w * n + 2 * margin * (n - 1);
+  const wFinal = footprint > avail && n > 1
+    ? Math.max(40, w - Math.ceil((footprint - avail) / (n - 1)))
+    : w;
+  w = wFinal;
   const h = compact ? Math.round(w / 0.74) : 200;
-  const overlap = Math.round(w * overlapRatio);
   hand.style.setProperty('--card-w', `${w}px`);
-  hand.style.setProperty('--card-m', `${-Math.floor(overlap / 2)}px`);
+  // Negative margins pull neighbours together: the visible gap is 2*floor(m).
+  hand.style.setProperty('--card-m', `${margin}px`);
   hand.style.setProperty('--card-h', `${h}px`);
+  // Each neighbour paints over the right-hand `gap` px of a card. Reserve that
+  // strip inside the card's own text column, or every line ends in a clipped
+  // word ("Permanent: all allies gain 3 S"). Zero on desktop (no overlap).
+  hand.style.setProperty('--card-cover', `${compact ? Math.max(0, -2 * margin) : 0}px`);
   const endTurnLabel = battle.drawStarted
     ? 'Draw started — ends on next turn'
     : (battle.cardsPlayedThisTurn > 0 ? `Draw: +${DRAW_NEXT} on End Turn` : 'End Turn');

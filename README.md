@@ -13,8 +13,8 @@ landscape, offline, ~14 MB, Android 7.0+. Sideload it (allow "install unknown ap
 browser/file manager once) and it runs standalone: no network, no ads, no analytics.
 
 > **Coming from 1.0.0?** That build could not install on Android 11+ at all, and its signing
-> key is gone, so **uninstall 1.0.0 before installing 1.0.1**. One time only — from 1.0.1 on,
-> upgrades install straight over the previous version.
+> key is gone, so **uninstall 1.0.0 first**. One time only — from 1.0.1 on, upgrades install
+> straight over the previous version.
 > Install trouble: **[docs/install-troubleshooting.md](docs/install-troubleshooting.md)**.
 
 On a phone it is designed **for landscape** and played with thumbs: tap a card to play it, tap an

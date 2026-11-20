@@ -15,7 +15,7 @@
 # Usage:
 #   android/build.sh                 # build + sign a release APK
 #   CW_DEBUG=1 android/build.sh      # debuggable build (chrome://inspect)
-#   CW_VERSION=1.0.1 CW_VERSION_CODE=8 android/build.sh
+#   CW_VERSION=1.0.2 CW_VERSION_CODE=10 android/build.sh
 #
 # Output: dist/CellWarriors-<version>.apk (+ .sha256)
 # =============================================================================
@@ -25,8 +25,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 # ---------------------------------------------------------------- 0. settings
-VERSION="${CW_VERSION:-1.0.1}"
-VERSION_CODE="${CW_VERSION_CODE:-9}"
+VERSION="${CW_VERSION:-1.0.2}"
+VERSION_CODE="${CW_VERSION_CODE:-10}"
 MIN_SDK=24
 TARGET_SDK=34
 OUT_DIR="dist"

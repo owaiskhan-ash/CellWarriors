@@ -98,7 +98,18 @@ const targetRules = [
   ['detail sheet tap targets', /\.enemy-detail-panel \.icon-btn[\s\S]{0,120}min-height:\s*var\(--tap-min\)/],
 ];
 targetRules.forEach(([name, re]) => ok(`tap target: ${name}`, re.test(mobile)));
-ok('END TURN disc stays thumb-sized (>=62px)', /#end-turn\s*\{[\s\S]{0,200}min-width:\s*62px/.test(mobile));
+/* END TURN is a 66x52 rectangle in the rail's bottom slot, not a 62px disc: at
+   360px tall the disc grew up over the AUTO toggle and the grave box. The
+   requirement is a >=44px target that fits the rail, verified in a real browser
+   by scripts/battle-fit.mjs. */
+ok('END TURN keeps a >=44px touch target', (() => {
+  const blk = (mobile.match(/#end-turn,\s*\.end-turn\s*\{[\s\S]*?\}/) || [''])[0];
+  const w = Number((blk.match(/width:\s*(\d+)px/) || [])[1] || 0);
+  const h = Number((blk.match(/height:\s*(\d+)px/) || [])[1] || 0);
+  return w >= 44 && h >= 44;
+})());
+ok('END TURN is pinned to the rail bottom, not the viewport',
+  /#end-turn,\s*\.end-turn\s*\{[\s\S]{0,160}position:\s*absolute;[\s\S]{0,80}bottom:\s*0/.test(mobile));
 ok('--tap-min token is 44px', /--tap-min:\s*44px/.test(mobile));
 
 /* --- A5. no hover-only affordances survive on touch --- */
@@ -139,9 +150,16 @@ const views = [...index.matchAll(/id="view-([a-z]+)"/g)].map((x) => x[1]);
 ok('all 14 views present in the DOM', views.length === 14, `${views.length}: ${views.join(',')}`);
 ['title', 'roster', 'missions', 'story', 'map', 'event', 'shop', 'rest', 'reward', 'battle', 'rank', 'guide', 'character', 'sim']
   .forEach((v) => ok(`view-${v} has a landscape rule`, new RegExp(`#view-${v}|#view-battle`).test(mobile) || true));
-ok('battle stage is reachable without scrolling (flex, min-height:0)',
-  /\.battle-stage\s*\{[\s\S]{0,200}min-height:\s*0/.test(mobile));
-ok('hand zone is not fixed-height on phones', /\.hand-zone\s*\{[\s\S]{0,120}min-height:\s*0/.test(mobile));
+/* The stage's implicit grid row used to grow to its content (447px of enemy
+   column in a 182px row), which pushed the arena and END TURN below the fold.
+   The row must be constrained, and the arena must not overflow its track. */
+ok('battle stage row is constrained (minmax(0,1fr))',
+  /\.battle-stage\s*\{[\s\S]{0,700}?grid-template-rows:\s*minmax\(0,\s*1fr\)/.test(mobile));
+ok('battle stage clips instead of spilling', /\.battle-stage\s*\{[\s\S]{0,800}?overflow:\s*hidden/.test(mobile));
+/* The hand strip is deliberately a FIXED height: a content-sized strip made the
+   cards taller, which made the strip taller, which ate the stage. */
+ok('hand zone has a bounded height on phones',
+  /\.hand-zone\s*\{[\s\S]{0,200}height:\s*clamp\(/.test(mobile));
 ok('panels/sheets are made scrollable rather than clipped',
   (mobile.match(/overflow:\s*auto/g) || []).length >= 8,
   String((mobile.match(/overflow:\s*auto/g) || []).length));
