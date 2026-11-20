@@ -85,7 +85,7 @@ function tone(freq, dur, { type = 'triangle', gain = 0.09, slideTo = null, delay
   osc.frequency.setValueAtTime(freq, now);
   if (slideTo) osc.frequency.exponentialRampToValueAtTime(Math.max(30, slideTo), now + dur);
   g.gain.setValueAtTime(0.0001, now);
-  g.gain.linearRampToValueAtTime(gain, now + 0.012);
+  g.gain.linearRampToValueAtTime(gain * sfxVolume, now + 0.012);
   g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
   osc.connect(g).connect(c.destination);
   osc.start(now);
@@ -106,7 +106,7 @@ function noiseBurst(dur, { gain = 0.08, highpass = 600, delay = 0 } = {}) {
   filt.frequency.value = highpass;
   const g = c.createGain();
   const now = c.currentTime + delay;
-  g.gain.setValueAtTime(gain, now);
+  g.gain.setValueAtTime(gain * sfxVolume, now);
   g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
   src.connect(filt).connect(g).connect(c.destination);
   src.start(now);
@@ -248,7 +248,7 @@ export function bark(charId, kind = 'attack') {
         const a = voiceCache[src] || new Audio(src);
         voiceCache[src] = a;
         a.currentTime = 0;
-        a.volume = 0.85;
+        a.volume = 0.85 * sfxVolume;
         activeAudio = a;
         a.play().catch(() => {
           const base = CHAR_PITCH[charId] || 300;
@@ -267,6 +267,15 @@ export function bark(charId, kind = 'attack') {
 }
 
 export const isMuted = () => muted;
+
+// Master SFX/voice volume (Settings slider), persisted.
+let sfxVolume = 0.9;
+try { const v = parseFloat(localStorage.getItem('cw_sfx_vol')); if (!Number.isNaN(v)) sfxVolume = Math.max(0, Math.min(1, v)); } catch { /* ignore */ }
+export const getSfxVolume = () => sfxVolume;
+export function setSfxVolume(v) {
+  sfxVolume = Math.max(0, Math.min(1, Number(v) || 0));
+  try { localStorage.setItem('cw_sfx_vol', String(sfxVolume)); } catch { /* ignore */ }
+}
 
 export function toggleMute() {
   muted = !muted;

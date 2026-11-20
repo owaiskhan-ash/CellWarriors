@@ -457,12 +457,35 @@ statusEnemy.poison = 9; statusEnemy.mark = 2; statusEnemy.vuln = 2; statusEnemy.
 cw.renderBattle();
 ok('enemy status icons render under HP bar', $('enemies').querySelectorAll('.status-icon').length >= 3, String($('enemies').querySelectorAll('.status-icon').length));
 ok('poison icon shows stacks', !!$('enemies').querySelector('[data-status="poison"]'));
+ok('status icons show stack count as N× (e.g. 9× POISON)', /\d+×/.test($('enemies').querySelector('[data-status="poison"]').textContent), $('enemies').querySelector('[data-status="poison"]').textContent);
+ok('boss HP bar shows for the Colossus', !$('boss-bar').classList.contains('hidden') && /TRAINING|COLOSSUS/i.test($('boss-bar-name').textContent), $('boss-bar-name').textContent);
+ok('action timeline lists enemies in acting order', $('action-timeline').children.length >= 1);
+ok('objective tracker shows trials in sim', /OBJECTIVE/.test($('objective-bar').textContent));
 cw.openEnemyDetail(statusEnemy.uid);
 ok('enemy long-press detail opens', !$('enemy-detail').classList.contains('hidden'));
 ok('enemy detail lists Poison with tick forecast', /Poison 9/.test($('enemy-detail').textContent) && /End Turn|end of YOUR turn/i.test($('enemy-detail').textContent));
 ok('enemy detail lists buffs and debuffs sections', /BUFFS/.test($('enemy-detail').textContent) && /DEBUFFS/.test($('enemy-detail').textContent));
 cw.closeEnemyDetail();
 ok('enemy detail closes', $('enemy-detail').classList.contains('hidden'));
+
+// game-feel UI pack: end-turn danger, settings, roster filter
+statusEnemy.counter = 1; statusEnemy.intents = [{ type: 'attack', value: 500 }]; statusEnemy.intentIndex = 0;
+cw.renderBattle();
+ok('end-turn button warns when an enemy is about to act hard', $('end-turn').classList.contains('danger'));
+cw.showView('roster');
+document.querySelector('[data-rfilter="alchemist"]').click();
+ok('roster class filter shows only Alchemists', [...$('roster').querySelectorAll('.roster-card')].filter((n) => n.style.display !== 'none').length === 1);
+document.querySelector('[data-rfilter="all"]').click();
+ok('roster filter resets', [...$('roster').querySelectorAll('.roster-card')].filter((n) => n.style.display !== 'none').length === 5);
+cw.showView('title');
+click('btn-open-settings-title');
+ok('settings modal opens', !$('settings-modal').classList.contains('hidden'));
+ok('settings has volume + fx size + toggles', !!$('set-volume') && !!$('set-fxsize') && !!$('set-shake') && !!$('set-cb'));
+$('set-cb').checked = true; $('set-cb').dispatchEvent(new window.Event('change', { bubbles: true }));
+ok('colorblind palette toggle applies', document.body.classList.contains('cb-palette'));
+$('set-cb').checked = false; $('set-cb').dispatchEvent(new window.Event('change', { bubbles: true }));
+click('settings-close');
+ok('settings modal closes', $('settings-modal').classList.contains('hidden'));
 
 console.log(errors.length ? 'JS ERRORS: ' + errors.join(' | ') : 'no JS errors');
 if (errors.length) process.exitCode = 1;

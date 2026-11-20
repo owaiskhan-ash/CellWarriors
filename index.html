@@ -63,6 +63,7 @@
               <button class="btn-ghost" id="btn-open-guide"><svg class="ico"><use href="#i-book"/></svg> COMBAT GUIDE</button>
               <button class="btn-ghost" id="btn-open-sim"><svg class="ico"><use href="#i-target"/></svg> SIMULATION</button>
               <button class="btn-ghost" id="btn-open-lab"><svg class="ico"><use href="#i-flask"/></svg> CELL LAB</button>
+              <button class="btn-ghost tiny" id="btn-open-settings-title"><svg class="ico"><use href="#i-menu"/></svg> SETTINGS</button>
               <button class="btn-ghost tiny" id="btn-reset">reset save</button>
             </div>
           </div>
@@ -89,6 +90,7 @@
           <button class="btn-ghost tiny" id="btn-roster-sim"><svg class="ico"><use href="#i-target"/></svg> SIM</button>
           <span class="team-count" id="team-count">0 / 3</span>
         </header>
+        <div class="roster-filters" id="roster-filters"></div>
         <div class="roster" id="roster"></div>
         <div class="synergy-preview" id="synergy-preview"></div>
         <div class="roster-foot">
@@ -270,6 +272,15 @@
           </div>
         </div>
         <button class="sim-hud-pill hidden" id="sim-hud-pill" title="Show simulation panel (H)"><svg class="ico"><use href="#i-chart"/></svg><b>SIM</b><span id="sim-pill-dmg">0 DMG</span><span class="sim-pill-trials" id="sim-pill-trials"></span><span class="sim-pill-show">SHOW ▸</span></button>
+        <div class="top-stack">
+          <div class="boss-bar hidden" id="boss-bar">
+            <div class="boss-bar-head"><b id="boss-bar-name">BOSS</b><span id="boss-bar-hp"></span></div>
+            <div class="boss-bar-track"><i id="boss-bar-fill"></i></div>
+            <div class="boss-bar-ten"><i id="boss-bar-tenfill"></i></div>
+            <div class="boss-bar-status" id="boss-bar-status"></div>
+          </div>
+          <div class="objective-bar" id="objective-bar"></div>
+        </div>
         <div class="turn-banner hidden" id="turn-banner"><span id="turn-banner-text">TURN 1</span><span class="turn-banner-sub" id="turn-banner-sub">ENGAGE</span></div>
         <div class="breakdown-overlay hidden" id="breakdown-overlay"><span>MENTAL BREAKDOWN</span><small id="breakdown-name">—</small></div>
         <svg class="target-line hidden" id="target-line"><line id="target-line-el" x1="0" y1="0" x2="0" y2="0" /></svg>
@@ -326,6 +337,7 @@
           <div class="arena">
             <div class="weak-banner" id="weak-banner"></div>
             <div class="enemy-row" id="enemies"></div>
+          <div class="action-timeline" id="action-timeline" title="Action order — who acts next"></div>
           </div>
 
           <!-- right rail -->
@@ -417,6 +429,7 @@
           <aside class="char-rail" id="char-rail"></aside>
           <div class="char-main" id="char-main"></div>
         </div>
+        <div class="ego-preview hidden" id="ego-preview"><img id="ego-preview-img" alt="" /><div><span>EGO CUT-IN</span><b id="ego-preview-name">—</b><p id="ego-preview-text"></p></div></div>
       </section>
 
       <!-- ================= SIMULATION CHAMBER (setup) ================= -->
@@ -541,6 +554,7 @@
             </div>
             <button class="btn-ghost tiny" id="deck-modal-close">CLOSE</button>
           </header>
+          <div class="deck-filters" id="deck-filters"><button data-dtype="all" class="active">ALL</button><button data-dtype="attack">ATTACKS</button><button data-dtype="skill">SKILLS</button><button data-dtype="upgrade">UPGRADES</button><button data-dtype="upgraded">UPGRADED +</button></div>
           <div class="deck-grid" id="deck-modal-grid"></div>
         </div>
       </div>
@@ -574,6 +588,20 @@
         </div>
       </div>
 
+      <!-- settings -->
+      <div class="modal hidden" id="settings-modal">
+        <div class="modal-panel settings-panel">
+          <header class="modal-head"><div><h2>SETTINGS</h2><span class="head-sub">Applied instantly · saved on this device</span></div><button class="btn-ghost tiny" id="settings-close">CLOSE</button></header>
+          <div class="set-row"><label for="set-volume">SFX / VOICE VOLUME</label><span><input type="range" id="set-volume" min="0" max="100" step="5" /><b id="set-volume-val">90%</b></span></div>
+          <div class="set-row"><label for="set-fxsize">DAMAGE NUMBER SIZE</label><select id="set-fxsize"><option value="s">SMALL</option><option value="m">DEFAULT</option><option value="l">LARGE</option></select></div>
+          <div class="set-row"><label for="set-uiscale">UI SCALE</label><span><input type="range" id="set-uiscale" min="85" max="110" step="5" /><b id="set-uiscale-val">100%</b></span></div>
+          <div class="set-row"><label for="set-shake">SCREEN SHAKE (BIG HITS)</label><input type="checkbox" id="set-shake" /></div>
+          <div class="set-row"><label for="set-motion">ANIMATIONS / MOTION</label><input type="checkbox" id="set-motion" /></div>
+          <div class="set-row"><label for="set-cb">COLORBLIND STATUS PALETTE</label><input type="checkbox" id="set-cb" /></div>
+          <p class="set-keys">KEYBINDS — <b>SPACE</b> End Turn · <b>1–7</b> Play card · <b>H</b> Hide Sim HUD · <b>ESC</b> Pause · <b>HOLD</b> any card or enemy to inspect it</p>
+        </div>
+      </div>
+
       <!-- pause -->
       <div class="pause hidden" id="pause">
         <div class="pause-card czn-frame">
@@ -582,6 +610,7 @@
           <button class="btn-primary" id="pause-resume">RESUME</button>
           <button class="btn-ghost" id="pause-restart">RESTART FIGHT</button>
           <button class="btn-ghost" id="pause-quit">QUIT TO MAP</button>
+          <button class="btn-ghost" id="pause-settings">SETTINGS</button>
         </div>
       </div>
 
