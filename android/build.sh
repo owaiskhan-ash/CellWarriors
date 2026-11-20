@@ -222,40 +222,84 @@ APK="$OUT_DIR/$APK_NAME"
 verify_apk() {
   local apk="$1"
   local bad=0
+  # NOTE: `set -o pipefail` makes `producer | grep -q` unreliable — grep exits
+  # as soon as it matches, the producer takes SIGPIPE, and the pipeline reports
+  # failure even though the match succeeded. Capture to a variable, then test.
+  local dump_badging xmltree listing
   dump_badging="$("$TOOLS/aapt2" dump badging "$apk" 2>/dev/null)"
-  echo "$dump_badging" | grep -q "package: name='com.cellwarriors.game'" || { echo "   !! wrong package"; bad=1; }
-  echo "$dump_badging" | grep -q "sdkVersion:'24'" || { echo "   !! minSdk is not 24"; bad=1; }
-  echo "$dump_badging" | grep -q "targetSdkVersion:'34'" || { echo "   !! targetSdk is not 34"; bad=1; }
-  echo "$dump_badging" | grep -q "launchable-activity: name='com.cellwarriors.game.MainActivity'" \
-    || { echo "   !! no launchable activity"; bad=1; }
-  # sensorLandscape == 6
-  "$TOOLS/aapt2" dump xmltree "$apk" --file AndroidManifest.xml 2>/dev/null \
-    | grep -q "screenOrientation(0x0101001e)=6" || { echo "   !! not locked to landscape"; bad=1; }
-  # the whole offline web app must be there
-  local listing
+  xmltree="$("$TOOLS/aapt2" dump xmltree "$apk" --file AndroidManifest.xml 2>/dev/null)"
   listing="$(unzip -l "$apk" | awk '{print $4}')"
+
+  case "$dump_badging" in
+    *"package: name='com.cellwarriors.game'"*) ;;
+    *) echo "   !! wrong package id"; bad=1 ;;
+  esac
+  case "$dump_badging" in
+    *"sdkVersion:'24'"*) ;;
+    *) echo "   !! minSdk is not 24"; bad=1 ;;
+  esac
+  case "$dump_badging" in
+    *"targetSdkVersion:'34'"*) ;;
+    *) echo "   !! targetSdk is not 34"; bad=1 ;;
+  esac
+  case "$dump_badging" in
+    *"launchable-activity: name='com.cellwarriors.game.MainActivity'"*) ;;
+    *) echo "   !! no launchable activity"; bad=1 ;;
+  esac
+  # sensorLandscape == 6; the attribute id is stable across API levels.
+  case "$xmltree" in
+    *"screenOrientation(0x0101001e)=6"*) ;;
+    *) echo "   !! not locked to sensorLandscape"; bad=1 ;;
+  esac
+  # v26+ adaptive icon XML must be present too (round + normal)
+  case "$listing" in
+    *"res/mipmap-anydpi-v26/ic_launcher.xml"*) ;;
+    *) echo "   !! adaptive launcher icon missing"; bad=1 ;;
+  esac
+
+  # the whole offline web app must be there
+  local f
   for f in assets/index.html assets/styles.css assets/styles-mobile.css assets/fonts.css \
            assets/src/ui.js assets/src/touch.js assets/manifest.webmanifest \
            assets/fonts/inter-400.woff2 assets/fonts/chakra-petch-700.woff2 \
            assets/images/logo-transparent.png assets/assets/icons/icon-512.png \
            classes.dex resources.arsc AndroidManifest.xml; do
-    echo "$listing" | grep -qx "$f" || { echo "   !! APK missing $f"; bad=1; }
+    case "$listing" in
+      *"$f"*) ;;
+      *) echo "   !! APK missing $f"; bad=1 ;;
+    esac
   done
-  # a 100-byte dex would mean the activity was never compiled
+
+  # a tiny dex would mean the activity was never compiled
   local dexsz
   dexsz="$(unzip -l "$apk" classes.dex | awk 'NR==4 {print $1}')"
   [ "${dexsz:-0}" -gt 4000 ] || { echo "   !! classes.dex looks empty ($dexsz bytes)"; bad=1; }
+
   # no stray network font refs or localhost URLs inside the bundled game
-  if unzip -p "$apk" assets/index.html | grep -qE "fonts\.(googleapis|gstatic)\.com|localhost|127\.0\.0\.1"; then
-    echo "   !! network reference inside bundled index.html"; bad=1
-  fi
+  local idx
+  idx="$(unzip -p "$apk" assets/index.html)"
+  case "$idx" in
+    *fonts.googleapis.com*|*fonts.gstatic.com*|*localhost*|*127.0.0.1*)
+      echo "   !! network reference inside bundled index.html"; bad=1 ;;
+  esac
+
+  # every same-origin asset index.html requests must be in the archive
+  local ref miss=0
+  for ref in $(echo "$idx" | grep -oE '(src|href)="\./[^"]+"' | sed -E 's/^(src|href)="\.\///; s/"$//'); do
+    case "$listing" in
+      *"assets/$ref"*) ;;
+      *) echo "   !! index.html references $ref but the APK does not contain it"; miss=1; bad=1 ;;
+    esac
+  done
+
   if [ "$bad" -ne 0 ]; then
     echo "APK VERIFICATION FAILED"; return 1
   fi
   local files
-  files="$(unzip -l "$apk" | tail -1 | awk '{print $2}')"
-  echo "   ok: landscape lock, $files entries, dex ${dexsz}b, all assets present"
+  files="$(printf '%s\n' "$listing" | grep -c .)"
+  echo "   ok: landscape lock, $files entries, dex ${dexsz}b, assets + all index.html refs present"
 }
+
 verify_apk "$APK"
 
 # ----------------------------------------------------------------- 11. report
