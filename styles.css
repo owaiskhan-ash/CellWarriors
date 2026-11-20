@@ -300,8 +300,10 @@ button .ico { margin-right: 4px; }
 .enemy.is-boss { width: clamp(280px, 38vw, 560px); }
 .enemy:hover { transform: translateY(-3px); }
 .enemy.dead { opacity: 0.15; filter: grayscale(1); pointer-events: none; }
-.enemy.selected .enemy-art::after { content:""; position:absolute; inset: 6% 10%; border-radius: 50%; border: 2px solid rgba(255,51,85,0.7); box-shadow: 0 0 30px rgba(255,51,85,0.45); background: radial-gradient(circle, rgba(255,51,85,0.14), transparent 68%); animation: targetPulse 1s infinite; }
-@keyframes targetPulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.04); opacity: 0.8; } }
+/* Selected target: no ring, no frame — the character sprite itself glows
+   (drop-shadow follows the silhouette), name plate tints red. */
+.enemy.selected .enemy-art img { filter: drop-shadow(0 22px 38px rgba(0,0,0,0.8)) drop-shadow(0 0 26px rgba(255,51,85,0.55)) brightness(1.07); }
+.enemy.selected .enemy-name { color: #ff8fa5; }
 .enemy-art { position: relative; height: clamp(210px, 42vh, 390px); width: 100%; display: flex; align-items: flex-end; justify-content: center; }
 .enemy.is-elite .enemy-art { height: clamp(250px, 48vh, 440px); }
 .enemy.is-boss .enemy-art { height: clamp(290px, 54vh, 500px); }
@@ -1136,7 +1138,8 @@ body.cb-palette .fx-line.poison b { color:#67e8f9; text-shadow:0 4px 18px #000, 
   0% { opacity: 0; transform: translateY(10px) scale(.93); }
   100% { opacity: 1; transform: none; }
 }
-.enemy.idle .enemy-art { box-shadow: 0 0 16px rgba(53,208,192,.22); }
+/* (removed: rectangular glow frame around the enemy art box — opponents
+   stand frameless on the stage; breathing animation lives on the img) */
 .enemy.dead .enemy-art img { animation: enemyDeathFlash .55s ease-out; }
 @keyframes enemyDeathFlash {
   0% { filter: none; } 25% { filter: drop-shadow(0 0 12px rgba(255,77,109,.95)) brightness(1.3); }
