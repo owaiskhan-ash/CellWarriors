@@ -60,48 +60,102 @@
       <section id="view-battle" class="view hidden">
         <div class="battle-bg"></div>
 
-        <header class="battle-top">
-          <button class="chip-btn" id="btn-flee" title="Retreat">✕</button>
-          <div class="mission-tag">
+        <!-- team HP, portraits, stress -->
+        <header class="hud-top">
+          <div class="team-block">
+            <div class="team-bar">
+              <div class="team-fill" id="team-hp-fill"></div>
+              <span class="team-num" id="team-hp-num">0 / 0</span>
+            </div>
+            <div class="team-parts">
+              <div class="portraits" id="team-portraits"></div>
+              <div class="stress-dots" id="team-stress"></div>
+            </div>
+          </div>
+          <div class="hud-title">
             <b id="b-mission">—</b>
             <span id="b-place">—</span>
           </div>
-          <div class="sands" id="sands"></div>
-          <div class="turn-badge">TURN <b id="b-turn">1</b></div>
+          <div class="hud-tools">
+            <button class="icon-btn" id="log-toggle" title="Battle log">▤</button>
+            <button class="icon-btn" id="btn-menu" title="Menu">☰</button>
+          </div>
         </header>
 
         <div class="battle-stage">
-          <aside class="party" id="party"></aside>
+          <!-- left rail -->
+          <aside class="rail rail-left">
+            <div class="turn-plate"><span>TURN</span><b id="b-turn">1</b></div>
+            <div class="pile-box" id="draw-pile" title="Draw pile">
+              <b id="draw-count">0</b><span>DRAW</span>
+            </div>
+            <div class="rail-ep">
+              <span class="ep-label">EP</span>
+              <b id="ep-num">0</b>
+              <div class="ep-pips" id="ep-pips"></div>
+            </div>
+            <div class="ego-stack" id="ego-list"></div>
+          </aside>
+
+          <!-- arena -->
           <div class="arena">
             <div class="weak-banner" id="weak-banner"></div>
             <div class="enemy-row" id="enemies"></div>
-            <div class="battle-tips" id="battle-tips"></div>
           </div>
+
+          <!-- right rail -->
+          <aside class="rail rail-right">
+            <div class="sands-wrap">
+              <button class="sands-btn" id="btn-sands" title="Sands of Time">⧗<i id="sands-count">3</i></button>
+              <div class="sands-menu hidden" id="sands-menu">
+                <button data-sand="1"><b>1</b><span>Undo last card</span></button>
+                <button data-sand="2"><b>2</b><span>Redraw Ego</span></button>
+                <button data-sand="3"><b>3</b><span>Rewind turn</span></button>
+              </div>
+            </div>
+            <div class="pile-box grave" id="grave-pile" title="Graveyard">
+              <b id="grave-count">0</b><i id="grave-used">+0</i><span>GRAVE</span>
+            </div>
+            <button class="end-turn" id="end-turn" title="End turn"><span>✓</span></button>
+          </aside>
         </div>
 
+        <!-- hand -->
         <footer class="hand-zone">
-          <div class="pile draw-pile" id="draw-pile">
-            <b id="draw-count">0</b><span>DRAW</span>
-          </div>
-          <div class="ap-orb" id="ap-orb"><b id="ap-now">3</b><span>AP</span></div>
           <div class="hand" id="hand"></div>
-          <div class="ego-dock">
-            <div class="ep-row">
-              <span class="ep-label">EP</span>
-              <div class="ep-pips" id="ep-pips"></div>
-              <span class="ep-num" id="ep-num">0/7</span>
-            </div>
-            <div class="ego-list" id="ego-list"></div>
+          <div class="ap-row">
+            <span class="ap-line"></span>
+            <b id="ap-now">3</b>
+            <span class="ap-line"></span>
           </div>
-          <div class="pile grave-pile" id="grave-pile">
-            <b id="grave-count">0</b><i id="grave-used">+0</i><span>GRAVE</span>
-          </div>
-          <button class="end-turn" id="end-turn"><span class="chk">✓</span><b>END<br />TURN</b></button>
+          <div class="battle-tips" id="battle-tips"></div>
         </footer>
 
-        <div class="battle-log" id="battle-log"></div>
-        <div class="log-toggle" id="log-toggle">LOG</div>
+        <div class="battle-log hidden" id="battle-log"></div>
       </section>
+
+      <!-- card cut-in -->
+      <div class="cutin hidden" id="cutin">
+        <div class="cutin-lines"></div>
+        <div class="cutin-flash"></div>
+        <img class="cutin-art" id="cutin-art" alt="" />
+        <div class="cutin-side">
+          <div class="cutin-name" id="cutin-name">—</div>
+          <div class="cutin-type" id="cutin-type">—</div>
+          <ul class="cutin-fx" id="cutin-fx"></ul>
+        </div>
+        <div class="cutin-card" id="cutin-card"></div>
+      </div>
+
+      <!-- pause -->
+      <div class="pause hidden" id="pause">
+        <div class="pause-card">
+          <h1>PAUSED</h1>
+          <button class="btn-primary" id="pause-resume">RESUME</button>
+          <button class="btn-ghost" id="pause-restart">RESTART FIGHT</button>
+          <button class="btn-ghost" id="pause-quit">QUIT TO MISSIONS</button>
+        </div>
+      </div>
 
       <!-- ================= RESULT ================= -->
       <div class="overlay hidden" id="overlay">

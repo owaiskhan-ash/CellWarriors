@@ -1,4 +1,4 @@
-import { CHARACTERS, CARDS, MISSIONS, ENEMIES, ATTRIBUTES, CLASSES, ROLES } from './data.js';
+import { CHARACTERS, MISSIONS, ENEMIES, ATTRIBUTES, CLASSES, ROLES } from './data.js';
 import {
   startBattle, playCard, endTurn, playEgo, useSands, canPlay, intentOf,
   MAX_EP, STRESS_MAX, RECOVERY_PLAYS,
@@ -17,9 +17,10 @@ const attr = (a) => ATTRIBUTES[a] || { name: '—', glyph: '·', color: '#888' }
 let progress = loadProgress();
 let battle = null;
 let mission = null;
-let pendingMission = null;
 let storyIndex = 0;
-let logOpen = true;
+let logOpen = false;
+let cutBusy = false;
+let prevState = null;
 
 const VIEWS = ['title', 'roster', 'missions', 'story', 'battle'];
 const showView = (name) => VIEWS.forEach((v) => $('view-' + v).classList.toggle('hidden', v !== name));
@@ -32,8 +33,17 @@ const ENEMY_ART = {
   prion: 'images/pathogen-toxin-cut.png',
   spore: 'images/pathogen-strep-cut.png',
 };
-const ENEMY_HUE = { strain: 'hue-rotate(255deg) saturate(1.3)', prion: 'hue-rotate(300deg)', spore: 'hue-rotate(60deg)' };
-const INTENT_ICON = { attack: '⚔', defend: '◈', buff: '↑', debuff: '☠', heal: '✚' };
+const ENEMY_HUE = {
+  strain: 'hue-rotate(250deg) saturate(1.4)',
+  prion: 'hue-rotate(300deg)',
+  spore: 'hue-rotate(60deg)',
+};
+const CARD_ART = {
+  k_jab: 'card-k1', k_rush: 'card-k2', k_last: 'card-k3',
+  m_strike: 'card-m1', m_guard: 'card-m2', m_patch: 'card-m3',
+};
+const KIND_ICON = { attack: '⚔', skill: '❖', upgrade: '⬆', status: '☓', curse: '✖' };
+const INTENT_ICON = { attack: null, defend: '❖', buff: '↑', debuff: '☠', heal: '✚' };
 
 /* ============================================================== roster */
 function renderRoster() {
@@ -53,7 +63,7 @@ function renderRoster() {
         <span class="roster-name">${c.name}</span>
         <span class="roster-cell">${c.full.split('— ')[1] || ''}</span>
         <span class="roster-cell" style="color:#9aa3c4">${ROLES[c.cls]} · ${c.deck.length} cards</span>
-        <div class="roster-stats"><span>HP <b>${c.hp}</b></span><span>EGO <b>${c.cls}</b></span></div>
+        <div class="roster-stats"><span>HP <b>${c.hp}</b></span><span>EGO <b>4 EP</b></span></div>
       </div>`;
     card.addEventListener('click', () => toggleTeam(id));
     grid.appendChild(card);
@@ -66,7 +76,7 @@ function renderRoster() {
     const slot = el('div', `team-slot${id ? ' filled' : ''}`);
     slot.innerHTML = id
       ? `<img src="${CHARACTERS[id].art}" alt="" /><div><b>${CHARACTERS[id].name}</b><br>${attr(CHARACTERS[id].attr).glyph} ${CLASSES[CHARACTERS[id].cls].name}</div>`
-      : `<div>EMPTY SLOT</div>`;
+      : '<div>EMPTY SLOT</div>';
     strip.appendChild(slot);
   }
   $('btn-deploy').disabled = progress.team.length !== 3;
@@ -96,7 +106,7 @@ function renderMissions() {
         <div class="threat ${m.threat}">${m.threat.toUpperCase()}</div>
       </div>
       <div>
-        <div class="m-name">${m.name}${cleared ? ' <span style="color:#4ddc9a;font-size:11px">✓</span>' : ''}</div>
+        <div class="m-name">${m.name}${cleared ? ' <span style="color:#46e08a;font-size:11px">✓</span>' : ''}</div>
         <div class="m-place">${m.place}</div>
       </div>
       <div class="m-right">
@@ -113,9 +123,8 @@ function renderMissions() {
 function openStory(m) {
   mission = m;
   storyIndex = 0;
-  const speaker = CHARACTERS[progress.team[0]];
-  $('story-art').style.backgroundImage = `url(images/cell-warriors-battle.png)`;
-  $('story-who').textContent = `${m.place.toUpperCase()}`;
+  $('story-art').style.backgroundImage = 'url(images/cell-warriors-battle.png)';
+  $('story-who').textContent = m.place.toUpperCase();
   $('story-text').textContent = m.story[0];
   $('btn-story-next').textContent = 'NEXT';
   showView('story');
@@ -123,10 +132,7 @@ function openStory(m) {
 
 function advanceStory() {
   storyIndex += 1;
-  if (storyIndex >= mission.story.length) {
-    beginBattle(mission);
-    return;
-  }
+  if (storyIndex >= mission.story.length) { beginBattle(mission); return; }
   $('story-text').textContent = mission.story[storyIndex];
   if (storyIndex === mission.story.length - 1) $('btn-story-next').textContent = 'ENGAGE';
 }
@@ -134,8 +140,13 @@ function advanceStory() {
 /* ============================================================== battle */
 function beginBattle(m) {
   battle = startBattle(m.code, progress.team, Date.now());
+  prevState = null;
+  cutBusy = false;
+  $('cutin').classList.add('hidden');
+  $('sands-menu').classList.add('hidden');
   showView('battle');
   $('overlay').classList.add('hidden');
+  $('pause').classList.add('hidden');
   $('b-mission').textContent = `${m.code.toUpperCase()} · ${m.name.toUpperCase()}`;
   $('b-place').textContent = m.place;
   renderBattle();
@@ -143,21 +154,24 @@ function beginBattle(m) {
 
 function renderBattle() {
   if (!battle) return;
-  renderParty();
+  renderTeam();
   renderEnemies();
   renderHand();
   renderResources();
   renderLog();
   $('b-turn').textContent = battle.turn;
   const w = attr(battle.enemies[0] ? battle.enemies[0].weakness : null);
-  $('weak-banner').innerHTML = `BREAK <b style="color:${w.color}">${w.glyph} ${w.name.toUpperCase()}</b> TENACITY FOR +1 AP`;
+  $('weak-banner').innerHTML = `BREAK <b style="color:${w.color}">${w.glyph} ${w.name.toUpperCase()}</b> TENACITY → +1 AP`;
   $('end-turn').disabled = !!battle.result;
-  const tips = [];
-  tips.push(`CARDS PLAYED <b>${battle.cardsPlayedThisTurn}</b>`);
-  if (battle.epiphany) tips.push(`⚡ EPIPHANY ON <b>${CHARACTERS[battle.epiphany].name.toUpperCase()}</b>`);
-  if (battle.enemies.some((e) => e.ravaged)) tips.push('<b>RAVAGED</b> — TAKES +30% DAMAGE');
+  $('ap-now').textContent = battle.ap;
+  $('ap-now').parentElement.classList.toggle('zero', battle.ap <= 0);
+
+  const tips = [`CARDS PLAYED <b>${battle.cardsPlayedThisTurn}</b>`];
+  if (battle.epiphany) tips.push(`⚡ EPIPHANY <b>${CHARACTERS[battle.epiphany].name.toUpperCase()}</b>`);
+  if (battle.enemies.some((e) => e.ravaged)) tips.push('<b>RAVAGED</b> +30% DMG');
   $('battle-tips').innerHTML = tips.join('');
-  const overlay = $('overlay');
+  prevState = snapshotOf();
+
   if (battle.result === 'win') {
     if (!progress.cleared.includes(battle.mission.code)) {
       progress.cleared.push(battle.mission.code);
@@ -167,15 +181,20 @@ function renderBattle() {
   } else if (battle.result === 'loss') {
     showOverlay('TEAM COLLAPSED', 'Stress took them before the pathogen did. Regroup.', 'RETRY', () => beginBattle(battle.mission), false);
   } else {
-    overlay.classList.add('hidden');
+    $('overlay').classList.add('hidden');
   }
 }
+
+const snapshotOf = () => ({
+  enemies: Object.fromEntries(battle.enemies.map((e) => [e.uid, { hp: e.hp, tenacity: e.tenacity, ravaged: e.ravaged }])),
+  chars: Object.fromEntries(battle.characters.map((c) => [c.id, { hp: c.hp, stress: c.stress, broken: c.broken, shield: c.shield }])),
+});
 
 function showOverlay(title, sub, btn, fn, win) {
   const ov = $('overlay');
   ov.classList.remove('hidden');
   $('overlay-title').textContent = title;
-  $('overlay-title').style.color = win ? '#4ddc9a' : '#ff3355';
+  $('overlay-title').style.color = win ? '#46e08a' : '#ff3355';
   $('overlay-sub').textContent = sub;
   $('overlay-stats').innerHTML = `
     <div><b>${battle.turn}</b>TURNS</div>
@@ -188,109 +207,220 @@ function showOverlay(title, sub, btn, fn, win) {
   $('overlay-retry').onclick = () => beginBattle(battle.mission);
 }
 
-function renderParty() {
-  const party = $('party');
-  party.innerHTML = '';
+/* --- top hud: pooled HP + portraits + stress --- */
+function renderTeam() {
+  $('team-hp-fill').style.width = '100%';
+  const hp = battle.characters.reduce((n, c) => n + Math.max(0, c.hp), 0);
+  const max = battle.characters.reduce((n, c) => n + c.maxHp, 0);
+  $('team-hp-fill').style.width = `${(hp / max) * 100}%`;
+  $('team-hp-num').textContent = `${hp} / ${max}`;
+
+  const box = $('team-portraits');
+  box.innerHTML = '';
   battle.characters.forEach((c) => {
-    const isEpi = battle.epiphany === c.id;
-    const node = el('div', `pc${c.hp <= 0 ? ' down' : ''}${c.broken ? ' broken' : ''}`);
-    node.style.setProperty('--pc', CHARACTERS[c.id].skin);
+    const p = el('div', `portrait${c.hp <= 0 ? ' down' : ''}${c.broken ? ' broken' : ''}`);
+    p.style.setProperty('--pc', CHARACTERS[c.id].skin);
+    p.title = `${c.name} — ${c.hp}/${c.maxHp} HP · ${Math.round(c.stress)} Stress`;
     const need = RECOVERY_PLAYS[Math.min(Math.max(c.breakdownCount - 1, 0), RECOVERY_PLAYS.length - 1)];
-    node.innerHTML = `
-      <div class="pc-art">
-        <img src="${c.art}" alt="${c.name}" />
-        ${isEpi ? '<span class="bulb">💡</span>' : ''}
-      </div>
-      <div class="pc-meta">
-        <div class="pc-name">${c.name.toUpperCase()}<i>${attr(c.attr).glyph}</i></div>
-        <div class="bar hp"><i style="width:${(c.hp / c.maxHp) * 100}%"></i></div>
-        <div class="bar stress"><i style="width:${(c.stress / STRESS_MAX) * 100}%"></i></div>
-        <div class="pc-nums"><span>${c.hp}/${c.maxHp}</span><span>${c.broken ? 'BROKEN' : Math.round(c.stress) + ' STRESS'}</span></div>
-      </div>
-      <div class="pc-flags">
-        ${c.shield > 0 ? `<span class="flag shield">◈ ${c.shield}</span>` : ''}
-        ${c.broken ? `<span class="flag breakdown">${c.recovery}/${need}</span>` : ''}
-      </div>`;
-    party.appendChild(node);
+    p.innerHTML = `
+      <img src="${c.art}" alt="${c.name}" />
+      ${c.shield > 0 ? `<span class="p-shield">◈${c.shield}</span>` : ''}
+      <div class="p-stress"><i style="width:${Math.min(100, c.stress)}%"></i></div>
+      <div class="p-hp"><i style="width:${(c.hp / c.maxHp) * 100}%"></i></div>
+      ${c.broken ? `<div class="p-broken">BREAK<br>${c.recovery}/${need}</div>` : ''}`;
+    p.addEventListener('click', () => {
+      if (c.hp <= 0) return;
+    });
+    box.appendChild(p);
   });
+
+  const dots = $('team-stress');
+  dots.innerHTML = '';
+  battle.characters.forEach((c) => {
+    const d = el('div', `sdot${c.stress > 66 ? ' high' : ''}`);
+    d.title = `${c.name} Stress ${Math.round(c.stress)}/100`;
+    d.innerHTML = `<i style="height:${Math.min(100, c.stress)}%"></i>`;
+    dots.appendChild(d);
+  });
+
+  // stress / damage floats
+  if (prevState) {
+    battle.characters.forEach((c) => {
+      const was = prevState.chars[c.id];
+      const node = box.querySelectorAll('.portrait')[battle.characters.indexOf(c)];
+      if (!was || !node) return;
+      if (c.stress > was.stress + 1) spawnFloat(node, `+${Math.round(c.stress - was.stress)}`, 'stress');
+      else if (c.hp < was.hp) spawnFloat(node, `-${was.hp - c.hp}`, '');
+    });
+  }
 }
 
+function spawnFloat(parent, text, kind) {
+  const f = el('div', `dmg-float ${kind}`, text);
+  parent.appendChild(f);
+  setTimeout(() => f.remove(), 950);
+}
+
+/* --- enemies --- */
 function renderEnemies() {
   const row = $('enemies');
   row.innerHTML = '';
   battle.enemies.forEach((e) => {
     const a = attr(e.weakness);
     const intent = intentOf(e);
-    const isSel = battle.targetUid === e.uid;
+    const isSel = battle.targetUid === e.uid && e.hp > 0;
     const node = el('div', `enemy${e.hp <= 0 ? ' dead' : ''}${isSel ? ' selected' : ''}${e.ravaged ? ' ravaged' : ''}`);
+
+    const isAttack = intent.type === 'attack';
+    const dmgShown = isAttack ? Math.round((intent.value + e.atkBuff) * (e.weaken > 0 ? 0.65 : 1)) : null;
+    const badge = isAttack
+      ? `<span class="badge dmg">${dmgShown}</span>`
+      : `<span class="badge dmg support">${INTENT_ICON[intent.type] || '?'}</span>`;
+
     node.innerHTML = `
-      <div class="enemy-top">
-        <span class="weak-glyph" style="color:${a.color};border-color:${a.color}55">${a.glyph}</span>
-        <span class="counter${e.counter <= 1 ? ' low' : ''}${e.ravaged ? ' ravaged' : ''}">${e.counter}</span>
-        <span class="intent-pill${['defend', 'buff', 'heal'].includes(intent.type) ? ' support' : ''}">
-          ${INTENT_ICON[intent.type] || '?'} ${intent.type === 'attack' ? intent.value : intent.type.toUpperCase()}
-        </span>
+      <div class="enemy-badges">
+        <span class="badge weak" style="color:${a.color}">${a.glyph}</span>
+        ${badge}
+        ${isAttack ? '<span class="badge counter" title="hits">×1</span>' : ''}
+        <span class="badge counter${e.counter <= 1 ? ' low' : ''}" title="action counter">${e.counter}</span>
+        ${e.ravaged ? '<span class="badge ravage">RAVAGED</span>' : ''}
       </div>
       <div class="enemy-art">
         <img src="${ENEMY_ART[e.id] || 'images/pathogen-strep-cut.png'}" alt="${e.name}" style="filter:${ENEMY_HUE[e.id] || 'none'}" />
       </div>
-      <div class="enemy-info">
+      <div class="enemy-plate">
+        <div class="enemy-hp"><i style="width:${(e.hp / e.maxHp) * 100}%"></i><span>${e.hp} / ${e.maxHp}</span></div>
+        <div class="ten-bar${e.ravaged ? ' broken' : ''}"><i style="width:${(e.tenacity / e.maxTenacity) * 100}%"></i></div>
         <div class="enemy-name">${e.name}</div>
-        <div class="bar hp"><i style="width:${(e.hp / e.maxHp) * 100}%"></i></div>
-        <div class="bar tenacity${e.ravaged ? ' broken' : ''}"><i style="width:${(e.tenacity / e.maxTenacity) * 100}%"></i></div>
       </div>`;
+
     node.addEventListener('click', () => {
       if (e.hp <= 0) return;
       battle.targetUid = e.uid;
       renderEnemies();
     });
     row.appendChild(node);
+
+    if (prevState) {
+      const was = prevState.enemies[e.uid];
+      if (was) {
+        if (e.hp < was.hp) {
+          const crit = was.tenacity > e.tenacity;
+          spawnFloat(node, `-${was.hp - e.hp}`, crit ? 'weak' : '');
+        }
+        if (!was.ravaged && e.ravaged) spawnFloat(node, 'BREAK', 'weak');
+      }
+    }
   });
 }
 
+/* --- hand --- */
 function renderHand() {
   const hand = $('hand');
   hand.innerHTML = '';
-  // fit the fan: cards shrink and overlap harder as the hand grows (cap is 10)
   const n = Math.max(1, battle.hand.length);
-  const avail = hand.clientWidth || 760;
-  const w = Math.max(86, Math.min(132, Math.floor(avail / (n + 0.2 * (n - 1)))));
-  const overlap = Math.round(w * 0.2);
+  const avail = hand.clientWidth || window.innerWidth * 0.72;
+  const w = Math.max(92, Math.min(144, Math.floor(avail / (n + 0.42 * (n - 1)))));
+  const overlap = Math.round(w * 0.42);
   hand.style.setProperty('--card-w', `${w}px`);
   hand.style.setProperty('--card-m', `${-Math.floor(overlap / 2)}px`);
+
+  const mid = (battle.hand.length - 1) / 2;
   battle.hand.forEach((card, i) => {
-    const free = card.zeroCost;
-    const cost = free ? 0 : card.cost;
+    const cost = card.zeroCost ? 0 : card.cost;
     const playable = canPlay(battle, card) && !battle.result;
     const owner = CHARACTERS[card.owner];
-    const node = el('div', `card ${card.type}${playable ? '' : ' unaffordable'}${card.glint ? ' glint' : ''}${cost === 0 ? ' card-free' : ''}`);
     const a = attr(card.attr);
+    const artKey = CARD_ART[card.defId];
+    const node = el('div', `card ${card.type}${playable ? '' : ' unaffordable'}${card.glint ? ' glint' : ''}${cost === 0 ? ' card-free' : ''}`);
+    const rot = battle.hand.length > 1 ? (i - mid) * 1.8 : 0;
+    const lift = Math.abs(i - mid) * 2.5;
+    node.style.setProperty('--rot', `${rot.toFixed(2)}deg`);
+    node.style.setProperty('--lift', `${lift.toFixed(1)}px`);
+
     node.innerHTML = `
-      <div class="card-cost" style="color:${cost === 0 ? '#ffc94d' : a.color}">${cost}</div>
-      ${owner ? `<div class="card-photo" style="background-image:url(${owner.art})"></div>` : ''}
-      <div class="card-head">${card.name}</div>
-      <div class="card-type" style="color:${a.color}">${card.type}${card.glint ? ' · epiphany' : ''}</div>
-      <div class="card-body">${card.text || ''}</div>
-      <div class="card-tags">${(card.tags || []).map((t) => `<span class="tag">${t}</span>`).join('')}</div>
-      <div class="card-owner" style="background:${owner ? owner.skin : '#666'}"></div>`;
-    node.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      if (battle.result) return;
-      const needsTarget = card.dmg > 0 && !card.aoe;
-      playCard(battle, i, needsTarget ? battle.targetUid : undefined);
-      renderBattle();
-    });
+      ${artKey ? `<div class="card-art" style="background-image:url(images/${artKey}.png)"></div>`
+        : `<img class="card-artimg" src="${owner ? owner.art : ''}" alt="" style="position:absolute;inset:10% 6% 30%;width:88%;height:60%;object-fit:contain;filter:drop-shadow(0 6px 12px rgba(0,0,0,.7))" />`}
+      <div class="card-frame"></div>
+      <div class="card-corner"></div>
+      <div class="card-topline">
+        <div class="card-cost" style="${cost === 0 ? '' : `border-color:${a.color}`}">${cost}</div>
+        ${card.glint ? '<span class="card-glint">✦</span>' : ''}
+      </div>
+      <div class="card-info">
+        <div class="card-name">${KIND_ICON[card.type] || ''} ${card.name}</div>
+        <div class="card-kind" style="color:${a.color}">${card.type}${card.glint ? ' · epiphany' : ''}</div>
+        <div class="card-text">${card.text || ''}</div>
+        <div class="card-tags">${(card.tags || []).map((t) => `<span class="tag">${t}</span>`).join('')}</div>
+      </div>
+      <div class="card-acc"></div>`;
+
+    node.addEventListener('click', (ev) => { ev.stopPropagation(); playFromUI(i); });
     hand.appendChild(node);
   });
 }
 
+/* --- play with cut-in --- */
+function playFromUI(index) {
+  if (cutBusy || !battle || battle.result) return;
+  const card = battle.hand[index];
+  if (!card || !canPlay(battle, card)) return;
+  const logLen = battle.log.length;
+  const res = playCard(battle, index, card.dmg > 0 && !card.aoe ? battle.targetUid : undefined);
+  if (!res.ok) return;
+
+  const newLines = battle.log.slice(logLen)
+    .filter((l) => ['hurt', 'break', 'kill', 'breakdown', 'weak', 'recover', 'epiphany'].includes(l.kind))
+    .map((l) => l.text.trim())
+    .slice(0, 3);
+
+  renderBattle();
+  if (!battle.result) showCutIn(card, newLines);
+}
+
+function showCutIn(card, fx) {
+  const owner = CHARACTERS[card.owner];
+  cutBusy = true;
+  const art = $('cutin-art');
+  art.src = owner ? owner.art : 'images/cut-kaito-cut.png';
+  $('cutin-name').textContent = card.name.toUpperCase();
+  $('cutin-type').textContent = `${owner ? owner.name.toUpperCase() + ' · ' : ''}${card.type.toUpperCase()} · ${card.zeroCost ? 0 : card.cost} AP`;
+  $('cutin-fx').innerHTML = fx.length ? fx.map((t) => `<li>${t}</li>`).join('') : '<li>Resolved.</li>';
+
+  const slot = $('cutin-card');
+  slot.innerHTML = '';
+  const ghost = el('div', `card ${card.type}${card.zeroCost ? ' card-free' : ''}`);
+  ghost.innerHTML = `
+    ${CARD_ART[card.defId] ? `<div class="card-art" style="background-image:url(images/${CARD_ART[card.defId]}.png)"></div>`
+      : `<img src="${owner ? owner.art : ''}" alt="" style="position:absolute;inset:10% 6% 30%;width:88%;height:60%;object-fit:contain" />`}
+    <div class="card-frame"></div><div class="card-corner"></div>
+    <div class="card-topline"><div class="card-cost">${card.zeroCost ? 0 : card.cost}</div></div>
+    <div class="card-info">
+      <div class="card-name">${KIND_ICON[card.type] || ''} ${card.name}</div>
+      <div class="card-kind">${card.type}</div>
+      <div class="card-text">${card.text || ''}</div>
+    </div>
+    <div class="card-acc"></div>`;
+  slot.appendChild(ghost);
+
+  const cu = $('cutin');
+  cu.classList.remove('hidden');
+  setTimeout(() => {
+    cu.classList.add('hidden');
+    cutBusy = false;
+    renderBattle();
+  }, 780);
+}
+
+/* --- resources: piles, EP, egos, sands --- */
 function renderResources() {
-  $('ap-now').textContent = battle.ap;
-  $('ap-orb').classList.toggle('zero', battle.ap <= 0);
   $('draw-count').textContent = battle.drawPile.length;
   $('grave-count').textContent = battle.discard.length;
   $('grave-used').textContent = `+${battle.cardsUsedThisTurn}`;
-  $('ep-num').textContent = `${battle.ep}/${MAX_EP}`;
+  $('ep-num').textContent = battle.ep;
+  $('sands-count').textContent = battle.sands;
+  $('btn-sands').classList.toggle('empty', battle.sands <= 0);
+
   const pips = $('ep-pips');
   pips.innerHTML = '';
   for (let i = 0; i < MAX_EP; i++) pips.appendChild(el('i', `ep-pip${i < battle.ep ? ' on' : ''}`));
@@ -300,26 +430,53 @@ function renderResources() {
   battle.egoQueue.forEach((ego, i) => {
     const owner = battle.characters.find((c) => c.id === ego.owner);
     const cost = owner && owner.egoFree ? 0 : ego.cost;
-    const b = el('button', 'ego-btn', `<b>${ego.name}</b><span>${cost} EP</span>`);
+    const b = el('button', `ego-btn${battle.ep >= cost && owner && !owner.broken ? ' ready' : ''}`);
+    b.innerHTML = `<img src="${owner ? owner.art : ''}" alt="${ego.name}" /><span class="ego-cost">${cost}</span>`;
+    b.title = `${ego.name} — ${cost} EP${owner && owner.broken ? ' (sealed)' : ''}`;
     b.disabled = !!battle.result || !owner || owner.broken || battle.ep < cost;
-    b.addEventListener('click', () => { playEgo(battle, i); renderBattle(); });
+    b.addEventListener('click', () => {
+      if (cutBusy) return;
+      const logLen = battle.log.length;
+      const res = playEgo(battle, i);
+      if (!res.ok) return;
+      const fx = battle.log.slice(logLen).map((l) => l.text.trim()).slice(0, 3);
+      renderBattle();
+      if (!battle.result) showEgoCutIn(ego, owner, fx);
+    });
     list.appendChild(b);
   });
 
-  const sands = $('sands');
-  sands.innerHTML = '';
-  [['⧗', 1, 'Undo last card'], ['⟳', 2, 'Redraw Ego'], ['↺', 3, 'Rewind turn']].forEach(([icon, n, title]) => {
-    const b = el('button', `sands-btn${battle.sands < n ? ' used' : ''}`, `${icon}<i>${n}</i>`);
-    b.title = title;
+  const menu = $('sands-menu');
+  [...menu.querySelectorAll('button')].forEach((b) => {
+    const n = Number(b.dataset.sand);
     b.disabled = battle.sands < n || !!battle.result;
-    b.addEventListener('click', () => { useSands(battle, n); renderBattle(); });
-    sands.appendChild(b);
+    b.onclick = () => {
+      useSands(battle, n);
+      menu.classList.add('hidden');
+      renderBattle();
+    };
   });
+}
+
+function showEgoCutIn(ego, owner, fx) {
+  cutBusy = true;
+  $('cutin-art').src = owner ? owner.art : 'images/cut-kaito-cut.png';
+  $('cutin-name').textContent = ego.name.toUpperCase();
+  $('cutin-type').textContent = `EGO SKILL · ${owner ? owner.name.toUpperCase() : ''}`;
+  $('cutin-fx').innerHTML = fx.length ? fx.map((t) => `<li>${t}</li>`).join('') : '<li>Ego unleashed.</li>';
+  $('cutin-card').innerHTML = '';
+  const cu = $('cutin');
+  cu.classList.remove('hidden');
+  setTimeout(() => {
+    cu.classList.add('hidden');
+    cutBusy = false;
+    renderBattle();
+  }, 820);
 }
 
 function renderLog() {
   const log = $('battle-log');
-  log.style.display = logOpen ? 'flex' : 'none';
+  log.classList.toggle('hidden', !logOpen);
   log.innerHTML = battle.log.slice(-7).map((l) => `<div class="${l.kind}">${l.text}</div>`).join('');
 }
 
@@ -330,22 +487,45 @@ function bind() {
   $('btn-deploy').addEventListener('click', () => { renderMissions(); showView('missions'); });
   $('btn-missions-back').addEventListener('click', () => { renderRoster(); showView('roster'); });
   $('btn-story-next').addEventListener('click', advanceStory);
-  $('end-turn').addEventListener('click', () => { if (!battle.result) { endTurn(battle); renderBattle(); } });
-  $('btn-flee').addEventListener('click', () => { renderMissions(); showView('missions'); });
+
+  $('end-turn').addEventListener('click', () => {
+    if (cutBusy || !battle || battle.result) return;
+    endTurn(battle);
+    renderBattle();
+  });
+
+  $('btn-sands').addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    $('sands-menu').classList.toggle('hidden');
+  });
+  document.addEventListener('click', (ev) => {
+    const menu = $('sands-menu');
+    if (!menu.classList.contains('hidden') && !ev.target.closest('.sands-wrap')) menu.classList.add('hidden');
+  });
+
   $('log-toggle').addEventListener('click', () => {
     logOpen = !logOpen;
-    $('log-toggle').classList.toggle('on', logOpen);
+    $('log-toggle').style.color = logOpen ? '#fff' : '';
     renderLog();
   });
+
+  $('btn-menu').addEventListener('click', () => $('pause').classList.remove('hidden'));
+  $('pause-resume').addEventListener('click', () => $('pause').classList.add('hidden'));
+  $('pause-restart').addEventListener('click', () => { if (battle) beginBattle(battle.mission); });
+  $('pause-quit').addEventListener('click', () => {
+    $('pause').classList.add('hidden');
+    renderMissions();
+    showView('missions');
+  });
+  $('btn-flee') && $('btn-flee').addEventListener('click', () => { renderMissions(); showView('missions'); });
+
   document.addEventListener('keydown', (e) => {
-    if ($('view-battle').classList.contains('hidden') || !battle || battle.result) return;
+    if ($('view-battle').classList.contains('hidden') || !battle) return;
+    if (e.key === 'Escape') { $('pause').classList.toggle('hidden'); return; }
+    if (battle.result || cutBusy) return;
     if (e.key === ' ') { e.preventDefault(); endTurn(battle); renderBattle(); return; }
     const n = Number(e.key);
-    if (n >= 1 && n <= battle.hand.length) {
-      const card = battle.hand[n - 1];
-      playCard(battle, n - 1, card && card.dmg > 0 && !card.aoe ? battle.targetUid : undefined);
-      renderBattle();
-    }
+    if (n >= 1 && n <= battle.hand.length) playFromUI(n - 1);
   });
 }
 
@@ -358,6 +538,7 @@ window.__cw = {
   get battle() { return battle; },
   get progress() { return progress; },
   beginBattle, renderBattle, startBattle, playCard, endTurn, showView,
+  playFromUI(index) { playFromUI(index); },
   setTeam(ids) { progress.team = ids.slice(0, 3); saveProgress(progress); renderRoster(); },
   openMission(code) {
     const m = MISSIONS.find((x) => x.code === code);
