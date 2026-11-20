@@ -83,15 +83,16 @@ const ACTION_ART = {
   goro: 'images/action-goro.jpg',
   bibi: 'images/action-bibi.jpg',
 };
-const KIND_ICON = { attack: '⚔', skill: '❖', upgrade: '⬆', status: '☓', curse: '✖' };
-const INTENT_ICON = { attack: null, defend: '❖', buff: '↑', debuff: '☠', heal: '✚' };
+const ico = (id, cls = '') => `<svg class="ico ${cls}"><use href="#${id}"/></svg>`;
+const KIND_ICON = { attack: 'i-sword', skill: 'i-shield', upgrade: 'i-buff', status: 'i-skull', curse: 'i-skull' };
+const INTENT_ICON = { attack: null, defend: 'i-shield', buff: 'i-buff', debuff: 'i-debuff', heal: 'i-heal', charge: 'i-bolt' };
 const NODE_META = {
-  battle: { ico: '⚔', lbl: 'HOSTILE' },
-  elite: { ico: '☠', lbl: 'ELITE' },
-  boss: { ico: '♛', lbl: 'BOSS' },
-  event: { ico: '✧', lbl: 'ANOMALY' },
-  shop: { ico: '⛁', lbl: 'SHOP' },
-  rest: { ico: '✚', lbl: 'SANCTUARY' },
+  battle: { ico: 'i-sword', lbl: 'HOSTILE' },
+  elite: { ico: 'i-skull', lbl: 'ELITE' },
+  boss: { ico: 'i-crown', lbl: 'BOSS' },
+  event: { ico: 'i-star', lbl: 'ANOMALY' },
+  shop: { ico: 'i-cell', lbl: 'SHOP' },
+  rest: { ico: 'i-heal', lbl: 'SANCTUARY' },
 };
 const RANK_ORDER = { S: 4, A: 3, B: 2, C: 1 };
 
@@ -100,9 +101,9 @@ function syncMeta() {
   ['title-cells', 'roster-cells', 'missions-cells', 'lab-cells'].forEach((id) => {
     if ($(id)) $(id).textContent = c;
   });
-  const muteIcon = isMuted() ? '🔇' : '🔊';
-  if ($('btn-mute-title')) $('btn-mute-title').textContent = muteIcon;
-  if ($('btn-mute')) $('btn-mute').textContent = muteIcon;
+  const muteIcon = isMuted() ? 'i-mute' : 'i-sound';
+  if ($('btn-mute-title')) $('btn-mute-title').innerHTML = ico(muteIcon);
+  if ($('btn-mute')) $('btn-mute').innerHTML = ico(muteIcon);
   const hasActiveRun = !!(progress.run && !progress.run.finished);
   if ($('btn-resume-run')) $('btn-resume-run').classList.toggle('hidden', !hasActiveRun);
 }
@@ -139,6 +140,7 @@ function renderRoster() {
     const xpPct = xpIntoLevel(rec.xp);
     const st = stats[id];
     const card = el('div', `roster-card${inTeam ? ' selected' : ''}`);
+    card.style.setProperty('--skin', c.skin);
     card.setAttribute('role', 'button');
     card.setAttribute('tabindex', '0');
     const pips = rec.awaken.map((on) => `<i class="${on ? 'on' : ''}">◆</i>`).join('');
@@ -235,7 +237,7 @@ function renderMissions() {
       </div>
       <div>
         <div class="m-name">${m.name}${cleared ? ` <span style="color:#46e08a;font-size:11px">✓${bestRank ? ' · ' + bestRank : ''}</span>` : ''}</div>
-        <div class="m-place">${m.place} · <span style="color:#ffc94d">⛁ ${m.reward || 40}${cleared ? ' (claimed)' : ''}</span></div>
+        <div class="m-place">${m.place} · <span style="color:#ffc94d">◆ ${m.reward || 40}${cleared ? ' (claimed)' : ''}</span></div>
       </div>
       <div class="m-right">
         <div class="m-weak">WEAK TO <b style="color:${a.color}">${a.glyph} ${a.name}</b><br>
@@ -320,7 +322,7 @@ function renderMap() {
       const isAvail = avail.has(node.id);
       const isCur = run.floor === node.floor && run.lane === node.lane;
       const cls = `map-node ${node.type}${isAvail ? ' avail' : (node.cleared ? ' cleared' : ' locked')}${isCur ? ' current' : ''}`;
-      const btn = el('button', cls, `<span class="n-ico">${meta.ico}</span><span class="n-lbl">${node.cleared ? '✓ ' : ''}${meta.lbl}</span>`);
+      const btn = el('button', cls, `<span class="n-ico">${ico(meta.ico)}</span><span class="n-lbl">${node.cleared ? '✓ ' : ''}${meta.lbl}</span>`);
       btn.dataset.nid = node.id;
       btn.disabled = !isAvail;
       if (isAvail) btn.addEventListener('click', () => { sfx('click'); enterRunNode(node.lane); });
@@ -443,7 +445,7 @@ function renderShop() {
     const cNode = el('div', className, html);
     cNode.addEventListener('contextmenu', (ev) => { ev.preventDefault(); openStaticDetail(card); });
     cNode.addEventListener('click', () => openStaticDetail(card));
-    const btn = el('button', 'shop-buy', item.sold ? 'SOLD' : `BUY · ⛁ ${item.cost}`);
+    const btn = el('button', 'shop-buy', item.sold ? 'SOLD' : `BUY · ◆ ${item.cost}`);
     btn.disabled = item.sold || run.earned < item.cost;
     btn.addEventListener('click', () => {
       if (item.sold || run.earned < item.cost) return;
@@ -467,7 +469,7 @@ function renderShop() {
       <b>${r.glyph} ${r.name}</b>
       <p>${r.text}</p>
       <button class="shop-buy"${shop.relic.sold || run.earned < shop.relic.cost ? ' disabled' : ''}>
-        ${shop.relic.sold ? 'ACQUIRED' : `BUY RELIC · ⛁ ${shop.relic.cost}`}
+        ${shop.relic.sold ? 'ACQUIRED' : `BUY RELIC · ◆ ${shop.relic.cost}`}
       </button>`);
     rc.querySelector('button').addEventListener('click', () => {
       if (shop.relic.sold || run.earned < shop.relic.cost) return;
@@ -483,7 +485,7 @@ function renderShop() {
     relBox.innerHTML = '<div class="shop-relic-card"><b>ALL RELICS OWNED</b><p>Your kit is complete.</p></div>';
   }
 
-  $('shop-remove-cost').textContent = `⛁ ${shop.removeCost}`;
+  $('shop-remove-cost').innerHTML = `${ico('i-cell')} ${shop.removeCost}`;
   $('btn-shop-remove').disabled = run.earned < shop.removeCost || run.deck.length <= 6;
 }
 
@@ -524,7 +526,7 @@ function openReward(node, summary, gained) {
   const run = progress.run;
   $('reward-rank').textContent = rankOf(summary);
   $('reward-title').textContent = node.type === 'elite' ? 'ELITE CONTAINED' : 'SECTOR CLEARED';
-  $('reward-cells').textContent = `+${gained} run cells gained (total ⛁ ${run.earned})`;
+  $('reward-cells').textContent = `+${gained} run cells gained (total ◆ ${run.earned})`;
 
   const relBox = $('reward-relic');
   if (node.type === 'elite') {
@@ -662,9 +664,46 @@ function enterBattleView(title, place) {
   renderBattle();
 }
 
+let lastTurnShown = 0;
+let lastBreakdownShown = '';
+function showTurnBanner(turn) {
+  const b = $('turn-banner');
+  if (!b) return;
+  $('turn-banner-text').textContent = `TURN ${turn}`;
+  $('turn-banner-sub').textContent = turn === 1 ? 'ENGAGE' : 'YOUR MOVE';
+  b.classList.remove('hidden');
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.classList.add('hidden'), 1200);
+}
+function showBreakdownOverlay(name) {
+  const o = $('breakdown-overlay');
+  if (!o) return;
+  $('breakdown-name').textContent = name.toUpperCase();
+  o.classList.remove('hidden');
+  clearTimeout(o._t);
+  o._t = setTimeout(() => o.classList.add('hidden'), 1400);
+}
+function hideTargetLine() { const t = $('target-line'); if (t) t.classList.add('hidden'); }
+function showTargetLine(fromEl, toEl) {
+  const svg = $('target-line'), line = $('target-line-el');
+  if (!svg || !line || !fromEl || !toEl) return;
+  const view = $('view-battle').getBoundingClientRect();
+  const a = fromEl.getBoundingClientRect(), b = toEl.getBoundingClientRect();
+  line.setAttribute('x1', a.left - view.left + a.width / 2);
+  line.setAttribute('y1', a.top - view.top + a.height / 2);
+  line.setAttribute('x2', b.left - view.left + b.width / 2);
+  line.setAttribute('y2', b.top - view.top + b.height / 2);
+  svg.classList.remove('hidden');
+}
+
 function renderBattle() {
   if (!battle) return;
   flushFx();
+  if (battle.turn !== lastTurnShown) { lastTurnShown = battle.turn; showTurnBanner(battle.turn); }
+  const broken = battle.characters.find((c) => c.broken);
+  const bKey = broken ? broken.id + broken.breakdownCount : '';
+  if (bKey && bKey !== lastBreakdownShown) { lastBreakdownShown = bKey; showBreakdownOverlay(broken.name); }
+  if (!broken) lastBreakdownShown = '';
   if (battle.ep < MAX_EP) exaltArmed = false;
   renderTeam();
   renderEnemies();
@@ -685,8 +724,8 @@ function renderBattle() {
   if (battle.resonance >= BURST_COST) tips.push('<b style="color:#ffc94d">BURST READY ×1.6</b>');
   if (battle.echoNext) tips.push('<b style="color:#b06bff">PRISM ECHO ×2</b>');
   if (battle.ep >= MAX_EP) tips.push('<b style="color:#ffc94d">OVER-EXALT READY</b>');
-  if (battle.epiphany) tips.push(`⚡ EPIPHANY <b>${CHARACTERS[battle.epiphany].name.toUpperCase()}</b>`);
-  if (battle.freeFirstLeft > 0) tips.push('⟡ <b>FIRST CARD FREE</b>');
+  if (battle.epiphany) tips.push(`» EPIPHANY <b>${CHARACTERS[battle.epiphany].name.toUpperCase()}</b>`);
+  if (battle.freeFirstLeft > 0) tips.push('◇ <b>FIRST CARD FREE</b>');
   if (battle.enemies.some((e) => e.ravaged)) tips.push('<b>RAVAGED</b> +30% DMG');
   tips.push('HOLD A CARD TO READ IT');
   $('battle-tips').innerHTML = tips.join('');
@@ -820,7 +859,7 @@ function flushFx() {
     } else if (ev.kind === 'toxin') {
       main = `-${ev.amt}`; label = `${ev.name} TOXIN`; cls = `heal ${sizeClass(ev.amt)}`;
     } else if (ev.kind === 'counter') {
-      main = `⚡${ev.amt}`; label = `${ev.name} COUNTER`; cls = `weak ${sizeClass(ev.amt)}`;
+      main = `»${ev.amt}`; label = `${ev.name} COUNTER`; cls = `weak ${sizeClass(ev.amt)}`;
     } else if (ev.kind === 'chain') {
       main = 'CHAIN'; label = `${ev.name} +1 RES`; cls = 'shield sz-sm';
     } else if (ev.kind === 'break') {
@@ -944,7 +983,7 @@ function renderTeam() {
       <img src="${c.art}" alt="${c.name}" />
       ${tags ? `<div class="p-tags">${tags}</div>` : ''}
       ${statsPills ? `<div class="p-stats">${statsPills}</div>` : ''}
-      ${c.shield > 0 ? `<span class="p-shield">◈${c.shield}</span>` : ''}
+      ${c.shield > 0 ? `<span class="p-shield">◆${c.shield}</span>` : ''}
       <div class="p-stress"><i style="width:${Math.min(100, c.stress)}%"></i></div>
       <div class="p-hp"><i style="width:${(c.hp / c.maxHp) * 100}%"></i></div>
       ${c.broken ? `<div class="p-broken">BREAK<br>${c.recovery}/${need}</div>` : ''}`;
@@ -976,11 +1015,12 @@ function renderEnemies() {
     const dmgShown = (isAttack || isCharge)
       ? Math.round((intent.value + e.atkBuff) * (e.weaken > 0 ? 0.65 : 1))
       : null;
+    const intentIco = INTENT_ICON[intent.type];
     const badge = isCharge
-      ? `<span class="badge dmg charge" title="Charged strike in ${intent.turns} turn(s)">⚡${dmgShown} · ${intent.turns}T</span>`
+      ? `<span class="badge dmg charge" title="Charged strike in ${intent.turns} turn(s)">${ico('i-bolt')}${dmgShown} · ${intent.turns}T</span>`
       : (isAttack
-          ? `<span class="badge dmg">${dmgShown}</span>`
-          : `<span class="badge dmg support">${INTENT_ICON[intent.type] || '?'}</span>`);
+          ? `<span class="badge dmg" title="Incoming damage">${dmgShown}</span>`
+          : `<span class="badge dmg support" title="Intent: ${intent.type}">${intentIco ? ico(intentIco) : '?'}</span>`);
 
     const modChips = [];
     if (e.boss) modChips.push('<span class="mod-chip boss">BOSS</span>');
@@ -994,12 +1034,22 @@ function renderEnemies() {
     if (e.bleed > 0) modChips.push(`<span class="mod-chip bleed">BLEED ${e.bleed}</span>`);
     if (e.toxin > 0) modChips.push(`<span class="mod-chip toxin">TOXIN ${e.toxin}</span>`);
 
+    // damage prediction: white segment = selected card's preview damage on this enemy
+    let predW = 0;
+    if (isSel && battle.hand && battle.hand.length) {
+      const best = battle.hand.reduce((m, c) => {
+        if (!(c.dmg > 0)) return m;
+        try { const p = previewCard(battle, c, e.uid); return Math.max(m, p.total || 0); } catch { return m; }
+      }, 0);
+      predW = Math.min(100, (best / e.maxHp) * 100);
+    }
+    node.dataset.uid = e.uid;
     node.innerHTML = `
       <div class="enemy-badges">
-        <span class="badge weak" style="color:${a.color}">${a.glyph}</span>
+        <span class="badge weak" style="color:${a.color}" title="Weakness: ${a.name}">${a.glyph}</span>
         ${badge}
         ${isAttack ? '<span class="badge counter" title="hits">×1</span>' : ''}
-        <span class="badge counter${e.counter <= 1 ? ' low' : ''}" title="action counter">${e.counter}</span>
+        <span class="badge counter${e.counter <= 1 ? ' low' : ''}" title="action counter — hits in ${e.counter} card(s)">${e.counter}</span>
         ${e.ravaged ? '<span class="badge ravage">RAVAGED</span>' : ''}
       </div>
       ${modChips.length ? `<div class="enemy-mods">${modChips.join('')}</div>` : ''}
@@ -1007,7 +1057,7 @@ function renderEnemies() {
         <img src="${ENEMY_ART[e.id] || 'images/pathogen-strep-cut.png'}" alt="${e.name}" style="filter:${ENEMY_HUE[e.id] || 'none'}" />
       </div>
       <div class="enemy-plate">
-        <div class="enemy-hp"><i style="width:${(e.hp / e.maxHp) * 100}%"></i><span>${e.hp} / ${e.maxHp}</span></div>
+        <div class="enemy-hp"><i style="width:${(e.hp / e.maxHp) * 100}%"></i>${predW ? `<em style="width:${predW}%"></em>` : ''}<span>${e.hp} / ${e.maxHp}</span></div>
         <div class="ten-bar${e.ravaged ? ' broken' : ''}"><i style="width:${(e.tenacity / e.maxTenacity) * 100}%"></i></div>
         <div class="enemy-name">${e.name}</div>
       </div>`;
@@ -1045,7 +1095,7 @@ function previewOf(card, battleState) {
 }
 
 function fxBadge(card, p, battleState) {
-  if (card.type === 'curse' || card.unplayable) return `<div class="card-fx bad"><b>✖</b><span>UNPLAYABLE</span></div>`;
+  if (card.type === 'curse' || card.unplayable) return `<div class="card-fx bad"><b>×</b><span>UNPLAYABLE</span></div>`;
   if (card.breakdown && battleState) {
     const ch = battleState.characters.find((c) => c.id === card.owner);
     const need = ch ? RECOVERY_PLAYS[Math.min(Math.max(ch.breakdownCount - 1, 0), RECOVERY_PLAYS.length - 1)] : 5;
@@ -1097,12 +1147,13 @@ function cardHTML(card, battleState = battle) {
       <div class="card-corner"></div>
       <div class="card-topline">
         <div class="card-cost" style="${cost === 0 ? '' : `border-color:${a.color}`}">${cost}</div>
+        <span class="card-type-pill">${card.type}${card.rare ? ' · RARE' : ''}</span>
         ${card.glint ? '<span class="card-glint">✦</span>' : ''}
       </div>
       ${fxBadge(card, p, battleState)}
       <div class="card-info">
-        <div class="card-name">${KIND_ICON[card.type] || ''} ${card.name}</div>
-        <div class="card-kind" style="color:${a.color}">${card.type}${card.glint ? ' · epiphany' : ''}${card.upgraded ? ' · +' : ''}</div>
+        <div class="card-name">${KIND_ICON[card.type] ? ico(KIND_ICON[card.type]) : ''} ${card.name}</div>
+        <div class="card-kind" style="color:${a.color}">${a.glyph} ${a.name} · ${card.type}${card.glint ? ' · epiphany' : ''}${card.upgraded ? ' · +' : ''}</div>
         <div class="card-text">${card.text || ''}</div>
         <div class="card-tags">${(card.tags || []).map((t) => `<span class="tag">${t}</span>`).join('')}</div>
       </div>
@@ -1115,7 +1166,7 @@ function renderHand() {
   hand.innerHTML = '';
   const n = Math.max(1, battle.hand.length);
   const avail = hand.clientWidth || window.innerWidth * 0.72;
-  const w = Math.max(92, Math.min(144, Math.floor(avail / (n + 0.42 * (n - 1)))));
+  const w = Math.max(104, Math.min(158, Math.floor(avail / (n + 0.42 * (n - 1)))));
   const overlap = Math.round(w * 0.42);
   hand.style.setProperty('--card-w', `${w}px`);
   hand.style.setProperty('--card-m', `${-Math.floor(overlap / 2)}px`);
@@ -1140,9 +1191,16 @@ function renderHand() {
     node.addEventListener('pointermove', (ev) => {
       if (Math.abs(ev.clientX - startX) > 12 || Math.abs(ev.clientY - startY) > 12) clearTimeout(pressTimer);
     });
-    node.addEventListener('pointerup', () => clearTimeout(pressTimer));
-    node.addEventListener('pointerleave', () => clearTimeout(pressTimer));
-    node.addEventListener('pointercancel', () => clearTimeout(pressTimer));
+    node.addEventListener('pointerup', () => { clearTimeout(pressTimer); hideTargetLine(); });
+    node.addEventListener('pointerleave', () => { clearTimeout(pressTimer); hideTargetLine(); });
+    node.addEventListener('pointercancel', () => { clearTimeout(pressTimer); hideTargetLine(); });
+    node.addEventListener('mouseenter', () => {
+      if (card.dmg > 0 && !card.aoe) {
+        const target = document.querySelector(`.enemy[data-uid="${battle.targetUid}"]`);
+        if (target) showTargetLine(node, target);
+      }
+    });
+    node.addEventListener('mouseleave', hideTargetLine);
     node.addEventListener('contextmenu', (ev) => { ev.preventDefault(); openDetail(i); });
     node.addEventListener('click', (ev) => {
       ev.stopPropagation();
@@ -1417,7 +1475,7 @@ function renderLab() {
             return `<button class="awk-btn${done ? ' done' : ''}" data-slot="${slot}"${done || !ok ? ' disabled' : ''}>
               <b>SLOT ${slot + 1}</b>
               <span>${awkLabels[slot]}</span>
-              <i>${done ? 'AWAKENED' : `⛁ ${AWAKEN_COST[slot]}`}</i>
+              <i>${done ? 'AWAKENED' : `◆ ${AWAKEN_COST[slot]}`}</i>
             </button>`;
           }).join('')}
         </div>
@@ -1426,7 +1484,7 @@ function renderLab() {
         <b>SKILL POTENCY (${skLv} / ${SKILL_COST.length})</b>
         <span class="head-sub">+1 Damage, Shield, and Heal on every card this combatant plays.</span>
         <button class="shop-buy" id="btn-lab-skill"${!canSkillUp(progress, labCharId) ? ' disabled' : ''}>
-          ${nextSkCost == null ? 'MAX SKILL LEVEL' : `UPGRADE SKILL POTENCY · ⛁ ${nextSkCost}`}
+          ${nextSkCost == null ? 'MAX SKILL LEVEL' : `UPGRADE SKILL POTENCY · ◆ ${nextSkCost}`}
         </button>
       </div>
     </div>`;
@@ -1531,7 +1589,7 @@ function bind() {
     openDeckModal({
       modalMode: 'remove',
       title: 'PURGE A CARD',
-      sub: `Select 1 card to permanently remove for ⛁ ${currentShop.removeCost}.`,
+      sub: `Select 1 card to permanently remove for ◆ ${currentShop.removeCost}.`,
       cards: run.deck.map((d, index) => ({ ...d, index })),
       onPick(entry) {
         if (removeCard(run, entry.index)) {

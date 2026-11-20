@@ -3,47 +3,80 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-    <meta name="theme-color" content="#06070f" />
+    <meta name="theme-color" content="#050203" />
     <title>Cell Warriors</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
+    <!-- SVG icon sprite — line icons only, 2px stroke, 24px grid (design-system §8) -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <defs>
+        <symbol id="i-sound" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M16 9c1.2 1.6 1.2 4.4 0 6M18.5 7c2 2.8 2 7.2 0 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+        <symbol id="i-mute" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M16 9l6 6M22 9l-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+        <symbol id="i-log" viewBox="0 0 24 24"><path d="M5 4h14M5 9h14M5 14h9M5 19h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+        <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+        <symbol id="i-cell" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="currentColor"/><path d="M12 4v3M12 17v3M4 12h3M17 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+        <symbol id="i-sands" viewBox="0 0 24 24"><path d="M7 3h10M7 21h10M8 3c0 5 8 5 8 9s-8 4-8 9M16 3c0 5-8 5-8 9s8 4 8 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+        <symbol id="i-sword" viewBox="0 0 24 24"><path d="M4 20l3-3M14 4l6 6-9 9H5v-6l9-9z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M13 7l4 4" stroke="currentColor" stroke-width="2"/></symbol>
+        <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+        <symbol id="i-heal" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+        <symbol id="i-skull" viewBox="0 0 24 24"><circle cx="12" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 16v3M15 16v3M9 10h.01M15 10h.01" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+        <symbol id="i-buff" viewBox="0 0 24 24"><path d="M12 19V6M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+        <symbol id="i-debuff" viewBox="0 0 24 24"><path d="M12 5v13M6 13l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+        <symbol id="i-crown" viewBox="0 0 24 24"><path d="M4 18l-1-9 5 4 4-7 4 7 5-4-1 9H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+        <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l2.4 5.2 5.6.7-4.1 3.9 1 5.6L12 15.7 7.1 18.4l1-5.6L4 8.9l5.6-.7L12 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+        <symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+        <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+        <symbol id="i-flask" viewBox="0 0 24 24"><path d="M10 3h4M10 3v6l-5 9a2 2 0 002 3h10a2 2 0 002-3l-5-9V3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+        <symbol id="i-map" viewBox="0 0 24 24"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+        <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+      </defs>
+    </svg>
+
     <main id="app">
       <!-- ================= TITLE ================= -->
-      <section id="view-title" class="view">
-        <div class="title-bg"></div>
+      <section id="view-title" class="view view-light">
+        <div class="title-bg"><img src="./images/bg-title.jpg" alt="" /><div class="title-bg-shade"></div></div>
         <div class="title-top">
-          <div class="cells-pill" title="Meta Cells currency">⛁ <b id="title-cells">0</b></div>
-          <button class="icon-btn" id="btn-mute-title" title="Toggle sound">🔊</button>
+          <div class="cells-pill" title="Meta Cells currency"><svg class="ico"><use href="#i-cell"/></svg><b id="title-cells">0</b><span class="czn-id">ID·07A</span></div>
+          <button class="icon-btn" id="btn-mute-title" title="Toggle sound"><svg class="ico"><use href="#i-sound"/></svg></button>
         </div>
-        <div class="title-inner">
+        <div class="title-inner czn-frame">
+          <span class="czn-corner tl"></span><span class="czn-corner tr"></span><span class="czn-corner bl"></span><span class="czn-corner br"></span>
           <img class="title-logo" src="./images/logo-transparent.png" alt="Cell Warriors" />
           <p class="title-tag">THE BODY IS THE BATTLEFIELD</p>
+          <p class="title-fake">▸▸▸ // CELL·WARRIORS // SECTOR·07 // ▸▸▸</p>
           <div class="title-actions">
             <button class="btn-primary big hidden" id="btn-resume-run">CONTINUE RUN</button>
             <button class="btn-primary big" id="btn-start">CHAOS EXPEDITION</button>
             <div class="title-sub-actions">
-              <button class="btn-ghost" id="btn-missions-mode">STORY MISSIONS</button>
-              <button class="btn-ghost" id="btn-open-lab">CELL LAB</button>
+              <button class="btn-ghost" id="btn-missions-mode"><svg class="ico"><use href="#i-map"/></svg> STORY MISSIONS</button>
+              <button class="btn-ghost" id="btn-open-lab"><svg class="ico"><use href="#i-flask"/></svg> CELL LAB</button>
               <button class="btn-ghost tiny" id="btn-reset">reset save</button>
             </div>
           </div>
+          <p class="title-ver">CELL WARRIORS v0.1.0 · BUILD 07A · © IMMUNE COMMAND</p>
         </div>
       </section>
 
       <!-- ================= ROSTER ================= -->
-      <section id="view-roster" class="view hidden">
+      <section id="view-roster" class="view view-light hidden">
+        <div class="roster-bg"><img src="./images/bg-roster.jpg" alt="" /></div>
         <header class="screen-head">
-          <button class="btn-ghost tiny" id="btn-roster-back">←</button>
+          <button class="btn-ghost tiny" id="btn-roster-back"><svg class="ico"><use href="#i-back"/></svg></button>
           <div class="head-left">
             <h1 id="roster-title">COMBATANTS</h1>
             <span class="head-sub">Pick three. Slot 1 is Team Leader. Their decks shuffle together.</span>
+            <span class="czn-id">ROSTER // SELECT·03</span>
           </div>
           <div class="mode-switch">
             <button class="chip-btn active" id="mode-chaos">CHAOS RUN</button>
             <button class="chip-btn" id="mode-story">STORY</button>
           </div>
-          <div class="cells-pill">⛁ <b id="roster-cells">0</b></div>
+          <div class="cells-pill"><svg class="ico"><use href="#i-cell"/></svg><b id="roster-cells">0</b></div>
           <span class="team-count" id="team-count">0 / 3</span>
         </header>
         <div class="roster" id="roster"></div>
@@ -55,20 +88,21 @@
       </section>
 
       <!-- ================= MISSIONS ================= -->
-      <section id="view-missions" class="view hidden">
+      <section id="view-missions" class="view view-light hidden">
         <header class="screen-head">
-          <button class="btn-ghost tiny" id="btn-missions-back">←</button>
-          <div class="head-left"><h1>MISSIONS</h1><span class="head-sub" id="mission-team"></span></div>
-          <div class="cells-pill">⛁ <b id="missions-cells">0</b></div>
+          <button class="btn-ghost tiny" id="btn-missions-back"><svg class="ico"><use href="#i-back"/></svg></button>
+          <div class="head-left"><h1>MISSIONS</h1><span class="head-sub" id="mission-team"></span><span class="czn-id">MISSIONS // STORY·05</span></div>
+          <div class="cells-pill"><svg class="ico"><use href="#i-cell"/></svg><b id="missions-cells">0</b></div>
         </header>
         <div class="mission-list" id="mission-list"></div>
       </section>
 
       <!-- ================= STORY ================= -->
-      <section id="view-story" class="view hidden">
+      <section id="view-story" class="view view-dark hidden">
         <div class="story-art" id="story-art"></div>
         <div class="story-scrim"></div>
-        <div class="story-bar">
+        <div class="story-bar czn-frame">
+          <span class="czn-corner tl"></span><span class="czn-corner tr"></span>
           <div class="story-who" id="story-who"></div>
           <div class="story-text" id="story-text"></div>
           <button class="btn-primary" id="btn-story-next">NEXT</button>
@@ -76,33 +110,36 @@
       </section>
 
       <!-- ================= CHAOS MAP ================= -->
-      <section id="view-map" class="view hidden">
+      <section id="view-map" class="view view-light hidden">
         <header class="screen-head map-head">
           <div class="head-left">
             <h1>CHAOS SECTOR</h1>
             <span class="head-sub" id="map-floor">FLOOR 0 / 11 · PICK A ROUTE</span>
+            <span class="czn-id">MAP // CHAOS·11</span>
           </div>
           <div class="map-team" id="map-team"></div>
           <div class="map-meta">
-            <span class="meta-chip" title="Sands of Time">⧗ <b id="map-sands">3</b></span>
-            <span class="meta-chip gold" title="Run Currency">⛁ <b id="map-cells">0</b></span>
+            <span class="meta-chip" title="Sands of Time"><svg class="ico"><use href="#i-sands"/></svg><b id="map-sands">3</b></span>
+            <span class="meta-chip gold" title="Run Currency"><svg class="ico"><use href="#i-cell"/></svg><b id="map-cells">0</b></span>
             <button class="btn-ghost tiny" id="btn-map-deck">DECK (<span id="map-deck-n">21</span>)</button>
             <button class="btn-ghost tiny" id="btn-map-quit">EXIT</button>
           </div>
         </header>
         <div class="relic-bar" id="map-relics"></div>
         <div class="map-wrap" id="map-wrap">
+          <div class="map-bg"><img src="./images/bg-map.jpg" alt="" /></div>
           <svg class="map-lines" id="map-lines"></svg>
           <div class="map-floors" id="map-floors"></div>
         </div>
       </section>
 
       <!-- ================= EVENT ================= -->
-      <section id="view-event" class="view hidden">
+      <section id="view-event" class="view view-dark hidden">
         <div class="event-art" id="event-art"></div>
         <div class="story-scrim"></div>
-        <div class="event-card">
-          <div class="event-tag">CHAOS ANOMALY</div>
+        <div class="event-card czn-frame">
+          <span class="czn-corner tl"></span><span class="czn-corner tr"></span><span class="czn-corner bl"></span><span class="czn-corner br"></span>
+          <div class="event-tag">CHAOS ANOMALY <span class="czn-id">EV·07</span></div>
           <h1 id="event-name">—</h1>
           <p id="event-text">—</p>
           <div class="event-choices" id="event-choices"></div>
@@ -114,13 +151,14 @@
       </section>
 
       <!-- ================= SHOP ================= -->
-      <section id="view-shop" class="view hidden">
+      <section id="view-shop" class="view view-light hidden">
         <header class="screen-head">
           <div class="head-left">
             <h1>VESICLE EXCHANGE</h1>
             <span class="head-sub">Buy cards, acquire a relic, or purge dead weight from your deck.</span>
+            <span class="czn-id">SHOP // EXCHANGE</span>
           </div>
-          <div class="cells-pill">⛁ <b id="shop-cells">0</b></div>
+          <div class="cells-pill"><svg class="ico"><use href="#i-cell"/></svg><b id="shop-cells">0</b></div>
           <button class="btn-ghost tiny" id="btn-shop-deck">DECK</button>
           <button class="btn-primary" id="btn-shop-leave">LEAVE SHOP</button>
         </header>
@@ -130,41 +168,43 @@
             <div class="shop-cards" id="shop-cards"></div>
           </div>
           <div class="shop-side">
+            <div class="shop-keeper"><img src="./images/cut-bibi-cut.png" alt="Shopkeeper" /><span class="czn-id">KEEPER // BIBI</span></div>
             <div class="shop-label">ANTIBODY RELIC</div>
             <div class="shop-relic" id="shop-relic"></div>
             <div class="shop-label" style="margin-top:16px">DECK PURGE</div>
             <button class="shop-service" id="btn-shop-remove">
               <b>REMOVE A CARD</b>
               <span>Permanently purge 1 card (incl. Curses)</span>
-              <i id="shop-remove-cost">⛁ 60</i>
+              <i id="shop-remove-cost"><svg class="ico"><use href="#i-cell"/></svg> 60</i>
             </button>
           </div>
         </div>
       </section>
 
       <!-- ================= REST ================= -->
-      <section id="view-rest" class="view hidden">
+      <section id="view-rest" class="view view-light hidden">
         <header class="screen-head">
           <div class="head-left">
             <h1>MARROW SANCTUARY</h1>
             <span class="head-sub">Choose ONE action before advancing. Choices are mutually exclusive.</span>
+            <span class="czn-id">REST // MARROW</span>
           </div>
         </header>
         <div class="rest-body">
           <div class="rest-team" id="rest-team"></div>
           <div class="rest-choices" id="rest-choices">
             <button class="rest-card" id="btn-rest-heal">
-              <span class="rest-icon">✚</span>
+              <span class="rest-icon"><svg class="ico ico-lg"><use href="#i-heal"/></svg></span>
               <b>REST &amp; REPAIR</b>
               <span>Heal 30% Max HP for every combatant.</span>
             </button>
             <button class="rest-card" id="btn-rest-calm">
-              <span class="rest-icon">☾</span>
+              <span class="rest-icon"><svg class="ico ico-lg"><use href="#i-star"/></svg></span>
               <b>DE-STRESS</b>
               <span>Clear 40 Stress across the whole squad.</span>
             </button>
             <button class="rest-card" id="btn-rest-upgrade">
-              <span class="rest-icon">✦</span>
+              <span class="rest-icon"><svg class="ico ico-lg"><use href="#i-bolt"/></svg></span>
               <b>EVOLVE CARD (+)</b>
               <span>Upgrade one card in your deck to its + variant.</span>
             </button>
@@ -177,8 +217,9 @@
       </section>
 
       <!-- ================= POST-BATTLE DRAFT ================= -->
-      <section id="view-reward" class="view hidden">
-        <div class="reward-panel">
+      <section id="view-reward" class="view view-light hidden">
+        <div class="reward-panel czn-frame">
+          <span class="czn-corner tl"></span><span class="czn-corner tr"></span><span class="czn-corner bl"></span><span class="czn-corner br"></span>
           <div class="reward-top">
             <span class="rank-chip" id="reward-rank">S</span>
             <div>
@@ -194,8 +235,11 @@
       </section>
 
       <!-- ================= BATTLE ================= -->
-      <section id="view-battle" class="view hidden">
-        <div class="battle-bg"></div>
+      <section id="view-battle" class="view view-dark hidden">
+        <div class="battle-bg"><img src="./images/bg-battle.jpg" alt="" /><div class="battle-bg-shade"></div></div>
+        <div class="turn-banner hidden" id="turn-banner"><span id="turn-banner-text">TURN 1</span><span class="turn-banner-sub" id="turn-banner-sub">ENGAGE</span></div>
+        <div class="breakdown-overlay hidden" id="breakdown-overlay"><span>MENTAL BREAKDOWN</span><small id="breakdown-name">—</small></div>
+        <svg class="target-line hidden" id="target-line"><line id="target-line-el" x1="0" y1="0" x2="0" y2="0" /></svg>
 
         <!-- team HP, portraits, stress -->
         <header class="hud-top">
@@ -218,9 +262,9 @@
             </div>
           </div>
           <div class="hud-tools">
-            <button class="icon-btn" id="btn-mute" title="Toggle sound">🔊</button>
-            <button class="icon-btn" id="log-toggle" title="Battle log">▤</button>
-            <button class="icon-btn" id="btn-menu" title="Menu">☰</button>
+            <button class="icon-btn" id="btn-mute" title="Toggle sound"><svg class="ico"><use href="#i-sound"/></svg></button>
+            <button class="icon-btn" id="log-toggle" title="Battle log"><svg class="ico"><use href="#i-log"/></svg></button>
+            <button class="icon-btn" id="btn-menu" title="Menu"><svg class="ico"><use href="#i-menu"/></svg></button>
           </div>
         </header>
 
@@ -254,7 +298,7 @@
           <!-- right rail -->
           <aside class="rail rail-right">
             <div class="sands-wrap">
-              <button class="sands-btn" id="btn-sands" title="Sands of Time">⧗<i id="sands-count">3</i></button>
+              <button class="sands-btn" id="btn-sands" title="Sands of Time"><svg class="ico"><use href="#i-sands"/></svg><i id="sands-count">3</i></button>
               <div class="sands-menu hidden" id="sands-menu">
                 <button data-sand="1"><b>1</b><span>Undo last card</span></button>
                 <button data-sand="2"><b>2</b><span>Redraw Ego</span></button>
@@ -264,7 +308,7 @@
             <div class="pile-box grave" id="grave-pile" title="Inspect graveyard">
               <b id="grave-count">0</b><i id="grave-used">+0</i><span>GRAVE</span>
             </div>
-            <button class="end-turn" id="end-turn" title="End turn"><span>✓</span></button>
+            <button class="end-turn" id="end-turn" title="End turn"><svg class="ico ico-lg"><use href="#i-check"/></svg></button>
           </aside>
         </div>
 
@@ -287,8 +331,9 @@
       </section>
 
       <!-- ================= RANK SCREEN ================= -->
-      <section id="view-rank" class="view hidden">
-        <div class="rank-panel">
+      <section id="view-rank" class="view view-light hidden">
+        <div class="rank-panel czn-frame">
+          <span class="czn-corner tl"></span><span class="czn-corner tr"></span><span class="czn-corner bl"></span><span class="czn-corner br"></span>
           <div class="rank-emblem" id="rank-letter">S</div>
           <h1 id="rank-title">EXPEDITION CLEAR</h1>
           <p id="rank-sub">—</p>
@@ -301,7 +346,8 @@
 
       <!-- card detail (long press) -->
       <div class="detail hidden" id="detail">
-        <div class="detail-panel">
+        <div class="detail-panel czn-frame">
+          <span class="czn-corner tl"></span><span class="czn-corner tr"></span>
           <div class="detail-card" id="detail-card"></div>
           <div class="detail-info">
             <div class="detail-head" id="detail-head">—</div>
@@ -350,7 +396,7 @@
               <h2>CELL ENHANCEMENT LAB</h2>
               <span class="head-sub">Spend earned Cells to raise Levels, Awakenings, and Skill Potency.</span>
             </div>
-            <div class="cells-pill">⛁ <b id="lab-cells">0</b></div>
+            <div class="cells-pill"><svg class="ico"><use href="#i-cell"/></svg><b id="lab-cells">0</b></div>
             <button class="btn-ghost tiny" id="lab-close">CLOSE</button>
           </header>
           <div class="lab-tabs" id="lab-tabs"></div>
@@ -373,7 +419,8 @@
 
       <!-- pause -->
       <div class="pause hidden" id="pause">
-        <div class="pause-card">
+        <div class="pause-card czn-frame">
+          <span class="czn-corner tl"></span><span class="czn-corner tr"></span>
           <h1>PAUSED</h1>
           <button class="btn-primary" id="pause-resume">RESUME</button>
           <button class="btn-ghost" id="pause-restart">RESTART FIGHT</button>
@@ -383,7 +430,8 @@
 
       <!-- ================= RESULT ================= -->
       <div class="overlay hidden" id="overlay">
-        <div class="overlay-card">
+        <div class="overlay-card czn-frame">
+          <span class="czn-corner tl"></span><span class="czn-corner tr"></span>
           <h1 id="overlay-title">—</h1>
           <p id="overlay-sub">—</p>
           <div class="overlay-stats" id="overlay-stats"></div>
