@@ -1,18 +1,17 @@
-import { CARDS, START, REGIONS, UNLOCKABLE, ART, ENEMY_ART, SIGIL, REGION_ART } from './data.js';
-import { createGame, endTurn, playCard, atkOf, previewEndTurn } from './engine.js';
-import {
-  loadProgress, saveProgress, resetProgress, regionUnlocked, buildDeck, totalCleared,
-} from './progress.js';
+import { CHAPTERS, CARDS, CHARACTERS, ROLES } from './data.js';
+import { startBattle, playCard, endTurn, damageOf } from './battle.js';
+import { loadProgress, saveProgress, resetProgress, chapterUnlocked } from './progress.js';
 
 const $ = (id) => document.getElementById(id);
 
 let progress = loadProgress();
-let game = null;
-let region = null;
+let battle = null;
+let chapter = null;
+let storyChapter = null;
+let storyIndex = 0;
 let settled = false;
-let lastWin = null;
 
-const VIEWS = ['menu', 'map', 'lab', 'battle'];
+const VIEWS = ['title', 'story', 'map', 'battle'];
 function showView(name) {
   for (const v of VIEWS) $('view-' + v).classList.toggle('hidden', v !== name);
 }
@@ -24,336 +23,221 @@ function el(tag, cls, html) {
   return node;
 }
 
-/* ---------------------------------------------------------------- menu */
-
-function renderMenu() {
-  $('menu-stem').textContent = progress.stem;
-  $('menu-cleared').textContent = totalCleared(progress);
-}
-
-/* ----------------------------------------------------------------- map */
+/* ------------------------------------------------------------- map */
 
 function renderMap() {
-  $('map-stem').textContent = progress.stem;
-  const list = $('region-list');
-  list.innerHTML = '';
+  const grid = $('chapter-grid');
+  grid.innerHTML = '';
 
-  REGIONS.forEach((r, i) => {
-    const unlocked = regionUnlocked(progress, i);
-    const cleared = progress.cleared.includes(r.id);
-    const btn = el('button', `region${unlocked ? '' : ' locked'}${cleared ? ' cleared' : ''}`);
-    btn.innerHTML = `
-      <div class="region-art" style="--art:url('${REGION_ART[r.id]}')"></div>
-      <div class="region-top">
-        <span class="region-name">${r.name}</span>
-        <span class="threat">${'▮'.repeat(r.threat)}</span>
-      </div>
-      <div class="region-foot">
-        <span>${unlocked ? '◈ ' + (cleared ? Math.round(r.reward * 0.25) : r.reward) : '🔒'}</span>
-        <span>${r.coreHp}</span>
+  CHAPTERS.forEach((ch, i) => {
+    const unlocked = chapterUnlocked(progress, i);
+    const cleared = progress.cleared.includes(ch.id);
+    const tile = el('button', `chapter${unlocked ? '' : ' locked'}${cleared ? ' cleared' : ''}`);
+    tile.innerHTML = `
+      <div class="chapter-art" style="--art:url('${CHARACTERS[ch.party[0]].art}')"></div>
+      <div class="chapter-title">${ch.title}</div>
+      <div class="chapter-place">${ch.place}${cleared ? ' · cleared' : ''}</div>
+      <div class="chapter-party">
+        ${ch.party.map((id) => `<span class="pip-face" style="--art:url('${CHARACTERS[id].art}')"></span>`).join('')}
+        <span class="pip-face" style="--art:url('${enemyArt(ch)}');border-color:#5b1420"></span>
       </div>`;
-    btn.addEventListener('click', () => {
+    tile.addEventListener('click', () => {
       if (!unlocked) return;
-      startRegion(r.id);
+      openStory(ch, i);
     });
-    list.appendChild(btn);
+    grid.appendChild(tile);
   });
 }
 
-/* ----------------------------------------------------------------- lab */
-
-function renderLab() {
-  $('lab-stem').textContent = progress.stem;
-  const list = $('lab-list');
-  list.innerHTML = '';
-
-  const ids = Object.keys(UNLOCKABLE).sort((a, b) => UNLOCKABLE[a].cost - UNLOCKABLE[b].cost);
-
-  for (const id of ids) {
-    const card = CARDS[id];
-    const meta = UNLOCKABLE[id];
-    const owned = progress.unlocked.includes(id);
-    const affordable = progress.stem >= meta.cost;
-
-    const item = el('div', 'lab-item');
-    item.dataset.rarity = card.rarity;
-    item.innerHTML = `
-      <div class="lab-row">
-        <div class="lab-id">
-          <div class="lab-thumb" style="--art:url('${ART[id] || ''}')"></div>
-          <div>
-            <div class="lab-name">${card.name}</div>
-            <div class="region-organ">${meta.faction} · ${card.rarity}</div>
-          </div>
-        </div>
-        <button class="buy${owned ? ' owned' : ''}" ${owned || !affordable ? 'disabled' : ''}>
-          ${owned ? 'OWNED' : '◈ ' + meta.cost}
-        </button>
-      </div>
-      <div class="lab-text">${card.text}</div>
-      ${owned ? '' : `<div class="lab-text" style="color:#6a4f57">adds one copy of ${card.name} to your deck</div>`}`;
-    list.appendChild(item);
-
-    if (!owned) {
-      item.querySelector('.buy').addEventListener('click', () => {
-        if (progress.stem < meta.cost) return;
-        progress.stem -= meta.cost;
-        progress.unlocked.push(id);
-        saveProgress(progress);
-        renderLab();
-      });
-    }
-  }
+function enemyArt(ch) {
+  const ids = { strep: './images/pathogen-strep.png', toxin: './images/pathogen-toxin.png', biofilm: './images/pathogen-biofilm.png', strain: './images/pathogen-strep.png' };
+  return ids[ch.enemies[0]];
 }
 
-/* --------------------------------------------------------------- battle */
+/* ----------------------------------------------------------- story */
 
-function startRegion(id) {
-  region = REGIONS.find((r) => r.id === id) || REGIONS[0];
-  progress.lastRegion = region.id;
-  saveProgress(progress);
+function openStory(ch, index) {
+  storyChapter = ch;
+  storyIndex = 0;
+  renderStoryLine();
+  showView('story');
+}
+
+function renderStoryLine() {
+  const line = storyChapter.story[storyIndex];
+  const speaker = line.art ? CHARACTERS[line.art] : null;
+  const fallback = CHARACTERS[storyChapter.party[0]];
+
+  $('story-art').style.setProperty('--art', `url('${(speaker || fallback).art}')`);
+  $('story-who').textContent = line.who || '';
+  $('story-text').textContent = line.text;
+  $('btn-story-next').textContent = storyIndex >= storyChapter.story.length - 1 ? 'FIGHT' : 'NEXT';
+}
+
+/* ---------------------------------------------------------- battle */
+
+function openChapter(ch, index) {
+  chapter = ch;
+  battle = startBattle(ch);
   settled = false;
-  lastWin = null;
-
-  game = createGame({
-    deck: buildDeck(progress),
-    coreHp: region.coreHp,
-    infection: region.infection,
-    infectionGain: region.infectionGain,
-    spawnEvery: region.spawnEvery,
-    wave: region.wave,
-  });
-
   $('overlay').classList.add('hidden');
+  $('battle-title').textContent = ch.title.toUpperCase();
   showView('battle');
   renderBattle();
 }
 
-function renderHud() {
-  $('turn').textContent = game.turn;
+function fighterNode(unit, { enemy = false } = {}) {
+  const node = el('div', `fighter${enemy ? ' enemy' : ''}${unit.hp <= 0 ? ' down' : ''}`);
+  if (enemy && battle.target === unit.uid) node.classList.add('selected');
 
-  const atp = $('atp');
-  atp.innerHTML = '';
-  for (let i = 0; i < game.maxAtp; i++) {
-    atp.appendChild(el('span', `pip${i < game.atp ? ' on' : ''}`));
-  }
+  const role = ROLES[unit.role];
+  const pct = Math.max(0, (unit.hp / unit.maxHp) * 100);
+  const atk = enemy ? Math.max(0, unit.atk - unit.weaken) : unit.atk + unit.atkBuff + unit.tempAtk;
 
-  $('infection-val').textContent = `${Math.round(game.infection)}%`;
-  $('infection-fill').style.width = `${Math.max(0, Math.min(100, game.infection))}%`;
-  $('fever-val').textContent = `${game.inflammation} / ${game.fever}`;
-  $('fever-fill').style.width = `${Math.min(100, (game.inflammation / game.fever) * 100)}%`;
-  $('core-hp').textContent = `INFECTION SITE ${Math.max(0, game.enemy.coreHp)}`;
-}
-
-function renderEnemy() {
-  const wrap = $('enemy-slots');
-  wrap.innerHTML = '';
-  for (let i = 0; i < START.slots; i++) {
-    const unit = game.enemy.units[i];
-    if (!unit) {
-      wrap.appendChild(el('div', 'slot empty', '<span class="muted">—</span>'));
-      continue;
-    }
-    const node = el('div', 'slot unit enemy');
-    const atk = Math.max(0, unit.atk - (game.enemy.weaken > 0 ? 2 : 0));
-    node.innerHTML = `
-      <div class="unit-art" style="--art:url('${ENEMY_ART[unit.id] || ''}')"></div>
-      <div class="unit-shade"></div>
-      <div class="unit-body">
-        <div class="unit-name">${unit.name}</div>
-        <div class="unit-stats"><span class="atk">⚔ ${atk}</span><span class="hp">♥ ${Math.max(0, unit.hp)}</span></div>
-        <div class="spread">SPREAD +${unit.spread}%</div>
+  node.innerHTML = `
+    <div class="fighter-art" style="--art:url('${unit.art}')"></div>
+    <div class="fighter-shade"></div>
+    ${!enemy && unit.shield > 0 ? `<div class="shield-badge">⛨ ${unit.shield}</div>` : ''}
+    ${!enemy && unit.taunt > 0 ? '<div class="taunt-badge">TAUNT</div>' : ''}
+    <div class="fighter-info">
+      <div class="fighter-top">
+        <span class="fighter-name">${unit.name}</span>
+        ${role ? `<span class="role-chip role-${unit.role}">${role.label}</span>` : ''}
       </div>
-      <div class="hpbar"><i style="width:${Math.max(0, unit.hp) / unit.maxHp * 100}%"></i></div>`;
-    wrap.appendChild(node);
-  }
-}
-
-function renderPlayer() {
-  const wrap = $('player-slots');
-  wrap.innerHTML = '';
-  for (let i = 0; i < START.slots; i++) {
-    const cell = game.player.cells[i];
-    if (!cell) {
-      wrap.appendChild(el('div', 'slot empty', '<span class="muted">empty tissue</span>'));
-      continue;
-    }
-    const node = el('div', 'slot unit');
-    node.innerHTML = `
-      <div class="unit-art" style="--art:url('${ART[cell.id] || ''}')"></div>
-      <div class="unit-shade"></div>
-      <div class="unit-body">
-        <div class="unit-name">${cell.name}</div>
-        <div class="unit-stats"><span class="atk">⚔ ${atkOf(game, cell)}</span><span class="hp">♥ ${Math.max(0, cell.hp)}</span></div>
+      <div class="hpbar"><i style="width:${pct}%"></i></div>
+      <div class="fighter-stats">
+        <span>♥ <b>${Math.max(0, unit.hp)}</b>/${unit.maxHp}</span>
+        <span>⚔ <b>${atk}</b></span>
       </div>
-      <div class="hpbar"><i style="width:${Math.max(0, cell.hp) / cell.maxHp * 100}%"></i></div>`;
-    wrap.appendChild(node);
+    </div>`;
+
+  if (enemy) {
+    node.addEventListener('click', () => {
+      if (unit.hp <= 0) return;
+      battle.target = unit.uid;
+      renderBattle();
+    });
   }
+  return node;
 }
 
-function renderHand() {
+function renderBattle() {
+  const party = $('party');
+  party.innerHTML = '';
+  battle.party.forEach((p) => party.appendChild(fighterNode(p)));
+
+  const foes = $('foes');
+  foes.innerHTML = '';
+  battle.enemies.forEach((e) => foes.appendChild(fighterNode(e, { enemy: true })));
+
+  $('turn').textContent = battle.turn;
+
+  const energy = $('energy');
+  energy.innerHTML = '<div class="energy-label">ATP</div><div class="energy-pips"></div>';
+  const pips = el('div', 'energy-pips');
+  for (let i = 0; i < Math.max(battle.maxEnergy, battle.energy); i++) {
+    pips.appendChild(el('span', `pip${i < battle.energy ? ' on' : ''}`));
+  }
+  energy.appendChild(pips);
+
   const hand = $('hand');
   hand.innerHTML = '';
-  game.hand.forEach((id, index) => {
+  battle.hand.forEach((id, i) => {
     const card = CARDS[id];
-    const affordable = card.cost <= game.atp && !game.result;
-    const node = el('div', `card type-${card.type}${affordable ? '' : ' unaffordable'}`);
-    node.dataset.rarity = card.rarity || 'common';
+    const owner = battle.party.find((p) => p.id === card.owner);
+    const down = !owner || owner.hp <= 0;
+    const playable = !down && card.cost <= battle.energy && !battle.result;
 
-    const art = ART[id];
-    const artHtml = art
-      ? `<div class="card-art" style="--art:url('${art}')"></div>`
-      : `<div class="card-art sigil">${SIGIL[id] || '✷'}</div>`;
-
+    const node = el('div', `card${playable ? '' : ' unplayable'}`);
+    const dmg = card.dmg ? damageOf(card, owner) : 0;
     node.innerHTML = `
-      ${artHtml}
+      <div class="card-art" style="--art:url('${CHARACTERS[card.owner].art}')"></div>
       <span class="card-cost">${card.cost}</span>
-      <span class="card-type">${card.type === 'cell' ? 'CELL' : 'CYTOKINE'}</span>
+      <span class="card-caster">${CHARACTERS[card.owner].name}</span>
       <div class="card-body">
         <div class="card-name">${card.name}</div>
-        ${card.type === 'cell'
-          ? `<div class="card-stats"><span class="atk">⚔ ${card.atk}</span><span class="hp">♥ ${card.hp}</span></div>`
-          : `<div class="card-text">${card.text}</div>`}
+        ${dmg ? `<div class="card-dmg">⚔ ${dmg}${card.hits ? ` ×${card.hits}` : ''}</div>` : ''}
+        <div class="card-text">${card.text}</div>
       </div>`;
     node.addEventListener('click', () => {
-      const res = playCard(game, index);
-      if (!res.ok) return flash(res.error);
+      const res = playCard(battle, i, battle.target);
+      if (!res.ok) return;
       renderBattle();
     });
     hand.appendChild(node);
   });
 
-  $('deck-count').textContent = `deck ${game.deck.length} · discard ${game.discard.length}`;
-  $('antibodies').textContent = game.player.antibodies ? `antibodies ${game.player.antibodies}` : '';
-}
-
-function renderLog() {
-  const box = $('log');
+  const box = $('battle-log');
   box.innerHTML = '';
-  for (const entry of game.log.slice(-2)) {
-    box.appendChild(el('div', entry.kind, entry.text));
-  }
+  battle.log.slice(-2).forEach((entry) => box.appendChild(el('div', entry.kind, entry.text)));
+
+  renderResult();
 }
 
-function renderPreview() {
-  const box = $('preview');
-  if (game.result) {
-    box.innerHTML = '';
-    return;
-  }
-  const p = previewEndTurn(game);
-  const feverWarn = p.feverAtEnd
-    ? '<span class="danger">🔥 FEVER</span>'
-    : `<span style="opacity:.6">🌡 ${game.fever - game.inflammation}</span>`;
-  box.innerHTML = `<b>⚔ ${p.myDamage}</b> · <span class="danger">+${p.theirSpread}%</span> · ◆ ${p.coreHp} · ${feverWarn}`;
-}
-
-function settle() {
-  if (!game || !game.result || settled) return;
-  settled = true;
-  const first = !progress.cleared.includes(region.id);
-
-  if (game.result === 'win') {
-    const gain = first ? region.reward : Math.round(region.reward * 0.25);
-    if (first) progress.cleared.push(region.id);
-    progress.stem += gain;
-    saveProgress(progress);
-    lastWin = { gain, first };
-  } else {
-    lastWin = null;
-  }
-}
-
-function renderOverlay() {
+function renderResult() {
   const overlay = $('overlay');
-  if (!game || !game.result) {
+  if (!battle || !battle.result) {
     overlay.classList.add('hidden');
     return;
   }
-  settle();
   overlay.classList.remove('hidden');
 
-  const won = game.result === 'win';
-  $('overlay-title').textContent = won ? 'BODY HELD' : 'HOST LOST';
-  $('overlay-sub').textContent = won
-    ? `${region.name} cleared on turn ${game.turn}. ${region.organ}.`
-    : `Infection hit 100% on turn ${game.turn}. ${region.name} is still yours to take.`;
-
-  const rewardBox = $('overlay-reward');
-  if (won && lastWin) {
-    rewardBox.classList.remove('hidden');
-    rewardBox.innerHTML = `+${lastWin.gain} STEM CELLS${lastWin.first ? ' · FIRST CLEAR' : ' · REPLAY'}`;
-  } else {
-    rewardBox.classList.add('hidden');
+  if (!settled) {
+    settled = true;
+    if (battle.result === 'win' && !progress.cleared.includes(chapter.id)) {
+      progress.cleared.push(chapter.id);
+      saveProgress(progress);
+    }
   }
 
-  $('overlay-btn').textContent = won ? 'BACK TO MAP' : 'GIVE UP';
+  const won = battle.result === 'win';
+  $('overlay-title').textContent = won ? 'BODY HELD' : 'SQUAD LOST';
+  $('overlay-sub').textContent = won
+    ? `${chapter.title} cleared in ${battle.turn} turns.`
+    : `${chapter.title} — the squad went down in ${battle.turn} turns.`;
+  $('overlay-btn').textContent = won ? 'BACK TO MAP' : 'RETRY';
   $('overlay-retry').classList.toggle('hidden', won);
 }
 
-function renderBattle() {
-  renderHud();
-  renderEnemy();
-  renderPlayer();
-  renderHand();
-  renderLog();
-  renderPreview();
-  renderOverlay();
-}
+/* ---------------------------------------------------------- events */
 
-function flash(message) {
-  if (!message) return;
-  $('log').appendChild(el('div', 'bad', message));
-}
-
-/* --------------------------------------------------------------- events */
-
-$('btn-continue').addEventListener('click', () => {
+$('btn-start').addEventListener('click', () => {
   renderMap();
   showView('map');
 });
-$('btn-map-back').addEventListener('click', () => {
-  renderMenu();
-  showView('menu');
-});
-$('btn-lab-menu').addEventListener('click', () => {
-  renderLab();
-  showView('lab');
-});
-$('btn-lab').addEventListener('click', () => {
-  renderLab();
-  showView('lab');
-});
-$('btn-lab-back').addEventListener('click', () => {
-  renderMap();
-  showView('map');
-});
+
+$('btn-title').addEventListener('click', () => showView('title'));
+
 $('btn-reset').addEventListener('click', () => {
   progress = resetProgress();
-  renderMenu();
+  renderMap();
+});
+
+$('btn-story-next').addEventListener('click', () => {
+  if (storyIndex < storyChapter.story.length - 1) {
+    storyIndex += 1;
+    renderStoryLine();
+    return;
+  }
+  openChapter(storyChapter, CHAPTERS.indexOf(storyChapter));
 });
 
 $('end-turn').addEventListener('click', () => {
-  endTurn(game);
+  endTurn(battle);
   renderBattle();
-  if (game.log.some((l) => l.kind === 'fever')) {
-    $('app').classList.add('fevering');
-    setTimeout(() => $('app').classList.remove('fevering'), 600);
-  }
-});
-$('restart').addEventListener('click', () => startRegion(region.id));
-$('btn-quit').addEventListener('click', () => {
-  renderMap();
-  showView('map');
 });
 
 $('overlay-btn').addEventListener('click', () => {
-  renderMap();
-  showView('map');
+  if (battle.result === 'win') {
+    renderMap();
+    showView('map');
+  } else {
+    openChapter(chapter, CHAPTERS.indexOf(chapter));
+  }
 });
-$('overlay-retry').addEventListener('click', () => startRegion(region.id));
 
-/* ---------------------------------------------------------------- boot */
+$('overlay-retry').addEventListener('click', () => openChapter(chapter, CHAPTERS.indexOf(chapter)));
 
-renderMenu();
-showView('menu');
+/* ------------------------------------------------------------ boot */
+
+showView('title');

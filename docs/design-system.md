@@ -3,8 +3,7 @@
 Everything visual is built from this file. No improvised colours, no improvised type sizes.
 If a screen needs something that isn't here, add it here first, then build it.
 
-Live preview of the components: **`design/card-lab.html`** (open in the browser — same CSS the
-game uses, so what you see is what ships).
+Live preview: run `npm run dev` — you are looking at the shipped CSS.
 
 ---
 
@@ -199,7 +198,7 @@ Infection: gradient crimson. Inflammation: cyan → amber → crimson with a tic
 | File | What it owns |
 | --- | --- |
 | `styles.css` | tokens + all components (single source of truth for the game) |
-| `design/card-lab.html` | living spec: every component rendered |
+| `src/ui.js` | how those components are assembled into screens |
 | `images/logo-anime-title.png` | locked wordmark (raster canon) |
 | `images/app-icon-512.png` | locked app icon (raster canon) |
 | `docs/design-system.md` | this file — the rules |
