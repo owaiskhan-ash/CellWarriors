@@ -295,13 +295,17 @@ button .ico { margin-right: 4px; }
 .weak-banner { align-self: center; font-size: 10px; letter-spacing: 0.2em; color: var(--dim); padding: 4px 14px; border: 1px solid var(--line-soft); border-radius: 20px; background: rgba(0,0,0,0.45); margin: 4px 0 0; font-family: var(--font-display); font-weight: 600; backdrop-filter: blur(4px); }
 .weak-banner b { letter-spacing: 0.14em; }
 .enemy-row { flex: 1; display: flex; align-items: flex-end; justify-content: center; gap: clamp(12px, 3vw, 56px); padding-bottom: 8px; min-height: 0; }
-.enemy { position: relative; width: clamp(170px, 22vw, 290px); display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 120ms ease-out; }
+.enemy { position: relative; width: clamp(200px, 27vw, 400px); display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 120ms ease-out; }
+.enemy.is-elite { width: clamp(240px, 32vw, 470px); }
+.enemy.is-boss { width: clamp(280px, 38vw, 560px); }
 .enemy:hover { transform: translateY(-3px); }
 .enemy.dead { opacity: 0.15; filter: grayscale(1); pointer-events: none; }
 .enemy.selected .enemy-art::after { content:""; position:absolute; inset: 6% 10%; border-radius: 50%; border: 2px solid rgba(255,51,85,0.7); box-shadow: 0 0 30px rgba(255,51,85,0.45); background: radial-gradient(circle, rgba(255,51,85,0.14), transparent 68%); animation: targetPulse 1s infinite; }
 @keyframes targetPulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.04); opacity: 0.8; } }
-.enemy-art { position: relative; height: clamp(150px, 34vh, 270px); width: 100%; display: flex; align-items: flex-end; justify-content: center; }
-.enemy-art img { max-height: 100%; max-width: 100%; object-fit: contain; filter: drop-shadow(0 18px 30px rgba(0,0,0,0.75)); }
+.enemy-art { position: relative; height: clamp(210px, 42vh, 390px); width: 100%; display: flex; align-items: flex-end; justify-content: center; }
+.enemy.is-elite .enemy-art { height: clamp(250px, 48vh, 440px); }
+.enemy.is-boss .enemy-art { height: clamp(290px, 54vh, 500px); }
+.enemy-art img { max-height: 100%; max-width: 100%; object-fit: contain; filter: drop-shadow(0 22px 38px rgba(0,0,0,0.8)); }
 .enemy.ravaged .enemy-art img { animation: ravage 0.5s ease-in-out infinite alternate; }
 @keyframes ravage { from { transform: translateX(-3px) rotate(-1.4deg); } to { transform: translateX(3px) rotate(1.4deg); } }
 .enemy-badges { position: absolute; top: 0; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 5px; z-index: 3; }
@@ -889,9 +893,10 @@ button .ico { margin-right: 4px; }
   .sim-hud-pill { top: auto; bottom: 235px; right: 80px; }
   .sim-stats b { font-size: 14px; }
 }
-.enemy-sim_colossus { width: clamp(250px, 30vw, 430px); }
-.enemy-sim_colossus .enemy-art { height: clamp(190px, 38vh, 320px); }
-.enemy-sim_colossus .enemy-art img { border-radius: 14px; box-shadow: 0 18px 40px rgba(0,0,0,.65); }
+/* Training Colossus is a boss-tier opponent: same big character-only
+   treatment, no rectangular framed art. */
+.enemy-sim_colossus { width: clamp(300px, 40vw, 580px); }
+.enemy-sim_colossus .enemy-art { height: clamp(300px, 55vh, 510px); }
 
 /* ---- enemy buff/debuff icons under HP bar + long-press inspect ---- */
 .enemy-status { display:flex; gap:4px; justify-content:center; flex-wrap:wrap; min-height:22px; margin-top:3px; }
