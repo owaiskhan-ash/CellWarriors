@@ -107,12 +107,29 @@ let simLoadout = 'starter';
 let simBehaviour = 'training';
 let simTracker = null;
 let simReported = false;
-let simHudHidden = (() => { try { return window.localStorage.getItem('cw_sim_hud_hidden') === '1'; } catch { return false; } })();
+/* A phone cannot afford the full panel over the stage: it covered the entire
+   right rail (END TURN, grave, AUTO) and a slice of the arena. Compact viewports
+   start with it closed; the pill in the objective band carries DAMAGE + trials
+   and opens the sheet on tap. */
+const simHudCompact = () => {
+  try { return window.matchMedia('(max-height: 560px)').matches; } catch { return false; }
+};
+let simHudHidden = (() => {
+  try {
+    const saved = window.localStorage.getItem('cw_sim_hud_hidden');
+    if (saved === '1') return true;
+    if (saved === '0') return false;
+  } catch { /* private mode */ }
+  return simHudCompact();
+})();
 function applySimHudVisibility() {
   const isSim = !!(battleCtx && battleCtx.kind === 'sim' && battle);
   const hud = $('sim-hud'), pill = $('sim-hud-pill');
   if (hud) hud.classList.toggle('hidden', !isSim || simHudHidden);
   if (pill) pill.classList.toggle('hidden', !isSim || !simHudHidden);
+  // The objective line reserves room for the pill so the two never overlap.
+  const view = $('view-battle');
+  if (view) view.classList.toggle('is-sim', !!(isSim && simHudHidden));
 }
 /* ---------------- UI settings (minimal, game-style, persisted) ---------------- */
 let settings = { volume: 90, fxSize: 'm', shake: true, motion: true, cb: false, uiScale: 100 };
@@ -266,8 +283,8 @@ function toastTarget(name) {
   targetToastTimer = setTimeout(() => toast.classList.add('hidden'), 1500);
 }
 
-function showBark(charId, kind) {
-  const line = bark(charId, kind);
+function showBark(charId, kind, cardId = null) {
+  const line = bark(charId, kind, cardId);
   const ch = CHARACTERS[charId];
   const toast = $('bark-toast');
   if (!line || !ch || !toast) return;
@@ -1887,6 +1904,14 @@ function previewOf(card, battleState) {
   };
 }
 
+/* A %HP attack against a 999,999-HP boss previews as 105012 — six digits at the
+   desktop 44px sitting across the bottom of a 105px-wide phone card, covering
+   the card name. Long values get a size class instead of a bigger card. */
+function fxLenClass(v) {
+  const n = String(Math.abs(Math.round(Number(v) || 0))).length;
+  return n >= 6 ? ' w6' : n === 5 ? ' w5' : n === 4 ? ' w4' : '';
+}
+
 function fxBadge(card, p, battleState) {
   if (card.type === 'curse' || card.unplayable) return `<div class="card-fx bad"><b>×</b><span>UNPLAYABLE</span></div>`;
   if (card.breakdown && battleState) {
@@ -1904,7 +1929,7 @@ function fxBadge(card, p, battleState) {
       p.pctBonus ? '+%HP' : '',
       p.poison ? `+${p.poison} POISON` : '',
     ].filter(Boolean).join(' · ');
-    return `<div class="card-fx ${cls}${p.burst ? ' burst' : ''}${p.lethal ? ' lethal' : ''}">
+    return `<div class="card-fx ${cls}${p.burst ? ' burst' : ''}${p.lethal ? ' lethal' : ''}${fxLenClass(p.total)}">
       <b>${p.total}</b><span>DMG${tags ? ' · ' + tags : ''}</span>
       ${p.lethal ? '<i>LETHAL</i>' : ''}</div>`;
   }
@@ -2056,7 +2081,8 @@ function renderHand() {
   // Each neighbour paints over the right-hand `gap` px of a card. Reserve that
   // strip inside the card's own text column, or every line ends in a clipped
   // word ("Permanent: all allies gain 3 S"). Zero on desktop (no overlap).
-  hand.style.setProperty('--card-cover', `${compact ? Math.max(0, -2 * margin) : 0}px`);
+  const coverPx = compact ? Math.max(0, -2 * margin) : 0;
+  hand.style.setProperty('--card-cover', `${coverPx}px`);
   const endTurnLabel = battle.drawStarted
     ? 'Draw started — ends on next turn'
     : (battle.cardsPlayedThisTurn > 0 ? `Draw: +${DRAW_NEXT} on End Turn` : 'End Turn');
@@ -2087,6 +2113,9 @@ function renderHand() {
     if (pp.total > 0 && pp.targets > 0) tt.push(`→ ${pp.total} dmg on ${pp.targets} target(s)`);
     if (STATUS_SENSITIVE.has(card.type) && pp.total > 0) tt.push('⚖ Takes longer to land on status-heavy enemies');
     node.title = tt.join(' · ');
+    // The right-most card has no neighbour covering it, so it keeps its full
+    // width instead of reserving a strip that is never painted over.
+    if (i === battle.hand.length - 1) node.style.setProperty('--card-cover', '0px');
     const rot = battle.hand.length > 1 ? (i - mid) * 1.8 : 0;
     node.style.setProperty('--rot', `${rot.toFixed(2)}deg`);
     node.style.setProperty('--lift', `${(Math.abs(i - mid) * 2.5).toFixed(1)}px`);
@@ -2283,7 +2312,8 @@ function playFromUI(index, ev) {
   else if (card.cost >= 3 || card.finale || (card.tags || []).includes('Finale')) sfxMajor('finisher', { owner: card.owner, cardId: card.defId || card.id });
   const res = playCard(battle, index, card.dmg > 0 && !card.aoe ? battle.targetUid : undefined);
   if (!res.ok) return;
-  if (card.owner) showBark(card.owner, 'attack');
+  // The card's own voice line: same character, different utterance per card.
+  if (card.owner) showBark(card.owner, 'attack', card.defId || card.id);
   else if (card.type === 'attack') sfx('slash');
   renderBattle();
   if (cardNode && rect) launchPlayArc(cardNode, rect, card);

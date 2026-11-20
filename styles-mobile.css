@@ -98,16 +98,31 @@ html, body { overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
      absolute — making it relative dropped it above the HUD. It gets the band
      immediately under the HUD, and the arena reserves that band above its own
      banner, so the two can never share pixels at any width. */
+  /* The objective line spans the full width of the band, but the right end is
+     reserved for the SIMULATION pill, so the two can never sit on each other.
+     The text is a single ellipsised line. */
   .top-stack {
     position: absolute;
-    top: calc(var(--safe-t) + 58px);
-    left: 50%;
-    transform: translateX(-50%);
-    width: min(420px, 62vw);
+    top: calc(var(--safe-t) + 56px);
+    /* starts clear of the left rail (74px) — it used to print straight over the
+       TURN box */
+    left: calc(var(--safe-l) + 84px);
+    right: calc(var(--safe-r) + 6px);
+    width: auto;
+    max-width: none;
+    transform: none;
+    text-align: left;
+    /* the objective line yields the right end of the band to the SIM pill */
+    padding-right: var(--sim-reserve, 0px);
     z-index: 16;
   }
+  #view-battle.is-sim { --sim-reserve: 162px; }
+  /* BOSS • NAME + a second 999,999 HP bar is pure duplication: the enemy plate
+     under the art already shows the same HP, tenacity and status. On a 182px
+     stage the duplicate cost 53px and buried the BREAK banner underneath it. */
+  #boss-bar { display: none; }
   .objective-bar {
-    font-size: 7.5px;
+    font-size: 8.5px;
     margin-top: 2px;
     line-height: 1.2;
     white-space: nowrap;
@@ -251,7 +266,7 @@ html, body { overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
     flex-direction: column;
     min-height: 0;
     /* top band: the objective line lives here, drawn by .top-stack */
-    padding-top: 24px;
+    padding-top: 20px;
     gap: 2px;
   }
   .weak-banner {
@@ -319,6 +334,20 @@ html, body { overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
      a word sliced in half by a neighbouring frame. */
   .card-info { padding: 0 calc(5px + var(--card-cover, 0px)) 5px 5px; }
   .card-fx { right: calc(6px + var(--card-cover, 0px)); }
+  /* The fx LABEL ("THIS FIGHT", "PERMANENT", "+2% HP") is 70-90px of text on a
+     90px-wide card, so its plate sat across the card name and the rules text.
+     The big number and its colour already say what the effect is; the exact
+     wording is one long-press away in the inspect sheet. */
+  .card-fx span { display: none; }
+  .card-fx::before { left: -10px; }
+  /* The preview number is the card's headline, so it stays big — but it scales
+     down with the number of digits so it can never run over the name row on a
+     105px-wide card. */
+  .card-fx { top: 32px; }
+  .card-fx b { font-size: 26px; }
+  .card-fx.w4 b { font-size: 21px; }
+  .card-fx.w5 b { font-size: 17px; }
+  .card-fx.w6 b { font-size: 14px; }
   /* A card only shows ~85 of its 105px in the fan, so a name that WRAPS breaks
      mid-word ("Overclo / ck"). One line, clipped with an ellipsis. */
   .card-name {
@@ -605,13 +634,22 @@ html, body { overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
   .char-cards { gap: 8px; }
   .char-cards .card, .char-cards [data-char-card] .card { width: clamp(84px, 14vh, 112px); height: auto; aspect-ratio: 0.74; }
 
-  /* --- simulated HUD: bottom sheet, thumb reachable --- */
+  /* --- simulated HUD ---
+     The panel is a sheet anchored under the HUD (never over the right rail:
+     it used to hide END TURN, the grave box and AUTO completely). It is closed
+     by default on a phone — the pill in the objective band carries the headline
+     numbers — and opens over the stage when tapped. */
   .sim-hud {
-    top: auto; bottom: calc(var(--safe-b) + 150px); right: calc(var(--safe-r) + 8px);
-    width: min(230px, 30vw); padding: 7px; gap: 5px;
-    max-height: 56vh; overflow: auto;
+    top: calc(var(--safe-t) + 54px); bottom: auto; right: calc(var(--safe-r) + 6px);
+    width: min(310px, 46vw); padding: 8px; gap: 5px;
+    max-height: calc(100% - 62px); overflow: auto; z-index: 30;
   }
-  .sim-hud-pill { top: auto; bottom: calc(var(--safe-b) + 150px); right: calc(var(--safe-r) + 8px); }
+  .sim-hud-pill {
+    top: calc(var(--safe-t) + 52px); bottom: auto; right: calc(var(--safe-r) + 6px);
+    padding: 3px 8px; gap: 5px; font-size: 8.5px; line-height: 1.2; z-index: 31;
+  }
+  .sim-hud-pill .ico { width: 11px; height: 11px; }
+  .sim-hud-pill .sim-pill-show { display: none; }
   .sim-stats b { font-size: 12px; }
   .sim-hud-head b { font-size: 9px; }
 
