@@ -356,6 +356,9 @@ button .ico { margin-right: 4px; }
 .card.upgraded .card-name { color: #ffe99e; }
 .card.burst-ready { box-shadow: 0 0 26px rgba(255,201,77,0.5), 0 14px 28px rgba(0,0,0,0.7); border-color: var(--gold); }
 .card-art { position: absolute; inset: 0; background-size: cover; background-position: 50% 8%; filter: saturate(1.06); }
+/* Interim full-bleed art for cards whose dedicated illustration is still queued:
+   slightly darkened/desaturated so dedicated art stays visually distinct. */
+.card-art-fallback { filter: saturate(0.82) brightness(0.78); }
 .card-art::after { content:""; position:absolute; inset:0; background: linear-gradient(180deg, rgba(5,2,3,0.08) 30%, rgba(5,2,3,0.72) 62%, #05070d 96%); }
 .card-frame { position: absolute; inset: 0; border-radius: 9px; pointer-events: none; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.16); z-index: 1; }
 .card.attack { --acc: #ff3d63; --acc-soft: rgba(255,61,99,0.32); }
@@ -380,25 +383,60 @@ button .ico { margin-right: 4px; }
 .card-acc { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: var(--acc); z-index: 3; }
 .card-corner { position: absolute; top: 0; right: 0; width: 38px; height: 38px; z-index: 2; pointer-events: none; background: linear-gradient(225deg, var(--acc) 0 14%, transparent 14%); opacity: 0.85; }
 .card-artimg { position: absolute; inset: 14% 6% 34%; width: 88%; height: 52%; object-fit: contain; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.8)); z-index: 0; }
-.card-fx { position: absolute; right: 6px; top: 38px; z-index: 3; text-align: right; display: flex; flex-direction: column; align-items: flex-end; line-height: 1; }
-.card-fx b { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,0.95), 0 0 16px rgba(255,90,120,0.65); font-family: var(--font-display); }
-.card-fx span { font-size: 7.5px; letter-spacing: 0.14em; font-weight: 700; margin-top: 3px; color: #ffd0da; text-shadow: 0 1px 3px #000; font-family: var(--font-display); }
-.card-fx.weak b { color: #ffe27a; text-shadow: 0 2px 6px #000, 0 0 18px rgba(255,201,77,0.9); }
+/* ——— Side damage / effect badge: cinematic treatment ———
+   The big number on the card's right edge. It SLAMS in when the card renders,
+   breathes with a hot glow, scales up with hit magnitude (.big / .mega),
+   and goes frantic for CRIT / LETHAL / BURST. Colours ride on --fx. */
+.card-fx { --fx: #ff5c7a; --fx-soft: rgba(255,92,122,0.55); position: absolute; right: 6px; top: 38px; z-index: 3; text-align: right; display: flex; flex-direction: column; align-items: flex-end; line-height: 1; pointer-events: none; }
+.card-fx::before { content: ""; position: absolute; top: -7px; right: -8px; bottom: -6px; left: -26px; z-index: -1;
+  background: linear-gradient(255deg, rgba(4,2,6,0.88) 52%, rgba(4,2,6,0.45) 78%, transparent);
+  clip-path: polygon(14% 0, 100% 0, 100% 100%, 0 100%, 8% 52%);
+  border-right: 3px solid var(--fx);
+  filter: drop-shadow(-3px 0 10px var(--fx-soft)); opacity: 0.92; }
+.card-fx b { position: relative; font-size: 31px; font-weight: 800; font-style: italic; letter-spacing: -0.03em; color: #fff;
+  font-family: var(--font-display); transform-origin: 100% 50%;
+  text-shadow: 0 0 2px #fff, 0 2px 0 rgba(0,0,0,0.9), 0 4px 10px rgba(0,0,0,0.95), 0 0 18px var(--fx), 0 0 42px var(--fx-soft);
+  animation: dmgSlam 0.5s cubic-bezier(0.16, 1.4, 0.3, 1) both, fxBreathe 2.2s ease-in-out 0.5s infinite; }
+.card-fx.big b { font-size: 37px; }
+.card-fx.mega b { font-size: 44px; text-shadow: 0 0 3px #fff, 0 2px 0 rgba(0,0,0,0.9), 0 5px 14px rgba(0,0,0,0.95), 0 0 24px var(--fx), 0 0 64px var(--fx); }
+.card:hover .card-fx b { transform: rotate(-2deg) scale(1.1); transition: transform 0.16s ease-out; }
+@keyframes dmgSlam { 0% { opacity: 0; transform: translateX(26px) rotate(5deg) scale(2.1); filter: blur(5px); } 55% { opacity: 1; transform: translateX(-2px) rotate(-2deg) scale(0.92); filter: blur(0); } 78% { transform: rotate(0.6deg) scale(1.06); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes fxBreathe { 0%,100% { text-shadow: 0 0 2px #fff, 0 2px 0 rgba(0,0,0,0.9), 0 4px 10px rgba(0,0,0,0.95), 0 0 15px var(--fx), 0 0 34px var(--fx-soft); } 50% { text-shadow: 0 0 3px #fff, 0 2px 0 rgba(0,0,0,0.9), 0 4px 12px rgba(0,0,0,0.95), 0 0 26px var(--fx), 0 0 58px var(--fx-soft); } }
+.card-fx span { font-size: 7.5px; letter-spacing: 0.16em; font-weight: 800; margin-top: 4px; color: #ffd0da; font-family: var(--font-display);
+  background: rgba(3,2,5,0.72); border: 1px solid var(--fx-soft); border-right: 3px solid var(--fx); padding: 2px 5px 2px 7px; border-radius: 3px 0 0 3px;
+  text-shadow: 0 1px 3px #000; animation: fxLabelIn 0.4s ease-out 0.12s both; white-space: nowrap; }
+@keyframes fxLabelIn { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+.card-fx.weak { --fx: #ffd23e; --fx-soft: rgba(255,210,62,0.55); }
+.card-fx.weak b { color: #fff3c4; }
 .card-fx.weak span { color: #ffe9b0; }
-.card-fx.shield b { color: #9ad6ff; text-shadow: 0 2px 6px #000, 0 0 16px rgba(53,208,192,0.85); }
+.card-fx.crit { --fx: #ffc21f; --fx-soft: rgba(255,194,31,0.7); }
+.card-fx.crit b { color: #ffe98a; animation: dmgSlam 0.5s cubic-bezier(0.16, 1.4, 0.3, 1) both, critShake 0.34s linear 0.5s infinite; }
+@keyframes critShake { 0%,100% { transform: translate(0,0) rotate(-1deg); } 25% { transform: translate(0.7px,-0.7px) rotate(0.6deg); } 60% { transform: translate(-0.7px,0.5px) rotate(-0.4deg); } }
+.card-fx.shield { --fx: #35d0c0; --fx-soft: rgba(53,208,192,0.55); }
+.card-fx.shield b { color: #c9f6ff; }
 .card-fx.shield span { color: #bfe6ff; }
-.card-fx.heal b { color: #8cf0b8; text-shadow: 0 2px 6px #000, 0 0 16px rgba(77,220,154,0.85); }
+.card-fx.heal { --fx: #4ddc9a; --fx-soft: rgba(77,220,154,0.55); }
+.card-fx.heal b { color: #c9ffe2; }
 .card-fx.heal span { color: #b6f5ce; }
-.card-fx.ap b { color: #7fe3ff; text-shadow: 0 2px 6px #000, 0 0 16px rgba(38,224,207,0.85); }
+.card-fx.ap { --fx: #26e0cf; --fx-soft: rgba(38,224,207,0.55); }
+.card-fx.ap b { color: #d2fbff; }
 .card-fx.ap span { color: #b3f2ea; }
-.card-fx.status b { color: #d9c2ff; font-size: 19px; }
+.card-fx.poison { --fx: #57e389; --fx-soft: rgba(87,227,137,0.6); }
+.card-fx.status { --fx: #b79bd8; --fx-soft: rgba(183,155,216,0.5); }
+.card-fx.status b { color: #ecdcff; font-size: 23px; }
 .card-fx.status span { color: #c9b0ef; }
-.card-fx.bad b { color: #ff7f96; }
-.card-fx i { font-style: normal; font-size: 7.5px; font-weight: 800; letter-spacing: 0.12em; margin-top: 4px; padding: 2px 5px; border-radius: 3px; background: var(--gold); color: #241a00; font-family: var(--font-display); }
-.card-fx.lethal b { animation: lethalPulse 1s ease-in-out infinite; }
-@keyframes lethalPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.14); } }
-.card-fx.crit b { color: #ffd45a; text-shadow: 0 0 14px rgba(255,201,77,0.9); }
-.card-fx.burst span { color: var(--gold); font-weight: 800; }
+.card-fx.bad { --fx: #ff7f96; --fx-soft: rgba(255,127,150,0.5); }
+.card-fx.bad b { color: #ffb3c0; animation: dmgSlam 0.5s ease-out both; }
+.card-fx i { font-style: normal; font-size: 8px; font-weight: 800; letter-spacing: 0.14em; margin-top: 5px; padding: 2px 6px; border-radius: 3px; background: linear-gradient(180deg, #ffe27a, var(--gold)); color: #241a00; font-family: var(--font-display); box-shadow: 0 0 14px rgba(255,201,77,0.8); animation: fxLabelIn 0.35s ease-out 0.22s both, lethalPulse 0.9s ease-in-out infinite; }
+.card-fx.lethal { --fx: #ff2e4d; --fx-soft: rgba(255,46,77,0.75); }
+.card-fx.lethal b { color: #ffe3e8; animation: dmgSlam 0.5s cubic-bezier(0.16, 1.4, 0.3, 1) both, lethalPulse 0.9s ease-in-out 0.5s infinite; }
+@keyframes lethalPulse { 0%,100% { transform: scale(1) rotate(-1deg); } 50% { transform: scale(1.16) rotate(1deg); } }
+.card-fx.burst span { color: var(--gold); border-color: var(--gold); font-weight: 800; }
+.card-fx.burst::after { content: ""; position: absolute; top: -4px; right: 2px; width: 34px; height: 46px; pointer-events: none;
+  background: radial-gradient(circle at 70% 18%, rgba(255,227,122,0.95) 0 2px, transparent 3px), radial-gradient(circle at 38% 42%, rgba(255,201,77,0.9) 0 1.6px, transparent 2.6px), radial-gradient(circle at 84% 62%, rgba(255,227,122,0.85) 0 1.4px, transparent 2.4px);
+  animation: burstSparks 1.1s ease-in-out infinite; }
+@keyframes burstSparks { 0%,100% { opacity: 0.25; transform: translateY(3px); } 50% { opacity: 1; transform: translateY(-3px); } }
+@media (prefers-reduced-motion: reduce) { .card-fx b, .card-fx.crit b, .card-fx.lethal b, .card-fx i, .card-fx.burst::after { animation: none; } }
 
 .ap-row { display: flex; align-items: center; justify-content: center; gap: 14px; height: 36px; width: 260px; margin-top: -2px; }
 .ap-row b { font-size: 34px; line-height: 1; font-weight: 800; color: #8ed2ff; text-shadow: 0 0 20px rgba(55,164,255,0.9); font-family: var(--font-display); }
@@ -470,7 +508,7 @@ button .ico { margin-right: 4px; }
 .detail-panel { display: flex; align-items: center; gap: 28px; padding: 24px 28px; border-radius: 16px; background: linear-gradient(150deg, rgba(23,10,14,0.98), rgba(11,5,7,0.98)); border: 1px solid var(--line); box-shadow: var(--shadow); max-width: min(780px, 92vw); max-height: 88vh; }
 .detail-card .card { width: 216px; height: 288px; margin: 0; transform: none; cursor: default; box-shadow: 0 24px 50px rgba(0,0,0,0.8); }
 .detail-card .card-name { font-size: 13px; } .detail-card .card-text { font-size: 10.5px; max-height: 66px; }
-.detail-card .card-fx b { font-size: 28px; } .detail-card .card-cost { width: 32px; height: 32px; font-size: 16px; }
+.detail-card .card-fx b { font-size: 42px; } .detail-card .card-fx.big b { font-size: 50px; } .detail-card .card-fx.mega b { font-size: 58px; } .detail-card .card-cost { width: 32px; height: 32px; font-size: 16px; }
 .detail-info { display: flex; flex-direction: column; gap: 7px; min-width: 270px; max-width: 390px; }
 .detail-head { font-size: 24px; font-weight: 700; letter-spacing: 0.04em; font-family: var(--font-display); }
 .detail-sub { font-size: 10px; letter-spacing: 0.16em; color: var(--teal); text-transform: uppercase; font-family: var(--font-display); font-weight: 600; }
