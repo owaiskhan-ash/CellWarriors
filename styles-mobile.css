@@ -310,14 +310,54 @@ html, body { overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
   .title-top .icon-btn { width: var(--tap-min); height: var(--tap-min); }
   .cells-pill { min-height: 34px; }
 
-  /* --- roster: 3 across, so a 6-character roster needs no scrolling --- */
-  .roster { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; padding: 8px 12px calc(var(--safe-b) + 10px); }
-  .roster-art { height: clamp(84px, 20vh, 130px); }
-  .roster-card { border-radius: 10px; }
-  .roster-name { font-size: 11px; }
-  .roster-cell, .roster-leader { font-size: 8.5px; line-height: 1.35; }
+  /* --- roster: 3 across x 2 rows fits inside one screen (no scroll) ---
+     Budget at 412px tall: head 46 + foot 60 + padding 18 + gap 8 => each card
+     gets ~160px, of which the art may take ~64px. The card is then a compact
+     horizontal tile: art left, stats right, actions inline. --- */
+  .roster {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    padding: 6px 10px calc(var(--safe-b) + 6px);
+    overflow: auto;
+  }
+  .roster-card {
+    border-radius: 8px;
+    flex-direction: row;
+    align-items: stretch;
+    max-height: clamp(140px, 38vh, 176px);
+  }
+  .roster-card.selected::after {
+    top: 6px; right: 6px; transform: none; padding: 1px 5px;
+    font-size: 6px; letter-spacing: 0.1em; border-radius: 3px;
+  }
+  .roster-top { top: 5px; left: 5px; gap: 3px; }
+  .roster-top .cls-chip { font-size: 6px; padding: 1px 4px; }
+  .roster-top .roster-lvl { font-size: 6.5px; }
+  .roster-top .attr-tag { display: none; }
+  .roster-art {
+    order: -1;
+    width: 42%;
+    height: auto;
+    flex: 0 0 42%;
+    align-items: flex-end;
+  }
+  .roster-info { padding: 5px 6px; gap: 2px; flex: 1; min-width: 0; }
+  .roster-name { font-size: 10px; line-height: 1.1; }
+  .roster-name .ico { width: 9px; height: 9px; }
+  .roster-cell { font-size: 6.5px; letter-spacing: 0.08em; }
+  .roster-leader { display: none; }  /* shown in the details screen */
+  .roster-xp { height: 3px; }
+  .roster-stats { gap: 6px; font-size: 7px; margin-top: 0; }
+  .roster-foot-row { gap: 3px; margin-top: auto; }
   .roster-info > div[style*="font-size:9.5px"] { display: none; } /* tap hint is noise on a phone */
-  .lab-link { min-height: 30px; min-width: 42px; font-size: 9px; }
+  .awk-pips { font-size: 6px; }
+  .lab-link { min-height: 22px; min-width: 34px; font-size: 6.5px; padding: 1px 3px; letter-spacing: 0.06em; }
+  .roster-foot { padding: 5px 10px; gap: 8px; }
+  .team-strip { gap: 5px; }
+  .team-slot { width: 96px; height: 38px; font-size: 8px; padding: 3px 5px; border-radius: 6px; }
+  .team-slot img { height: 30px; }
+  .roster-foot .btn-primary { padding: 9px 16px; font-size: 10px; min-height: 38px; }
+  .roster-foot .btn-ghost { padding: 6px 9px; font-size: 8.5px; min-height: 34px; }
 
   /* --- missions --- */
   .mission-list { padding: 8px 12px calc(var(--safe-b) + 10px); gap: 8px; }

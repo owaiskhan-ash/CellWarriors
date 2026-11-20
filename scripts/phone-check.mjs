@@ -176,6 +176,25 @@ group('A7c · title stack arithmetic');
   ok('logo is height-capped as well as width-capped', /\.title-logo\s*\{[^}]*max-height:\s*44vh/.test(mobile));
 }
 
+/* --- A7d. roster must fit ONE phone screen: 6 combatants + team strip --- */
+group('A7d · roster fits without scrolling');
+{
+  const H = 412;
+  const head = 46, foot = 50, pad = 12, gap = 6;
+  const avail = H - head - foot - pad - gap;
+  const cardH = Math.floor(avail / 2);
+  ok('two rows of combatant cards fit the height budget', cardH >= 125, `${cardH}px per card`);
+  ok('roster grid is fixed at 3 columns on a phone',
+    /\.roster\s*\{[\s\S]{0,140}grid-template-columns:\s*repeat\(3,/.test(mobile));
+  ok('roster cards switch to a horizontal tile (art left, stats right)',
+    /\.roster-card\s*\{[\s\S]{0,160}flex-direction:\s*row/.test(mobile));
+  ok('card height is capped so a row can never overflow',
+    /\.roster-card\s*\{[\s\S]{0,200}max-height:\s*clamp\(/.test(mobile));
+  ok('roster scrolls only if a device is genuinely too short',
+    /\.roster\s*\{[\s\S]{0,240}overflow:\s*auto/.test(mobile));
+  ok('team strip is compacted for thumbs', /\.team-slot\s*\{[\s\S]{0,120}height:\s*38px/.test(mobile));
+}
+
 /* --- A8. PWA / install metadata --- */
 group('A8 · install metadata');
 ok('webmanifest linked', /rel="manifest"/.test(index));

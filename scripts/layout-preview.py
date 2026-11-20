@@ -253,8 +253,132 @@ def sheets():
     return c.save('sheet')
 
 
+def roster():
+    """Roster: 6 combatants, team slot strip, deploy bar. Must not need a scroll."""
+    c = Canvas('ROSTER  ·  892x412  ·  six combatants + team strip + deploy, one screen')
+    c.d.rectangle([0, 18, W * S, (H - 18) * S], fill=(242, 244, 245))
+    c.rect(0, 18, W, 46, (250, 250, 250), (220, 224, 230), 1, 0)
+    c.text(12, 30, 'COMBATANTS', 12, C['ink'], bold=True)
+    c.text(12, 44, 'PICK 3 · 3 / 3 SELECTED', 7, (107, 90, 96))
+    c.text(150, 38, 'EDGE SYNERGY  ·  +2 ATK', 7, (10, 107, 98), bold=True)
+    for i, lab in enumerate(['ALL', 'STRIKER', 'VANGUARD', 'CONTROLLER', 'PSIONIC', 'ALCHEMIST', 'MNEMONIST']):
+        x = 430 + i * 62
+        if x > W - 70: break
+        c.rect(x, 28, 58, 15, (255, 255, 255), (220, 224, 230), 1, 8)
+        c.text(x + 29, 32, lab, 5.5, (107, 90, 96), 'ma')
+    c.text(W - 12, 30, '1 240', 10, C['gold'], 'ra', True)
+    # 6 cards in 3 columns x 2 rows (the mobile rule: minmax(140px,1fr))
+    cw2, ch2 = 282, 118
+    for i in range(6):
+        col, row = i % 3, i // 3
+        x = 12 + col * (cw2 + 8)
+        y = 72 + row * (ch2 + 8)
+        c.rect(x, y, cw2, ch2, (255, 255, 255), (226, 230, 234), 1, 8)
+        c.rect(x, y, cw2, 3, (53, 208, 192), None, 0, 2)
+        c.rect(x + 4, y + 10, 108, ch2 - 20, (237, 240, 242), None, 0, 5)
+        c.text(x + 58, y + ch2 / 2 - 10, ['KAITO', 'MOMO', 'GORO', 'BIBI', 'YUNA', 'SABLE'][i], 6.5, (107, 90, 96), 'ma')
+        c.text(x + 58, y + ch2 / 2 + 2, 'ART', 5, (170, 175, 185), 'ma')
+        c.text(x + 120, y + 12, ['NEUTROPHIL', 'PLATELET', 'MACROPHAGE', 'MAST CELL', 'EOSINOPHIL', 'MEMORY B'][i],
+               7, C['ink'], bold=True)
+        c.text(x + 120, y + 24, ['STRIKER', 'VANGUARD', 'CONTROLLER', 'PSIONIC', 'ALCHEMIST', 'MNEMONIST'][i],
+               5.5, (10, 107, 98))
+        for k in range(3):
+            c.rect(x + 120, y + 36 + k * 7, 150, 4, (235, 238, 242), None, 0, 2)
+        for k, lab in enumerate(['DETAILS', 'SIM', 'LAB']):
+            c.rect(x + 120 + k * 40, y + ch2 - 20, 36, 14, (255, 255, 255), (53, 208, 192), 1, 4)
+            c.text(x + 138 + k * 40, y + ch2 - 16, lab, 4.5, (10, 107, 98), 'ma')
+        if i < 3:
+            c.text(x + cw2 - 10, y + 10, 'IN TEAM', 5, C['white'], 'ra', True)
+            c.rect(x, y, cw2, ch2, None, (53, 208, 192), 2, 8)
+    # bottom bar: team slots + deploy
+    y = H - 46
+    c.rect(0, y, W, 46, (252, 252, 252), (220, 224, 230), 1, 0)
+    for i in range(3):
+        c.rect(12 + i * 96, y + 8, 88, 30, (240, 243, 245), (53, 208, 192), 1, 6)
+        c.text(56 + i * 96, y + 16, ['KAITO · LEAD', 'GORO', 'BIBI'][i], 6, C['ink'], 'ma', True)
+        c.text(56 + i * 96, y + 27, 'HP 88', 5.5, (107, 90, 96), 'ma')
+    c.rect(W - 200, y + 8, 188, 30, C['blood'], C['white'], 1, 7)
+    c.text(W - 106, y + 18, 'START EXPEDITION', 9, C['white'], 'ma', True)
+    return c.save('roster')
+
+
+def reward():
+    """Post-battle draft: three cards must fit without scrolling."""
+    c = Canvas('REWARD  ·  892x412  ·  draft of three, rank chip, take/skip')
+    c.rect(0, 18, W, H - 18, (233, 237, 240), None, 0, 0)
+    # content-sized panel (flex column, gap 9) centred in the view
+    cw3 = round(min(130, 0.17 * H * 1.6))
+    ch3 = round(cw3 / 0.74)
+    ph = 14 + 40 + 9 + ch3 + 9 + 14 + 9 + 32 + 14   # header, cards, hint, buttons, padding
+    pw = 720
+    px, py = (W - pw) / 2, (H - ph) / 2
+    c.rect(px, py, pw, ph, (255, 255, 255), (230, 233, 238), 1, 12)
+    c.rect(px + 16, py + 14, 40, 40, (240, 166, 60), None, 0, 20)
+    c.text(px + 36, py + 24, 'S', 16, C['white'], 'ma', True)
+    c.text(px + 66, py + 18, 'SECTOR CLEARED', 15, C['ink'], bold=True)
+    c.text(px + 66, py + 34, '+18 cells · 2 of 3 combatants survived', 7, (107, 90, 96))
+    # three draft cards, sized from the height budget
+    total = cw3 * 3 + 20
+    x0 = px + (pw - total) / 2
+    for i in range(3):
+        x = x0 + i * (cw3 + 10)
+        y = py + 14 + 40 + 9
+        c.rect(x, y, cw3, ch3, (11, 5, 7), (255, 255, 255), 2, 8, 90)
+        c.text(x + cw3 / 2, y + 14, 'CARD', 7, C['text'], 'ma')
+        c.text(x + cw3 / 2, y + ch3 - 22, 'NEW', 6, C['gold'], 'ma', True)
+        c.text(x + cw3 / 2, y + ch3 - 10, '+34 DMG', 6, C['dim'], 'ma')
+    c.text(px + pw / 2, py + 14 + 40 + 9 + ch3 + 6, 'TAP A CARD TO ADD IT TO YOUR DECK', 7,
+           (107, 90, 96), 'ma')
+    by = py + ph - 32 - 14
+    c.rect(px + pw / 2 - 170, by, 160, 32, C['blood'], C['white'], 1, 7)
+    c.text(px + pw / 2 - 90, by + 10, 'TAKE CARD', 8, C['white'], 'ma', True)
+    c.rect(px + pw / 2 + 10, by, 160, 32, (246, 247, 249), (220, 224, 230), 1, 7)
+    c.text(px + pw / 2 + 90, by + 10, 'SKIP (+CELLS)', 8, (107, 90, 96), 'ma')
+    c.text(px + pw / 2, py + ph + 8, f'card {cw3}x{ch3} · 3 fit in {total}px of {pw - 40}px', 6, C['green'], 'ma')
+    return c.save('reward')
+
+
+def map_screen():
+    """Chaos map: 11 floors, lazy diagonal, nodes thumb-sized."""
+    c = Canvas('MAP  ·  892x412  ·  11 floors in a scroll; nodes >=44px')
+    c.d.rectangle([0, 18, W * S, (H - 18) * S], fill=(242, 244, 245))
+    c.rect(0, 18, W, 42, (250, 250, 250), (220, 224, 230), 1, 0)
+    c.text(12, 28, 'CHAOS SECTOR', 12, C['ink'], bold=True)
+    c.text(12, 44, 'FLOOR 4 / 11 · PICK A ROUTE', 7, (107, 90, 96))
+    c.rect(W - 190, 26, 54, 22, (255, 249, 236), C['gold'], 1, 11)
+    c.text(W - 163, 32, '⧗ 2', 7, (138, 90, 18), 'ma', True)
+    c.rect(W - 130, 26, 54, 22, (255, 249, 236), C['gold'], 1, 11)
+    c.text(W - 103, 32, '◈ 47', 7, (138, 90, 18), 'ma', True)
+    c.rect(W - 70, 26, 30, 22, (255, 255, 255), (220, 224, 230), 1, 6)
+    c.text(W - 55, 32, 'DECK', 5, (107, 90, 96), 'ma')
+    c.rect(W - 34, 26, 26, 22, (255, 255, 255), (220, 224, 230), 1, 6)
+    c.text(W - 21, 32, 'EXIT', 4.5, (107, 90, 96), 'ma')
+    y = 68
+    for f in range(5):
+        n = 3 if f % 2 == 0 else 2
+        for i in range(n):
+            nw = min(104, 0.22 * W)
+            total = nw * n + 8 * (n - 1)
+            x = (W - total) / 2 + i * (nw + 8)
+            cleared = f < 3
+            active = f == 3
+            c.rect(x, y, nw, 44, C['white'], (53, 208, 192) if active else (226, 230, 234),
+                   2 if active else 1, 9)
+            c.text(x + nw / 2, y + 8, ['⚔', '✦', '☠', '⧗', '◈'][(f + i) % 5], 8,
+                   (107, 90, 96), 'ma')
+            c.text(x + nw / 2, y + 20, ['PATHOGEN', 'ELITE', 'BOSS', 'REST', 'SHOP'][(f + i) % 5],
+                   5.5, C['ink'], 'ma', True)
+            c.text(x + nw / 2, y + 30, 'CLEARED' if cleared else ('TAP TO ENTER' if active else 'FLOOR %d' % (f + 1)),
+                   4.5, (10, 107, 98) if active else (150, 150, 160), 'ma')
+        if f < 4:
+            c.line(W / 2, y + 44, W / 2, y + 50, (200, 205, 215), 1)
+        y += 50
+    c.text(12, H - 12, 'scrolls to floor 11 · the latest floor is highlighted', 6, (107, 90, 96))
+    return c.save('map')
+
+
 if __name__ == '__main__':
-    made = [battle(), title(), hand_geometry(), safe_area(), sheets()]
+    made = [battle(), title(), roster(), map_screen(), reward(), hand_geometry(), safe_area(), sheets()]
     # contact sheet
     pad = 8
     totalh = sum(i.height for i in made) + pad * (len(made) + 1)
