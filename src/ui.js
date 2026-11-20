@@ -1856,6 +1856,205 @@ function playFromUI(index) {
   if (!battle.result) showCutIn(card);
 }
 
+/* ============================================================ AUTOPLAY
+   Stacking AI: rounds 1-2 it BUILDS (engines, Poison/Bleed/Toxin/Mark,
+   Fury, Resonance, free tokens), then round 3+ it CASHES OUT (Burst
+   finishers, Fury spenders, detonates, Ego/Exalt) for mega damage.
+   Also auto: target, Ego, End Turn, Epiphany, reward draft, next fight. */
+let autoplay = (() => { try { return window.localStorage.getItem('cw_autoplay') === '1'; } catch { return false; } })();
+let autoTimer = null;
+let lastAutoPlan = '';
+function setAutoPlan(txt) {
+  lastAutoPlan = txt;
+  const pill = $('auto-plan');
+  if (pill) { pill.textContent = txt; pill.classList.toggle('hidden', !autoplay); }
+  const btn = $('btn-autoplay');
+  if (btn) { btn.classList.toggle('on', autoplay); btn.textContent = autoplay ? 'AUTO ▶' : 'AUTO'; }
+}
+function setAutoplay(on) {
+  autoplay = !!on;
+  try { window.localStorage.setItem('cw_autoplay', autoplay ? '1' : '0'); } catch { /* ignore */ }
+  setAutoPlan(autoplay ? 'AUTO · THINKING…' : '');
+  if (autoplay) autoLoop(); else if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+}
+function autoLoop() {
+  if (!autoplay) return;
+  if (autoTimer) clearTimeout(autoTimer);
+  autoTimer = setTimeout(() => {
+    autoTimer = null;
+    try { autoTick(); } catch { /* never let autoplay kill the game */ }
+    if (autoplay) autoLoop();
+  }, 620);
+}
+function autoTick() {
+  if (!autoplay) return;
+  // Epiphany choice modal: pick the most stacking/payoff branch
+  if (battle && battle.pendingEpiphany && !$('epiphany-modal').classList.contains('hidden')) { autoStepOnce(); return; }
+  // Result overlay: sim loops the test, everything else continues onward
+  if (battle && battle.result && !$('overlay').classList.contains('hidden')) {
+    if (battleCtx && battleCtx.kind === 'sim') { const r = $('overlay-retry'); if (r && r.style.display !== 'none') { r.click(); return; } }
+    $('overlay-btn').click(); return;
+  }
+  if (cutBusy) return;
+  if (battle && !$('view-battle').classList.contains('hidden')) { autoStepOnce(); return; }
+  // --- auto everything outside battle ---
+  if (!$('view-story').classList.contains('hidden')) { $('btn-story-next').click(); return; }
+  if (!$('view-reward').classList.contains('hidden')) {
+    const kids = [...$('reward-cards').children];
+    if (kids.length) {
+      const score = (n) => (n.classList.contains('rare') ? 50 : 0) + (/NEW/.test(n.textContent) ? 15 : 0)
+        + (/Poison|Detonate|Fury|Resonance/i.test(n.textContent) ? 30 : 0) + (/\bDMG\b|\d+ DMG/.test(n.textContent) ? 10 : 0);
+      kids.sort((a, b) => score(b) - score(a))[0].click();
+    } else { const skip = $('btn-reward-skip'); if (skip) skip.click(); }
+    return;
+  }
+  if (!$('view-map').classList.contains('hidden')) {
+    const nodes = [...document.querySelectorAll('.map-node.avail:not([disabled])')];
+    const pick = ['boss', 'elite', 'battle', 'event', 'shop', 'rest'].map((ty) => nodes.find((n) => n.classList.contains(ty))).find(Boolean) || nodes[0];
+    if (pick) pick.click();
+    return;
+  }
+  if (!$('view-missions').classList.contains('hidden')) {
+    const tile = [...document.querySelectorAll('.mission-tile:not(.locked)')].find((n) => !/✓/.test(n.textContent));
+    if (tile) tile.click();
+    return;
+  }
+  if (!$('view-sim').classList.contains('hidden')) { $('btn-sim-start').click(); }
+}
+const autoStacks = (e) => (e.poison || 0) * 3 + (e.bleed || 0) + (e.toxin || 0);
+function autoMainTarget() {
+  const alive = battle.enemies.filter((e) => e.hp > 0);
+  return alive.find((e) => e.boss) || alive.find((e) => e.elite) || alive.slice().sort((a, b) => b.hp - a.hp)[0] || null;
+}
+function autoAttackTarget(card) {
+  const alive = battle.enemies.filter((e) => e.hp > 0);
+  if (!alive.length) return null;
+  for (const e of alive) { // lethal first — always take the kill
+    try { const pv = previewCard(battle, card, e.uid); if (pv && pv.total >= e.hp) return { enemy: e, lethal: true, dmg: pv.total }; } catch { /* ignore */ }
+  }
+  const main = autoMainTarget();
+  const scored = alive.map((e) => {
+    let pv = null;
+    try { pv = previewCard(battle, card, e.uid); } catch { /* ignore */ }
+    const setup = autoStacks(e) + (e.mark > 0 ? 18 : 0) + (e.vuln > 0 ? 10 : 0) + (e.ravaged ? 22 : 0) + (e === main ? 6 : 0);
+    return { enemy: e, lethal: false, dmg: pv ? pv.total : 0, setup };
+  }).sort((a, b) => (b.dmg + b.setup) - (a.dmg + a.setup));
+  return scored[0];
+}
+function autoScoreCard(card, idx) {
+  const actor = battle.characters.find((c) => c.id === card.owner) || battle.characters[0];
+  const turn = battle.turn;
+  const main = autoMainTarget();
+  if (!main) return { score: -1 };
+  const stacks = autoStacks(main);
+  const lowestHpPct = Math.min(...battle.characters.filter((c) => c.hp > 0).map((c) => c.hp / c.maxHp), 1);
+  const dangerSoon = battle.enemies.some((e) => e.hp > 0 && e.counter <= 1 && intentOf(e).type === 'attack');
+  if (card.breakdown) return actor && actor.broken ? { score: 1000, target: main, why: 'RECOVER' } : { score: -1 };
+  if (card.type === 'curse' || card.unplayable) return { score: 4, target: main, why: 'CLEAR' };
+  if (card.type === 'upgrade') return { score: turn <= 2 ? 280 : 200, target: main, why: 'ENGINE' };
+  // Poison stacking engine (Yuna) — build, incubate, then detonate for mega
+  if (card.detonatePoison) return (main.poison >= 9 || (turn >= 3 && main.poison >= 6)) ? { score: 340, target: main, why: 'DETONATE' } : { score: 12, target: main, why: 'HOLD' };
+  if (card.doublePoison) return main.poison >= 5 ? { score: 240, target: main, why: 'INCUBATE ×2' } : { score: -1 };
+  if (card.poison || card.poisonAll) {
+    if (main.poison >= 17) return { score: 30, target: main, why: 'STACKED' };
+    return { score: 150 + (card.poison || card.poisonAll || 0) * 9, target: main, why: 'STACK POISON' };
+  }
+  if (card.triggerPoisonTick) return { score: main.poison >= 8 ? 230 : 110, target: main, why: 'TICK NOW' };
+  // other status primers
+  if ((card.bleed || card.toxin) && !(card.dmg > 0)) return { score: 130 + ((card.bleed || 0) + (card.toxin || 0)) * 8, target: main, why: 'STACK STATUS' };
+  if (card.mark || card.vuln || card.vulnAll) return { score: (main.mark > 0 && main.vuln > 0) ? 45 : 165, target: main, why: 'SETUP ×DMG' };
+  if ((card.heal || card.teamHeal) && lowestHpPct < 0.55) return { score: 320, target: main, why: 'HEAL' };
+  if ((card.shield || card.teamShield) && dangerSoon) return { score: 190, target: main, why: 'BRACE' };
+  if (card.draw && battle.hand.length <= 5) return { score: 145, target: main, why: 'REFILL' };
+  if (card.apGain || card.maxAp) return { score: 150, target: main, why: '+AP' };
+  if (card.spawnTokens) return { score: 175, target: main, why: 'SWARM' };
+  if (card.dmg > 0 || card.shieldDmgPct) {
+    const pick = autoAttackTarget(card);
+    if (!pick) return { score: -1 };
+    if (pick.lethal) return { score: 950, target: pick.enemy, why: 'LETHAL' };
+    let score = pick.dmg * 0.92 + pick.setup * 0.6;
+    const fury = actor ? actor.fury || 0 : 0;
+    if (card.consumeFury) { if (fury >= 5 || turn >= 3) score += 130 + fury * card.consumeFury * 0.7; else return { score: -1, why: 'HOLD FURY' }; }
+    if (card.scaleFury) score += fury * 5;
+    if (card.dmgPerPoison) score += (pick.enemy.poison || 0) * card.dmgPerPoison * 1.4;
+    if (card.cost >= 2 && battle.resonance >= BURST_COST) score *= 1.55; // Resonance Burst window = mega
+    if (card.finale && battle.ap - card.cost <= 0) score += 45;
+    if (turn <= 1 && card.cost >= 3) score *= 0.45; // don't blow the mega on round 1
+    return { score, target: pick.enemy, why: turn >= 3 ? 'PAYOFF' : 'BUILD HIT' };
+  }
+  if (card.shield || card.teamShield) return { score: 70, target: main, why: 'SHIELD' };
+  if (card.heal || card.teamHeal) return { score: 55, target: main, why: 'TOP UP' };
+  if (card.draw) return { score: 80, target: main, why: 'DRAW' };
+  return { score: 40, target: main, why: 'PLAY' };
+}
+function autoPickEgo() {
+  if (!battle || battle.result || !battle.egoQueue) return false;
+  const turn = battle.turn;
+  const stacks = Math.max(...battle.enemies.map((e) => autoStacks(e)), 0);
+  const lowestHpPct = Math.min(...battle.characters.filter((c) => c.hp > 0).map((c) => c.hp / c.maxHp), 1);
+  for (let i = 0; i < battle.egoQueue.length; i++) {
+    const ego = battle.egoQueue[i];
+    const owner = battle.characters.find((c) => c.id === ego.owner);
+    if (!owner || owner.broken || owner.hp <= 0) continue;
+    const useExalt = battle.ep >= MAX_EP && turn >= 3 && !!(ego.dmg || ego.poison);
+    const cost = useExalt ? MAX_EP : Math.max(1, ego.cost - (owner.egoDiscount || 0));
+    if (battle.ep < cost) continue;
+    const healEgo = !!(ego.teamHeal || ego.heal);
+    const want = healEgo ? (lowestHpPct < 0.55 || battle.ep >= MAX_EP)
+      : (turn >= 3 || stacks >= 12 || (battle.ep >= MAX_EP && turn >= 2) || useExalt);
+    if (!want) continue;
+    if (useExalt) exaltArmed = true;
+    const res = playEgo(battle, i, { exalt: useExalt });
+    if (res && res.ok) {
+      exaltArmed = false;
+      setAutoPlan(`AUTO · ${useExalt ? 'OVER-EXALT' : 'EGO'} — ${ego.name.toUpperCase()}`);
+      renderBattle();
+      return true;
+    }
+    exaltArmed = false;
+  }
+  return false;
+}
+function autoStepOnce() {
+  if (!autoplay || !battle || battle.result) return 'idle';
+  if (battle.pendingEpiphany) {
+    const p = battle.pendingEpiphany;
+    let best = 0, bestScore = -1;
+    p.options.forEach((opt, i) => {
+      const c = opt.card || {};
+      const s = (c.dmg || 0) + (c.poison || 0) * 8 + (c.dmgPerPoison || 0) * 10 + (c.detonatePoison ? 60 : 0) + (c.draw || 0) * 9 + (c.hits || 1) * 4;
+      if (s > bestScore) { bestScore = s; best = i; }
+    });
+    chooseEpiphany(battle, best);
+    $('epiphany-modal').classList.add('hidden');
+    setAutoPlan('AUTO · EPIPHANY PICKED');
+    renderBattle();
+    return 'epiphany';
+  }
+  if (autoPickEgo()) return 'ego';
+  let bestIdx = -1, best = { score: -1 };
+  battle.hand.forEach((card, idx) => {
+    if (!canPlay(battle, card)) return;
+    const s = autoScoreCard(card, idx);
+    if (s.score > best.score) { best = s; bestIdx = idx; }
+  });
+  const card = bestIdx >= 0 ? battle.hand[bestIdx] : null;
+  if (card && best.score >= 38) {
+    if (best.target) battle.targetUid = best.target.uid;
+    const res = playCard(battle, bestIdx, best.target ? best.target.uid : undefined);
+    if (res && res.ok) {
+      setAutoPlan(`AUTO · T${battle.turn} ${best.why} — ${card.name.toUpperCase()}`);
+      renderBattle();
+      return 'card';
+    }
+  }
+  setAutoPlan(`AUTO · END TURN ${battle.turn} — STACKS TICKING`);
+  exaltArmed = false;
+  endTurn(battle);
+  renderBattle();
+  return 'endturn';
+}
+
 function showCutIn(card) {
   const owner = CHARACTERS[card.owner];
   cutBusy = true;
@@ -2327,6 +2526,9 @@ function bind() {
   if ($('set-shake')) $('set-shake').addEventListener('change', (e) => { settings.shake = e.target.checked; saveSettings(); });
   if ($('set-motion')) $('set-motion').addEventListener('change', (e) => { settings.motion = e.target.checked; applySettings(); saveSettings(); });
   if ($('set-cb')) $('set-cb').addEventListener('change', (e) => { settings.cb = e.target.checked; applySettings(); saveSettings(); });
+  if ($('btn-autoplay')) $('btn-autoplay').addEventListener('click', () => { sfx(autoplay ? 'click' : 'buff'); setAutoplay(!autoplay); });
+  setAutoPlan(autoplay ? 'AUTO · THINKING…' : '');
+  if (autoplay) autoLoop();
   if ($('btn-sim-hud-hide')) $('btn-sim-hud-hide').addEventListener('click', () => { sfx('click'); setSimHudHidden(true); });
   if ($('sim-hud-pill')) $('sim-hud-pill').addEventListener('click', () => { sfx('click'); setSimHudHidden(false); });
   if ($('btn-sim-end')) $('btn-sim-end').addEventListener('click', () => { sfx('click'); endSimTest(true); });
@@ -2354,6 +2556,7 @@ function bind() {
     if (!$('lab-modal').classList.contains('hidden')) { if (e.key === 'Escape') $('lab-modal').classList.add('hidden'); return; }
     if ($('view-battle').classList.contains('hidden') || !battle) return;
     if (e.key === 'Escape') { $('pause').classList.toggle('hidden'); return; }
+    if ((e.key === 'a' || e.key === 'A') && !/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')) { setAutoplay(!autoplay); return; }
     if ((e.key === 'h' || e.key === 'H') && battleCtx && battleCtx.kind === 'sim' && !/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')) { setSimHudHidden(!simHudHidden); return; }
     if (battle.result || cutBusy) return;
     if (e.key === ' ') { e.preventDefault(); sfx('turn'); endTurn(battle); renderBattle(); return; }
@@ -2379,7 +2582,7 @@ window.__cw = {
   get progress() { return progress; },
   get run() { return progress.run; },
   setMode, startNewRun, enterRunNode, renderMap,
-  beginBattle, beginRunBattle, renderBattle, startBattle, playCard, endTurn, playEgo, useSands, previewCard, POISON_PER_STACK, poisonPerStack, setSimHudHidden,
+  beginBattle, beginRunBattle, renderBattle, startBattle, playCard, endTurn, playEgo, useSands, previewCard, POISON_PER_STACK, poisonPerStack, setSimHudHidden, setAutoplay, autoStepOnce, get autoplayOn() { return autoplay; },
   chooseEpiphany, setExalt(on) { exaltArmed = !!on; renderResources(); },
   showView, playFromUI, openDetail, closeDetail, openLab, openDeckModal, closeDeckModal,
   openGuide, renderGuide, openCharacter, renderCharacter, openSim, renderSimSetup, beginSimBattle, endSimTest,

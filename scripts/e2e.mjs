@@ -487,5 +487,23 @@ $('set-cb').checked = false; $('set-cb').dispatchEvent(new window.Event('change'
 click('settings-close');
 ok('settings modal closes', $('settings-modal').classList.contains('hidden'));
 
+// AUTOPLAY: stacking build-up -> mega payoff (Yuna solo vs Colossus)
+cw.beginSimBattle('yuna');
+cw.setAutoplay(true);
+ok('autoplay toggle on', cw.autoplayOn === true && $('btn-autoplay').classList.contains('on'));
+{
+  let maxPoisonSeen = 0, steps = 0;
+  while (steps++ < 90 && cw.battle.turn <= 5 && !cw.battle.result) {
+    cw.autoStepOnce();
+    maxPoisonSeen = Math.max(maxPoisonSeen, cw.battle.enemies[0].poison || 0);
+    if (cw.battle.turn >= 4 && cw.battle.stats.damage >= 250) break;
+  }
+  ok('autoplay stacks Poison before cashing out', maxPoisonSeen >= 8, `max poison ${maxPoisonSeen}`);
+  ok('autoplay builds to mega damage over 2-3 rounds', cw.battle.stats.damage >= 200, `damage ${cw.battle.stats.damage} in ${cw.battle.turn} turns, best hit ${cw.battle.stats.maxHit}`);
+  ok('autoplay ends turns and survives the loop', cw.battle.turn >= 3, `turn ${cw.battle.turn}`);
+}
+cw.setAutoplay(false);
+ok('autoplay toggle off', cw.autoplayOn === false);
+
 console.log(errors.length ? 'JS ERRORS: ' + errors.join(' | ') : 'no JS errors');
 if (errors.length) process.exitCode = 1;
