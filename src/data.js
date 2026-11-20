@@ -335,29 +335,30 @@ export const CARDS = {
 
   // === Yuna / Alchemist / Instinct (POISON Damage-over-Time) ===
   // Poison rule: stacks collect on the enemy. When you End Turn, each enemy
-  // takes damage equal to its Poison stacks (+ Potency), then Poison -1.
+  // takes stacks x (3 + Potency) damage, then Poison -1. Her attacks also
+  // scale off the target's Poison (dmgPerPoison), so stacking feeds both.
   y_sting: {
     name: 'Venom Sting', owner: 'yuna', type: 'attack', cost: 1, attr: 'instinct', basic: true,
-    dmg: 6, poison: 3,
-    text: 'BASIC ATTACK — Deal 6 damage and apply 3 Poison (ticks at end of turn).',
-    up: { dmg: 9, poison: 4, text: 'BASIC ATTACK — Deal 9 damage and apply 4 Poison.' },
+    dmg: 6, poison: 2, dmgPerPoison: 1,
+    text: 'BASIC ATTACK — Deal 6 damage (+1 per Poison on the target) and apply 2 Poison. Poison ticks for 3 per stack at End Turn — the bigger the stack, the harder this hits.',
+    up: { dmg: 9, poison: 3, dmgPerPoison: 2, text: 'BASIC ATTACK — Deal 9 damage (+2 per Poison on the target) and apply 3 Poison.' },
   },
   y_dose: {
     name: 'Creeping Dose', owner: 'yuna', type: 'skill', cost: 1, attr: 'instinct',
-    poison: 5, tags: ['Poison'],
-    text: 'Apply 5 Poison. It will deal 5, 4, 3… damage at each End Turn.',
-    up: { poison: 7, text: 'Apply 7 Poison. It ticks down at each End Turn.' },
+    poison: 4, tags: ['Poison'],
+    text: 'Apply 4 Poison. Every stack deals 3 damage at End Turn: ticks 12, then 9, then 6…',
+    up: { poison: 5, text: 'Apply 5 Poison: ticks 15, then 12, then 9… at each End Turn.' },
   },
   y_mist: {
     name: 'Spore Mist', owner: 'yuna', type: 'skill', cost: 1, attr: 'instinct',
-    poisonAll: 3, tags: ['Poison'],
-    text: 'Apply 3 Poison to ALL enemies.',
-    up: { poisonAll: 4, text: 'Apply 4 Poison to ALL enemies.' },
+    poisonAll: 2, tags: ['Poison'],
+    text: 'Apply 2 Poison to ALL enemies (ticks 6 each at End Turn).',
+    up: { poisonAll: 3, text: 'Apply 3 Poison to ALL enemies (ticks 9 each at End Turn).' },
   },
   y_incubate: {
     name: 'Incubate', owner: 'yuna', type: 'skill', cost: 1, attr: 'instinct',
     doublePoison: true, draw: 1, tags: ['Poison'],
-    text: 'Double the target’s Poison stacks, then Draw 1 card.',
+    text: 'Double the target’s Poison stacks (gains at most +6 stacks, 20 max) — its End-Turn tick grows with it — then Draw 1 card.',
     up: { doublePoison: true, draw: 1, resonance: 1, tags: ['Poison'], text: 'Double the target’s Poison, +1 Resonance, and Draw 1.' },
   },
   y_antidote: {
@@ -374,34 +375,34 @@ export const CARDS = {
   },
   y_culture: {
     name: 'Living Culture', owner: 'yuna', type: 'upgrade', cost: 1, attr: 'instinct',
-    poisonPotency: 2, onPoisonTickRes: 1, tags: ['Initiation', 'Unique'],
-    text: 'Permanent: Poison ticks deal +2 damage, and every Poison tick grants +1 Resonance.',
-    up: { poisonPotency: 3, onPoisonTickRes: 1, onPoisonTickHeal: 1, tags: ['Initiation', 'Unique'], text: 'Permanent: Poison ticks +3 damage, +1 Resonance per tick, and Yuna heals 1 per tick.' },
+    poisonPotency: 1, onPoisonTickRes: 1, tags: ['Initiation', 'Unique'],
+    text: 'Permanent: every Poison stack deals +1 more damage per tick (4/stack instead of 3), and every Poison tick grants +1 Resonance. Scales with every stack you stack.',
+    up: { poisonPotency: 2, onPoisonTickRes: 1, onPoisonTickHeal: 1, tags: ['Initiation', 'Unique'], text: 'Permanent: Poison stacks deal +2 more per tick (5/stack), +1 Resonance per tick, and Yuna heals 1 per tick.' },
   },
   // --- Yuna Build-Around Cards ---
   y_epidemic: {
     name: 'Epidemic Bloom', owner: 'yuna', type: 'skill', cost: 2, attr: 'instinct', rare: true,
-    poisonAll: 6, vulnAll: 1, tags: ['Poison'],
-    text: 'Apply 6 Poison and 1T Vulnerable (+35% taken) to ALL enemies.',
-    up: { poisonAll: 8, vulnAll: 2, tags: ['Poison'], text: 'Apply 8 Poison and 2T Vulnerable to ALL enemies.' },
+    poisonAll: 5, vulnAll: 1, tags: ['Poison'],
+    text: 'Apply 5 Poison (ticks 15) and 1T Vulnerable (+35% taken) to ALL enemies.',
+    up: { poisonAll: 6, vulnAll: 2, tags: ['Poison'], text: 'Apply 6 Poison (ticks 18) and 2T Vulnerable to ALL enemies.' },
   },
   y_necrosis: {
     name: 'Necrotic Feast', owner: 'yuna', type: 'skill', cost: 2, attr: 'instinct', rare: true,
     detonatePoison: true, tags: ['Poison', 'Detonate'],
-    text: 'Detonate Poison: target immediately takes damage equal to its Poison stacks (stacks are consumed), and your team heals 1 HP per stack.',
-    up: { detonatePoison: true, tags: ['Poison', 'Detonate'], text: 'Detonate Poison for full stack damage, heal 1 per stack, and Draw 1.', draw: 1 },
+    text: 'Detonate Poison: target immediately takes its full End-Turn tick — Poison stacks x 3 (more with Potency) — stacks are consumed, and your team heals 1 HP per stack.',
+    up: { detonatePoison: true, tags: ['Poison', 'Detonate'], text: 'Detonate Poison for stacks x 3+ damage, heal 1 per stack, and Draw 1.', draw: 1 },
   },
   y_predator: {
     name: 'Apex Parasite', owner: 'yuna', type: 'skill', cost: 3, attr: 'instinct', rare: true,
-    poison: 10, triggerPoisonTick: 1, tags: ['Poison'],
-    text: 'Apply 10 Poison, then immediately trigger one Poison tick (damage now, Poison -1).',
-    up: { poison: 14, triggerPoisonTick: 1, tags: ['Poison'], text: 'Apply 14 Poison, then immediately trigger one Poison tick.' },
+    poison: 8, triggerPoisonTick: 1, tags: ['Poison'],
+    text: 'Apply 8 Poison, then immediately trigger one Poison tick (stacks x 3 damage NOW, Poison -1).',
+    up: { poison: 10, triggerPoisonTick: 1, tags: ['Poison'], text: 'Apply 10 Poison, then immediately trigger one Poison tick (stacks x 3 NOW).' },
   },
   y_virulence: {
     name: 'Virulence Engine', owner: 'yuna', type: 'upgrade', cost: 1, attr: 'instinct', rare: true,
-    poisonPotency: 3, onPoisonTickFury: 1, tags: ['Unique'],
-    text: 'Permanent: Poison ticks deal +3 damage, and every Poison tick grants Kaito/the team +1 Fury (lead combatant if no Kaito).',
-    up: { poisonPotency: 4, onPoisonTickFury: 1, onPoisonTickRes: 1, tags: ['Unique'], text: 'Permanent: Poison ticks +4 damage, +1 Fury and +1 Resonance per tick.' },
+    poisonPotency: 1, onPoisonTickFury: 1, tags: ['Unique'],
+    text: 'Permanent: every Poison stack deals +1 more damage per tick (stacks with Living Culture — up to 5+/stack), and every Poison tick grants Kaito/the team +1 Fury (lead combatant if no Kaito).',
+    up: { poisonPotency: 2, onPoisonTickFury: 1, onPoisonTickRes: 1, tags: ['Unique'], text: 'Permanent: Poison stacks deal +2 more per tick, +1 Fury and +1 Resonance per tick.' },
   },
 
   // === Generated Tokens ===
@@ -419,9 +420,9 @@ export const CARDS = {
   },
   tok_spore: {
     name: 'Spore Mite', owner: 'yuna', type: 'attack', cost: 0, attr: 'instinct', token: true,
-    dmg: 3, poison: 2, tags: ['Poison', 'Exhaust', 'Haste'],
-    text: 'Deal 3 damage and apply 2 Poison. Haste. Exhaust.',
-    up: { dmg: 4, poison: 3, text: 'Deal 4 damage and apply 3 Poison. Haste. Exhaust.' },
+    dmg: 3, poison: 1, dmgPerPoison: 1, tags: ['Poison', 'Exhaust', 'Haste'],
+    text: 'Deal 3 damage (+1 per Poison on the target) and apply 1 Poison. Haste. Exhaust.',
+    up: { dmg: 4, poison: 2, dmgPerPoison: 2, text: 'Deal 4 damage (+2 per Poison on the target) and apply 2 Poison. Haste. Exhaust.' },
   },
 
   // === Status / Curse ===
@@ -474,7 +475,7 @@ export const CHARACTERS = {
     id: 'yuna', name: 'Yuna', full: 'Yuna — Eosinophil', cls: 'alchemist', attr: 'instinct',
     art: 'images/cut-yuna-cut.png', skin: '#57e389',
     hp: 92, blurb: 'Poison apothecary. Stacks Poison that melts enemies at End Turn, then incubates or detonates it.',
-    leader: { name: 'Toxic Bloom', desc: 'Leader: Enemies start with 4 Poison. Poison ticks grant +1 Resonance (with Living Culture, from turn 1).' },
+    leader: { name: 'Toxic Bloom', desc: 'Leader: Enemies start with 3 Poison — already a 9-damage tick at the first End Turn.' },
     deck: ['y_sting', 'y_dose', 'y_mist', 'y_incubate', 'y_antidote', 'y_hatch', 'y_culture'],
   },
 };
@@ -532,13 +533,13 @@ export const EGOS = {
   yuna: [
     {
       id: 'ego_yuna_1', owner: 'yuna', name: 'Pandemic Requiem', cost: 4, attr: 'instinct',
-      poison: 12, aoe: true, text: 'Apply 12 Poison to ALL enemies. It melts them at every End Turn.',
-      exaltText: 'OVER-EXALT (7 EP): Apply 24 Poison to ALL enemies and trigger a tick immediately in the tick engine!',
+      poison: 10, aoe: true, text: 'Apply 10 Poison to ALL enemies — a 30-damage tick on each at every End Turn.',
+      exaltText: 'OVER-EXALT (7 EP): Apply 20 Poison to ALL enemies and trigger a 60+ damage tick on each immediately!',
     },
     {
       id: 'ego_yuna_2', owner: 'yuna', name: 'Mercy Antidote', cost: 4, attr: 'instinct',
-      teamHeal: 14, teamStressHeal: 18, teamShield: 10, poison: 6, text: 'Allies +10 Shield, heal 14, clear 18 Stress. Target gains 6 Poison.',
-      exaltText: 'OVER-EXALT (7 EP): +20 Shield, heal 28, clear 36 Stress, target gains 12 Poison!',
+      teamHeal: 14, teamStressHeal: 18, teamShield: 10, poison: 6, text: 'Allies +10 Shield, heal 14, clear 18 Stress. Target gains 6 Poison (ticks 18).',
+      exaltText: 'OVER-EXALT (7 EP): +20 Shield, heal 28, clear 36 Stress, target gains 12 Poison (ticks 36)!',
     },
   ],
 };
@@ -646,12 +647,12 @@ export const CHARACTER_GUIDES = {
   },
   yuna: {
     difficulty: 'Medium', fantasy: 'A poison apothecary who wins fights she has already stopped touching. The enemy melts at End Turn while she shields, draws and smiles.',
-    core: 'POISON is damage-over-time (DoT). Stacks collect on the enemy all turn. When you End Turn, each enemy takes damage equal to its Poison stacks (+ Potency from her Upgrades), then Poison decreases by 1. Poison ignores Shield-style timing, Strength and Crit — it scales with stacks and patience, not with one big hit.',
-    loop: ['Apply Poison with almost every card: Venom Sting (her one Basic Attack), Creeping Dose, Spore Mist, free Spore Mites.', 'Double the biggest stack with Incubate instead of adding a little more.', 'End Turn and collect: the tick happens automatically. Repeat while Antidote keeps Yuna healthy.'],
-    combo: ['Living Culture turn 1 — every tick now pays +2 damage and +1 Resonance.', 'Spore Mist into a crowd, Hatchery for free Mites, then Incubate the boss stack.', 'Apex Parasite when you want it NOW: +10 Poison and an immediate tick.', 'Necrotic Feast to cash a huge stack instantly and heal the team per stack — or simply let it melt.'],
-    tips: ['Poison ticks at End Turn, so a lethal tick kills before the enemy ever acts again — check the green stack under its HP bar.', 'Long-press / right-click an enemy to inspect every buff and debuff on it, including exactly how much Poison will tick.', 'Poison does not reduce Tenacity by itself. Pair her with a Weakness hitter when you need a Break, or let the tick finish a Ravaged target.'],
-    partners: 'Goro (CASCADE adds +1 per status application and his Detonate also cashes Poison via status totals on some cards); Bibi Marks targets so her Sting and your finishers hit harder while Poison cooks.',
-    simGoal: 'Stack 15+ Poison on the Colossus, watch a 15+ End-Turn tick, then detonate or double it.',
+    core: 'POISON is damage-over-time (DoT) that SCALES. Every stack deals 3 damage when you End Turn (then -1 stack, max 20 stacks): 10 Poison ticks 30, then 27, then 24… Her Potency upgrades (Living Culture, Virulence Engine) add +damage PER STACK, and Incubate grows the stack — so stacks x per-stack damage multiplies fast. Her attacks scale too: Venom Sting deals +1 damage per Poison already on the target (+2 upgraded), so the stack you built also makes her hit directly harder. Poison ignores Strength timing and Shield, and can kill before the enemy acts.',
+    loop: ['Apply Poison with almost every card: Venom Sting (her one Basic Attack), Creeping Dose, Spore Mist, free Spore Mites.', 'Grow the biggest stack with Incubate — a 12-stack becomes 18, a 72-damage tick with one Potency upgrade.', 'Sting the most-poisoned enemy: at 20 Poison her 1-AP Basic Attack hits for 26+ before multipliers (49+ upgraded). Then End Turn and collect the tick.'],
+    combo: ['Living Culture turn 1 — every stack now pays 4 per tick and every tick grants +1 Resonance.', 'Spore Mist into a crowd, Hatchery for free Mites, then Incubate the boss stack (up to +6).', 'Apex Parasite when you want it NOW: +8 Poison and an immediate stacks-x3 tick.', 'Necrotic Feast to cash a huge stack instantly (stacks x 3+) and heal the team per stack — or simply let it melt.'],
+    tips: ['Do the math before End Turn: stacks x 3 (or x4-5 with Potency) is printed on the green POISON icon under the enemy HP bar — a lethal tick kills before it acts again.', 'Long-press / right-click an enemy to inspect exactly how much its Poison will tick for.', 'Poison does not reduce Tenacity by itself. Pair her with a Weakness hitter when you need a Break, or let the tick finish a Ravaged target.'],
+    partners: 'Goro (CASCADE adds +1 per status application); Bibi Marks targets (x1.5) so her Poison-scaled Sting and your finishers hit harder while Poison cooks.',
+    simGoal: 'Stack 15+ Poison on the Colossus, watch a 45+ End-Turn tick, then land a huge Poison-scaled Venom Sting.',
   },
 };
 

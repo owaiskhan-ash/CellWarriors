@@ -82,6 +82,11 @@ ok('3 sands options', $('sands-menu').querySelectorAll('button').length === 3);
 click('btn-sands');
 
 // Play a card via UI -> cut-in + bark toast + dmg rail
+// (starter decks hold few attacks, so guarantee one is in hand for this test)
+if (!cw.battle.hand.some((c) => c.type === 'attack')) {
+  const pi = cw.battle.drawPile.findIndex((c) => c.type === 'attack');
+  if (pi >= 0) { const tmp = cw.battle.hand[0]; cw.battle.hand[0] = cw.battle.drawPile[pi]; cw.battle.drawPile[pi] = tmp; cw.renderBattle(); }
+}
 const domCards = [...$('hand').querySelectorAll('.card')];
 ok('cards render art', !!$('hand').querySelector('.card-art, .card-artimg'));
 const atkIdx = cw.battle.hand.findIndex((c) => c.type === 'attack' && (c.zeroCost ? 0 : c.cost) <= cw.battle.ap);
@@ -425,7 +430,20 @@ const hpBeforeTick = poisonBattle.enemies[0].hp;
 const stacksBeforeTick = poisonBattle.enemies[0].poison;
 cw.endTurn(poisonBattle);
 ok('Poison ticks at End Turn for stack damage', hpBeforeTick - poisonBattle.enemies[0].hp >= stacksBeforeTick, `${hpBeforeTick} -> ${poisonBattle.enemies[0].hp}`);
+ok('Poison tick SCALES: stacks x 3 per stack (not 1 per stack)', hpBeforeTick - poisonBattle.enemies[0].hp >= stacksBeforeTick * 3, `${stacksBeforeTick} stacks dealt ${hpBeforeTick - poisonBattle.enemies[0].hp}`);
 ok('Poison decays by 1 after ticking', poisonBattle.enemies[0].hp <= 0 || poisonBattle.enemies[0].poison === stacksBeforeTick - 1, String(poisonBattle.enemies[0].poison));
+// Her attacks scale off Poison: Venom Sting preview must grow with target Poison
+{
+  const e = poisonBattle.enemies[0];
+  e.hp = e.maxHp; e.poison = 0;
+  const stingCard = poisonBattle.hand.find((c) => c.id === 'y_sting') || { id: 'y_sting', owner: 'yuna', type: 'attack', dmg: 6, poison: 2, dmgPerPoison: 1, cost: 1, attr: 'instinct' };
+  const clean = cw.previewCard(poisonBattle, stingCard, e.uid);
+  e.poison = 15;
+  const scaled = cw.previewCard(poisonBattle, stingCard, e.uid);
+  ok('Venom Sting scales +1 per Poison stack (grows with the stack)', scaled.dmg - clean.dmg >= 15, `clean ${clean.dmg} vs poisoned ${scaled.dmg}`);
+  ok('preview forecasts scaled tick (stacks x per-stack)', scaled.poisonNextTick >= (15 + 2) * 3, String(scaled.poisonNextTick));
+  e.poison = 0;
+}
 // Enemy status icons + long-press inspect (in a fresh sim battle so DOM is live)
 cw.beginSimBattle('yuna');
 ok('simulation now offers 5 solo combatants', document.querySelectorAll('.sim-char').length === 0 || true);
