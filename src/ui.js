@@ -152,8 +152,16 @@ const ENEMY_HUE = {
   spore: 'hue-rotate(60deg)',
 };
 const CARD_ART = {
-  k_jab: 'images/card-k1.jpg', k_rush: 'images/card-k2.jpg', k_last: 'images/card-k3.jpg',
-  m_strike: 'images/card-m1.jpg', m_guard: 'images/card-m2.jpg', m_patch: 'images/card-m3.jpg',
+  // New per-card art (images/cards/<id>.jpg) — generated from docs/character-bible.md.
+  // Cards not yet listed keep the legacy shared art below until their batch lands.
+  k_jab: 'images/cards/k_jab.jpg', k_rush: 'images/cards/k_rush.jpg', k_last: 'images/cards/k_last.jpg',
+  k_first: 'images/cards/k_first.jpg', k_up: 'images/cards/k_up.jpg', k_flurry: 'images/cards/k_flurry.jpg',
+  k_berserk: 'images/cards/k_berserk.jpg', k_reap: 'images/cards/k_reap.jpg', k_execute: 'images/cards/k_execute.jpg',
+  k_brace: 'images/cards/k_brace.jpg', k_rally: 'images/cards/k_rally.jpg', k_feint: 'images/cards/k_feint.jpg',
+  k_supply: 'images/cards/k_supply.jpg', tok_cut: 'images/cards/tok_cut.jpg',
+  breakdown_kaito: 'images/cards/breakdown_kaito.jpg',
+  m_strike: 'images/cards/m_strike.jpg', m_guard: 'images/cards/m_guard.jpg', m_patch: 'images/cards/m_patch.jpg',
+  m_stand: 'images/cards/m_stand.jpg',
   g_strike: 'images/card-g1.jpg', g_cleave: 'images/card-g2.jpg', g_devour: 'images/card-g3.jpg',
   b_ping: 'images/card-b1.jpg', b_flare: 'images/card-b2.jpg', b_hist: 'images/card-b3.jpg',
   y_sting: 'images/card-y1.jpg', y_mist: 'images/card-y2.jpg', y_epidemic: 'images/card-y2.jpg',
