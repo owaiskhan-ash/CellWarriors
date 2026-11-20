@@ -82,3 +82,19 @@ A human who plays well should land well above that — which is the point.
 - 6 body regions (adventure map), stem-cell currency, card unlocks
 - PvP: async raids on a friend's body map
 - Then the art pass, then the APK
+
+---
+
+## Art direction (locked)
+
+**In-game cards:** bold cel-shaded anime — thick clean outlines, flat highlights, crimson + cyan.
+Reads at 96px, cheap to keep consistent across 40 cards.
+
+**Key art / store screenshots:** gritty textured shounen (char-neutrophil-gritty).
+
+**Lore pages / comic beats:** two-tone manga ink (char-neutrophil-manga).
+
+Cast so far: Neutrophil (squad lead, burnt out), Killer T (elite, arrogant),
+Platelet (anxious, oversized first-aid kit), Macrophage (silent heavy).
+
+TODO art: Mast Cell, B Cell, Dendritic, 3 pathogen designs, 6 body-region backgrounds.
