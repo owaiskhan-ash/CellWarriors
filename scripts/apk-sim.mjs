@@ -103,6 +103,15 @@ ok('no @import left in styles.css', !/@import/.test(fs.readFileSync(`${ROOT}/sty
 const imgs = [...new Set([...fs.readFileSync(`${ROOT}/src/ui.js`, 'utf8').matchAll(/(images\/[A-Za-z0-9_./-]+\.(?:jpg|png|webp))/g)].map((m) => m[1]))];
 const missing = imgs.filter((i) => !fs.existsSync(`${ROOT}/${i}`));
 ok(`all ${imgs.length} images referenced by ui.js ship in the APK`, missing.length === 0, missing.join(','));
+/* A stale committed APK would make the release link point at an old build. */
+const repoCopy = `releases/${APK.split('/').pop()}`;
+if (fs.existsSync(repoCopy)) {
+  const same = execFileSync('bash', ['-lc', `cmp -s "${repoCopy}" "${APK}" && echo yes || echo no`], { encoding: 'utf8' }).trim();
+  ok(`releases/${APK.split('/').pop()} matches the build output`, same === 'yes');
+} else {
+  ok('no stale copy in releases/ (nothing to compare)', true);
+}
+
 fs.rmSync(WORK, { recursive: true, force: true });
 console.log(fails ? `\n${fails} FAILURE(S)` : '\nWEBVIEW SIMULATION OK');
 if (fails) process.exit(1);

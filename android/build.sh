@@ -302,7 +302,15 @@ verify_apk() {
 
 verify_apk "$APK"
 
-# ----------------------------------------------------------------- 11. report
+# ------------------------------------------- 11. keep the repo copy in sync
+# releases/CellWarriors-<ver>.apk is the file the GitHub release links to, so a
+# build must refresh it — otherwise the repo would advertise a stale binary.
+mkdir -p releases
+cp "$APK" "releases/$APK_NAME"
+(cd releases && sha256sum "$APK_NAME" > "$APK_NAME.sha256")
+echo "   synced releases/$APK_NAME"
+
+# ----------------------------------------------------------------- 12. report
 (cd "$OUT_DIR" && sha256sum "$APK_NAME" > "$APK_NAME.sha256")
 SIZE=$(du -h "$OUT_DIR/$APK_NAME" | cut -f1)
 echo ""
