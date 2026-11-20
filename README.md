@@ -94,7 +94,15 @@ Reads at 96px, cheap to keep consistent across 40 cards.
 
 **Lore pages / comic beats:** two-tone manga ink (char-neutrophil-manga).
 
-Cast so far: Neutrophil (squad lead, burnt out), Killer T (elite, arrogant),
-Platelet (anxious, oversized first-aid kit), Macrophage (silent heavy).
+Full cast specs, personalities, locked colours and prompt rules: **[docs/character-bible.md](docs/character-bible.md)**.
+
+Generate any character prompt from the locked data — never from memory:
+
+```bash
+node scripts/prompt.mjs --list
+node scripts/prompt.mjs neutrophil            # default pose, full body
+node scripts/prompt.mjs platelet --shot=card   # card crop
+node scripts/prompt.mjs all --shot=full        # whole roster
+```
 
 TODO art: Mast Cell, B Cell, Dendritic, 3 pathogen designs, 6 body-region backgrounds.

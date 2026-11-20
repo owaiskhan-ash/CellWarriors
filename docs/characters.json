@@ -1,0 +1,171 @@
+{
+  "$comment": "Machine-readable source of truth for image prompts. Prose spec: docs/character-bible.md. Build prompts with: node scripts/prompt.mjs <id>",
+  "style": {
+    "art": "Bold modern cel-shaded anime game character splash art, vertical 9:16 composition. Thick clean black outlines of even weight, flat two-tone cel shading with a single hard specular highlight per surface, zero airbrush gradients, zero soft bloom except on energy blades.",
+    "palette": "Palette restricted to crimson #C2183A, deep crimson #6D0F22, cyan #35D0C0, pale cyan #7FF3EA, bone white #F2F4F5, near-black #0B0507.",
+    "background": "Background: the glowing interior of a blood vessel — flat graphic red blood cell discs, dark tissue walls, cyan speed lines.",
+    "framing": "Dramatic low-angle hero framing, full body visible from head to feet, single character, centered with negative space at the top third. No text anywhere in the image.",
+    "negative": "text, letters, watermark, signature, logo, ui, frame, border, multiple characters, background characters, crowd, duplicate figure, extra limbs, extra fingers, deformed hands, photorealistic, 3d render, western cartoon, chibi (unless the character is Platelet), pastel colours, soft gradient shading, airbrush, blurry, low contrast, off-model costume, different hair colour, different eye colour, armour where not specified, weapon where not specified, blood gore, realistic anatomy gore"
+  },
+  "characters": {
+    "neutrophil": {
+      "name": "Kaito",
+      "role": "Squad lead · aggro bruiser",
+      "identity": "Male, apparent age 24, 182 cm, lean wiry build, slight forward hunch from exhaustion. Hair #F2F4F5 bone white, jagged unstyled, medium-short, four distinct spikes, bangs falling over the right eye only. Eyes #9FB8C4 pale grey-blue, narrow, with permanent heavy dark circles #3A2A2E beneath. Skin #EFDCD6 cool pale. One thin scar across the left cheekbone, dirt smudges on the jaw, no tattoos. Visible forearm tendons, bandaged left forearm.",
+      "costume": "White wrap-front jacket with a kimono collar, left shoulder torn open exposing skin. Thin cyan #35D0C0 seam glow on both cuffs and the hem — never armour, never glowing plates. Dried dark blood spatter #8E0F22 on the chest and right sleeve, never fresh. Black cloth sash at the waist knotted on the left. Baggy white trousers torn at the right knee. Dark grey shin wraps, bare feet or straw sandals. No boots, no armour, no helmet.",
+      "prop": "Straight single-edged blade, 90 cm, no guard, wrapped black grip, edge glowing pale cyan #7FF3EA, held low with the point toward the ground in the right hand.",
+      "pose": "Standing with weight on the back foot, blade hanging low in the right hand, left hand loose and empty, chin slightly down, looking straight at the viewer.",
+      "never": "grinning, shouting, glowing eyes, arms-raised hero pose, armour, boots, two blades",
+      "personality": {
+        "core": "The exhausted veteran. Does the work nobody thanks him for, then does it again.",
+        "want": "One shift where nobody dies.",
+        "fear": "Being the reason someone died.",
+        "flaw": "Self-sacrifice as a habit — spends his own body before asking for help.",
+        "humour": "Dry, deadpan, one line.",
+        "speech": "Short sentences. Trails off. Never explains the science.",
+        "catchphrase": "Someone has to go first.",
+        "inBattle": "First in, takes the hit, adds +1 Inflammation every attack. He is a mess and he knows it."
+      }
+    },
+    "killerT": {
+      "name": "Rin",
+      "role": "Elite duelist · burst damage",
+      "identity": "Female, apparent age 19, 172 cm, athletic and compact, upright posture, shoulders back. Hair #16121A near-black with two crimson #D81F45 streaks framing the face, high ponytail falling straight to mid-back — the ponytail is mandatory. Eyes #FF3B5C crimson, sharp, narrow, upturned. Skin #F0D2C0 warm, small nick scar on the right eyebrow.",
+      "costume": "Black tactical bodysuit #121014 with crimson #D81F45 seam glow. High black collar covering the throat. Matte black chest plate with a small crimson 'T' glyph at the left chest, no other symbols. Fingerless black gloves, crimson elbow pads. Thigh pouches both legs, one knee pad on the left leg only. Scuffed black combat boots.",
+      "prop": "Twin short blades, 45 cm each, crimson edge glow #FF3B5C, no guard, both blades always appear together.",
+      "pose": "Mid-lunge forward, blades crossed low in front of the chest, chin up, smirk, weight forward.",
+      "never": "one blade only, crying, cute, wide eyes, submissive posture, ponytail missing",
+      "personality": {
+        "core": "The ace who has never lost and is terrified of the first time.",
+        "want": "To be the one who ends it.",
+        "fear": "Being benched, being ordinary.",
+        "flaw": "Arrogance — takes the duel she can win and misses the one that matters.",
+        "humour": "Taunting, performative.",
+        "speech": "Clipped, sharp, challenges everything.",
+        "catchphrase": "Watch and learn.",
+        "inBattle": "Pierces armour. Highest single hit in the game."
+      }
+    },
+    "platelet": {
+      "name": "Momo",
+      "role": "Guard · damage sponge",
+      "identity": "Female, apparent age 12, 138 cm, child proportions with a large head and small hands — the one character where chibi-adjacent proportions are correct. Hair #E8EDF0 silver-white, messy shoulder-length, one ahoge cowlick standing up. Eyes #3FD8C8 teal, very large, round, slightly watery and panicked. Skin #F5DCD6 pale with a permanent blush on both cheeks.",
+      "costume": "Oversized high-visibility vest #D6E821 with two grey reflective strips, clearly too big, hanging off the shoulders. White uniform shirt and shorts underneath. Grey knee pads, white socks, brown lace-up ankle boots. Brown belt with three charms: a red blood cell disc, a white cross, a rolled bandage.",
+      "prop": "Red first-aid kit #C8102E with a white cross, wider than her torso, clutched to her chest with both arms. She never puts it down and it is never small.",
+      "pose": "Mid-run leaning forward, kit hugged to the chest, one free hand raised high as if flagging someone down, mouth open in a panicked shout.",
+      "never": "adult proportions, weapon, cool pose, seductive, kit missing or small",
+      "personality": {
+        "core": "Anxious, over-committed, apologetic — and the one who actually holds the line.",
+        "want": "To be useful enough that nobody notices she's scared.",
+        "fear": "Freezing when it counts.",
+        "flaw": "Says yes to everything, then panics while doing it.",
+        "humour": "Accidental. Funny because she is sincere.",
+        "speech": "Stammers, over-explains, apologises mid-sentence.",
+        "catchphrase": "I-I'll patch it — just give me a second!",
+        "inBattle": "Absorbs the hit meant for someone else."
+      }
+    },
+    "macrophage": {
+      "name": "Goro",
+      "role": "Tank · regen",
+      "identity": "Male, apparent age 40, 198 cm, hulking with wide shoulders, thick neck, heavy hands — the widest silhouette in the cast. Shaved head with grey stubble #B8BDC0, heavy brow scar through the left eyebrow. Eyes #4A3A3E dark brown, half-lidded, calm, almost sleepy. Skin #C99A78 tan, old scars on the forearms and jaw, light chin stubble.",
+      "costume": "Heavy long white coat split at the back, falling to mid-calf. Two thick brown leather cross-straps with buckles over the chest. Minimal cyan #35D0C0 seam glow at the cuffs only, no armour plating. Dark grey apron-like front panel with old dark stains #5A1018, never fresh. Scuffed heavy black boots, unlaced at the top.",
+      "prop": "Cleaver-like blade, 120 cm, broad and chipped, no glow, resting on one shoulder held in the right hand.",
+      "pose": "Standing completely still, blade resting on the shoulder, head tilted slightly, eyes on the viewer, no tension in the body.",
+      "never": "shouting, raging, monstrous, glowing eyes, armour, swinging the blade",
+      "personality": {
+        "core": "The gentle giant who does the ugly work without comment.",
+        "want": "For the young ones to survive him.",
+        "fear": "Nothing he admits to.",
+        "flaw": "Too slow to act when speed is what is needed; carries grief as silence.",
+        "humour": "Almost none — which is why he is funny twice a game.",
+        "speech": "Three words maximum. Long pauses.",
+        "catchphrase": "...Leave it to me.",
+        "inBattle": "Heals himself, tanks, and cleans the field."
+      }
+    },
+    "mast": {
+      "name": "Bibi",
+      "role": "Aura buffer · chaos",
+      "identity": "Female, apparent age 21, 165 cm, wiry and restless, never still in any shot. Hair #F0A6B8 pale pink bob with a blunt fringe, left side shaved to the skin — asymmetry is mandatory. Eyes #F0A63C amber, wide, dilated, twitchy. Skin #F3D9CE pale warm with a smudge of pink powder on one cheek.",
+      "costume": "White lab coat with PINK #FF7FA8 seam glow instead of cyan — the only immune character with a non-cyan seam. Utility vest underneath loaded with small glass vials of glowing pink fluid. A gas mask hanging at the throat by a strap, never worn. Loose uneven bandages on both forearms. Shorts, boots, mismatched socks.",
+      "prop": "One large vial of glowing pink histamine #FF7FA8 raised in one hand, a chemical flare in the other. Never a blade.",
+      "pose": "Arms thrown wide open, head back mid-shout, vial raised, coat flaring like she is on a stage.",
+      "never": "calm, quiet, cyan seams, blade, symmetric hair, stillness",
+      "personality": {
+        "core": "The chaos agent with a heart. Causes the problem, then heroically fixes it.",
+        "want": "To be felt — to matter loudly.",
+        "fear": "Silence and being ignored.",
+        "flaw": "No brakes. Escalates when she should cool down.",
+        "humour": "Loud, theatrical, genuinely funny.",
+        "speech": "Dramatic announcements with mid-sentence volume changes.",
+        "catchphrase": "Let's make it LOUD.",
+        "inBattle": "Buffs everyone's damage and pushes Inflammation toward fever — the risk button with a face."
+      }
+    },
+    "bcell": {
+      "name": "Ivo",
+      "role": "Ranged scaling damage",
+      "identity": "Male, apparent age 27, 170 cm, lanky with narrow shoulders, slight stoop over his weapon. Hair #3A2A22 dark brown, undercut sides, small tied bun at the back. Eyes #A8792F hazel, thoughtful, half-smile, one eyebrow permanently raised. Skin #D9AE8C medium tan with thin stubble.",
+      "costume": "White lab coat worn open over a black tactical vest. Cyan #35D0C0 seam glow at the coat cuffs. Bandolier of glowing cyan test-tube antibodies across the chest, small and evenly spaced. Reading glasses pushed up onto the forehead, never over the eyes. Dark trousers, one knee pocket, boots, no armour plating.",
+      "prop": "Compact crossbow, 70 cm, matte black with cyan accents, loaded with a glowing cyan antibody vial instead of a bolt, held horizontally at chest height.",
+      "pose": "Aiming the crossbow to one side, calm, glasses on the forehead, weight even.",
+      "never": "charging, shouting, melee pose, blade, glasses over the eyes, glowing eyes",
+      "personality": {
+        "core": "The methodical prepper. Has already prepared for this.",
+        "want": "For his system to be vindicated.",
+        "fear": "Being surprised.",
+        "flaw": "Smug about long-term plans, useless when the plan breaks.",
+        "humour": "Dry, pedantic, quietly pleased with himself.",
+        "speech": "Precise, cites his own records.",
+        "catchphrase": "I already made one for this.",
+        "inBattle": "Scales — adds Antibodies every turn, so his damage compounds."
+      }
+    },
+    "dendritic": {
+      "name": "Noor",
+      "role": "Utility · card draw",
+      "identity": "Female, apparent age 30, 168 cm, slender, still, hard to read. Hair #6B2438 dark auburn, one long braid over the right shoulder — the braid is mandatory. Eyes #8E7FA8 grey-violet, knowing, level, rarely blinking. Skin #C99E86 warm brown with a small beauty mark under the left eye.",
+      "costume": "Hooded white coat with the hood down, cyan #35D0C0 seam glow on the lining. Dark high-neck underlayer, no armour. Leather satchel across the body full of labelled sample tubes. Thin black gloves. No weapons anywhere on her person.",
+      "prop": "A lantern-like glass jar holding a captured glowing pathogen fragment, pale violet #B79BD8, held up at eye level. She is carrying evidence, not a weapon.",
+      "pose": "Holding the lantern up and turning back over her shoulder toward the viewer, unhurried, coat settling.",
+      "never": "attacking, running, shouting, weapons, glowing eyes, hood up",
+      "personality": {
+        "core": "The one who has already seen this before. Remembers every slight.",
+        "want": "To understand the enemy completely.",
+        "fear": "Acting before she is certain.",
+        "flaw": "Observes when she should strike; lets others bleed for her information.",
+        "humour": "Unsettling, deadpan, occasionally cruel.",
+        "speech": "Unhurried, precise, asks the question you don't want to answer.",
+        "catchphrase": "I've seen this one before.",
+        "inBattle": "Draws cards and reduces infection — no direct attacks."
+      }
+    }
+  },
+  "pathogens": {
+    "strep": {
+      "kind": "pathogen",
+      "identity": "A chain of five spheres joined by a thin translucent ligament forming a whip shape. Colour #8E3FA8 violet with #D9A6F0 highlights, wet and glossy. Three small dark eyes clustered at the leading sphere, no mouth.",
+      "pose": "Coiled mid-lash, asymmetric, in motion.",
+      "never": "human anatomy, face, clothing, weapon, symmetry"
+    },
+    "toxin": {
+      "kind": "pathogen",
+      "identity": "A translucent sac taller than it is wide, #B6E02A acid yellow-green, with bubbles suspended inside. No eyes at all. Two thin dripping tendrils at the base.",
+      "pose": "Slumped and oozing, heavy, waiting.",
+      "never": "eyes, human anatomy, limbs, clothing, weapon"
+    },
+    "biofilm": {
+      "kind": "pathogen",
+      "identity": "A massive armoured crustacean-like mass, wider than a character, #4A5A3A grey-green. Overlapping chitin plates, slime trails, dozens of tiny pinprick eyes scattered at random, never two symmetric ones.",
+      "pose": "Rooted like a wall, impossibly slow, slime pooling.",
+      "never": "human anatomy, symmetry, speed, clothing, weapon"
+    }
+  },
+  "shots": {
+    "full": "Full body visible head to toe, dramatic low-angle hero framing, single character, centered with negative space at the top third.",
+    "portrait": "Vertical portrait crop from the chest up, dramatic three-quarter lighting, single character, background softly darkened.",
+    "card": "3:4 card art crop from the chest up, single flat background, strong readable silhouette, no fine detail below the waist.",
+    "chibi": "Cute chibi proportions of three heads tall, same costume and colours exactly, plain flat background — social media use only, never in-game cards."
+  }
+}
