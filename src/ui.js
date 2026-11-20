@@ -128,6 +128,9 @@ const VIEWS = ['title', 'roster', 'missions', 'story', 'map', 'event', 'shop', '
 const raf = (fn) => (typeof requestAnimationFrame !== 'undefined' ? requestAnimationFrame(fn) : fn());
 const showView = (name) => {
   VIEWS.forEach((v) => $('view-' + v).classList.toggle('hidden', v !== name));
+  // Belt-and-braces: leaving the battle view always dismisses the
+  // body-level result overlay so it can never strand the player.
+  if (name !== 'battle') { const ov = $('overlay'); if (ov) ov.classList.add('hidden'); }
   syncMeta();
   if (name === 'map') raf(drawMapLines);
 };
@@ -1302,6 +1305,10 @@ function showEpiphanyModal() {
 }
 
 function resolveBattleOutcome() {
+  // renderBattle() calls this on every render after the result lands —
+  // run the rewards/overlay exactly once per battle, never per render.
+  if (battle._outcomeDone) return;
+  battle._outcomeDone = true;
   const sum = battleSummary(battle);
   if (battleCtx && battleCtx.kind === 'sim') { endSimTest(false); return; }
   if (battleCtx && battleCtx.kind === 'run') {
@@ -1515,7 +1522,10 @@ function showOverlay(title, sub, btn, fn, win) {
     <div><b>${battle.characters.reduce((n, c) => n + c.breakdownCount, 0)}</b>BREAKDOWNS</div>`;
   const btnEl = $('overlay-btn');
   btnEl.textContent = btn;
-  btnEl.onclick = fn;
+  // The overlay is a fixed body-level element, NOT part of any view —
+  // showView() cannot hide it. Always dismiss it before running the
+  // button's action, or the game navigates behind a stuck overlay.
+  btnEl.onclick = () => { ov.classList.add('hidden'); if (fn) fn(); };
   $('overlay-retry').style.display = win ? 'none' : 'inline-block';
   $('overlay-retry').textContent = 'RETRY';
   $('overlay-retry').onclick = () => {

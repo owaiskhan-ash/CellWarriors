@@ -217,6 +217,7 @@ ok('save v5 recorded m01 + cells + rank', savedV5.cleared.includes('m01') && sav
 
 // Pause & Lab modal check
 click('overlay-btn');
+ok('result overlay dismissed', $('overlay').classList.contains('hidden'));
 ok('back to missions', !$('view-missions').classList.contains('hidden'));
 ok('m02 unlocked', $('mission-list').querySelectorAll('.mission-tile.locked').length === 3);
 
