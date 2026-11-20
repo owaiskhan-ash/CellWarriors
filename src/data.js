@@ -14,9 +14,10 @@ export const CLASSES = {
   controller: { name: 'Controller', desc: 'Toxin/Bleed catalyst, Stress cleanse, and Overheal Strength.' },
   psionic:    { name: 'Psionic',    desc: 'Mark, Exhaust scaling, Token swarm, and Echo amplification.' },
   alchemist:  { name: 'Alchemist',  desc: 'Poison damage-over-time: stack it, incubate it, detonate it at end of turn.' },
+  mnemonist:  { name: 'Mnemonist',  desc: 'Percent scaling: damage as a % of enemy Max/Missing HP, Shield as % of her Max HP, heals as % of missing HP. Weak vs trash, melts bosses.' },
 };
 
-export const ROLES = { striker: 'Fury DPS', vanguard: 'Shield / Counter', controller: 'Catalyst / Heal', psionic: 'Amplify / Swarm', alchemist: 'Poison DoT' };
+export const ROLES = { striker: 'Fury DPS', vanguard: 'Shield / Counter', controller: 'Catalyst / Heal', psionic: 'Amplify / Swarm', alchemist: 'Poison DoT', mnemonist: '%HP Scaling' };
 
 // ---------------------------------------------------------------------------
 // Cards: 10+ per character. Design rule (all combatants): exactly ONE Basic
@@ -405,6 +406,67 @@ export const CARDS = {
     up: { poisonPotency: 2, onPoisonTickFury: 1, onPoisonTickRes: 1, tags: ['Unique'], text: 'Permanent: Poison stacks deal +2 more per tick, +1 Fury and +1 Resonance per tick.' },
   },
 
+  // === SABLE / Mnemonist / Justice (PERCENT scaling) ===
+  // Every number on her kit is a percentage: attacks add % of the target's
+  // Max HP (steady) or % of its missing HP (execute), her Shield is a % of
+  // HER Max HP, and her heals restore a % of missing HP. Flat vs trash,
+  // enormous vs bosses — the bigger the HP pool, the harder she hits.
+  s_annotate: {
+    name: 'Annotate', owner: 'sable', type: 'attack', cost: 1, attr: 'justice', basic: true,
+    dmg: 6, pctMaxHp: 0.03,
+    text: 'BASIC ATTACK — Deal 6 damage + 3% of the target’s Max HP. The bigger the enemy, the harder this hits.',
+    up: { dmg: 8, pctMaxHp: 0.04, text: 'BASIC ATTACK — Deal 8 damage + 4% of the target’s Max HP.' },
+  },
+  s_recall: {
+    name: 'Recall Strike', owner: 'sable', type: 'attack', cost: 1, attr: 'justice',
+    dmg: 5, pctMissingHp: 0.12,
+    text: 'Deal 5 damage + 12% of the target’s MISSING HP. An execute: worthless on a fresh enemy, lethal on a wounded one.',
+    up: { dmg: 7, pctMissingHp: 0.16, text: 'Deal 7 damage + 16% of the target’s missing HP.' },
+  },
+  s_margin: {
+    name: 'Margin Note', owner: 'sable', type: 'skill', cost: 1, attr: 'justice',
+    shieldPctMax: 0.14, stressHeal: 8,
+    text: 'Gain Shield equal to 14% of Sable’s Max HP and clear 8 Stress.',
+    up: { shieldPctMax: 0.20, stressHeal: 12, text: 'Gain Shield equal to 20% of Sable’s Max HP and clear 12 Stress.' },
+  },
+  s_index: {
+    name: 'Index Card', owner: 'sable', type: 'skill', cost: 1, attr: 'justice',
+    resonance: 2, draw: 1,
+    text: 'Gain +2 Resonance and Draw 1 card. She has already filed this moment.',
+    up: { resonance: 3, draw: 1, text: 'Gain +3 Resonance and Draw 1 card.' },
+  },
+  s_second: {
+    name: 'Second Reading', owner: 'sable', type: 'skill', cost: 1, attr: 'justice',
+    healPctMissing: 0.30, stressHeal: 10,
+    text: 'Heal 30% of Sable’s MISSING HP and clear 10 Stress. The closer to death, the bigger the heal.',
+    up: { healPctMissing: 0.45, stressHeal: 16, text: 'Heal 45% of Sable’s missing HP and clear 16 Stress.' },
+  },
+  s_titer: {
+    name: 'Titer Lance', owner: 'sable', type: 'attack', cost: 2, attr: 'justice',
+    dmg: 8, pctMaxHp: 0.05, mark: 2,
+    text: 'Deal 8 damage + 5% of the target’s Max HP and apply 2T Mark (+50% dmg taken).',
+    up: { dmg: 11, pctMaxHp: 0.07, mark: 3, text: 'Deal 11 damage + 7% of Max HP and apply 3T Mark.' },
+  },
+  s_up: {
+    name: 'Living Index', owner: 'sable', type: 'upgrade', cost: 1, attr: 'justice',
+    pctBoost: 0.02, tags: ['Initiation', 'Unique'],
+    text: 'Permanent: all of Sable’s % HP damage effects gain +2% (e.g. Annotate deals +5% of Max HP).',
+    up: { pctBoost: 0.03, extraDraw: 1, tags: ['Initiation', 'Unique'], text: 'Permanent: % HP damage +3%, and draw +1 card each turn.' },
+  },
+  // --- Sable Build-Around Cards (tight legendary pool: 2 rares) ---
+  s_apex: {
+    name: 'Apex Entry', owner: 'sable', type: 'attack', cost: 3, attr: 'justice', rare: true,
+    dmg: 10, pctMaxHp: 0.10, pctMissingHp: 0.10,
+    text: 'Deal 10 damage + 10% of the target’s Max HP + 10% of its missing HP. A boss execution written in advance.',
+    up: { dmg: 14, pctMaxHp: 0.13, pctMissingHp: 0.13, text: 'Deal 14 damage + 13% of Max HP + 13% of missing HP.' },
+  },
+  s_century: {
+    name: 'Century Recall', owner: 'sable', type: 'skill', cost: 2, attr: 'justice', rare: true,
+    healPctMissing: 0.45, teamStressHeal: 18, resonance: 2,
+    text: 'Heal 45% of Sable’s missing HP, clear 18 Stress from the squad, and gain +2 Resonance.',
+    up: { healPctMissing: 0.60, teamStressHeal: 26, resonance: 3, text: 'Heal 60% of missing HP, clear 26 team Stress, +3 Resonance.' },
+  },
+
   // === Generated Tokens ===
   tok_cut: {
     name: 'Micro-Cut', owner: 'kaito', type: 'attack', cost: 0, attr: 'passion', token: true,
@@ -431,6 +493,7 @@ export const CARDS = {
   breakdown_goro:  { name: 'Breakdown: Goro', owner: 'goro', type: 'status', cost: 0, breakdown: true, text: 'Play to pull Goro back.' },
   breakdown_bibi:  { name: 'Breakdown: Bibi', owner: 'bibi', type: 'status', cost: 0, breakdown: true, text: 'Play to pull Bibi back.' },
   breakdown_yuna:  { name: 'Breakdown: Yuna', owner: 'yuna', type: 'status', cost: 0, breakdown: true, text: 'Play to pull Yuna back.' },
+  breakdown_sable: { name: 'Breakdown: Sable', owner: 'sable', type: 'status', cost: 0, breakdown: true, text: 'Play to pull Sable back.' },
   curse_doubt:     { name: 'Doubt', owner: 'enemy', type: 'curse', cost: 0, text: 'Unplayable. Clogs your hand.', unplayable: true },
   curse_fever:     { name: 'Fever', owner: 'enemy', type: 'curse', cost: 0, text: 'Unplayable. Adds 6 Stress when drawn.', unplayable: true, onDrawStress: 6 },
 };
@@ -477,6 +540,13 @@ export const CHARACTERS = {
     hp: 92, blurb: 'Poison apothecary. Stacks Poison that melts enemies at End Turn, then incubates or detonates it.',
     leader: { name: 'Toxic Bloom', desc: 'Leader: Enemies start with 3 Poison — already a 9-damage tick at the first End Turn.' },
     deck: ['y_sting', 'y_dose', 'y_mist', 'y_incubate', 'y_antidote', 'y_hatch', 'y_culture'],
+  },
+  sable: {
+    id: 'sable', name: 'Sable', full: 'Sable — Memory B', cls: 'mnemonist', attr: 'justice',
+    art: 'images/char-memoryb.png', skin: '#F0A63C', dob: '1979-05-30',
+    hp: 96, blurb: 'Percent scaling. Damage as % of enemy Max/Missing HP, Shield as % of her Max HP, heals as % of missing HP. Melts bosses.',
+    leader: { name: 'Written Down', desc: 'Leader: Start with +1 EP and +1 Resonance — Sable has read this fight before.' },
+    deck: ['s_annotate', 's_recall', 's_margin', 's_index', 's_second', 's_titer', 's_up'],
   },
 };
 
@@ -540,6 +610,18 @@ export const EGOS = {
       id: 'ego_yuna_2', owner: 'yuna', name: 'Mercy Antidote', cost: 4, attr: 'instinct',
       teamHeal: 14, teamStressHeal: 18, teamShield: 10, poison: 6, text: 'Allies +10 Shield, heal 14, clear 18 Stress. Target gains 6 Poison (ticks 18).',
       exaltText: 'OVER-EXALT (7 EP): +20 Shield, heal 28, clear 36 Stress, target gains 12 Poison (ticks 36)!',
+    },
+  ],
+  sable: [
+    {
+      id: 'ego_sable_1', owner: 'sable', name: 'Written in Full', cost: 4, attr: 'justice',
+      dmg: 26, aoe: true, mark: 2, text: 'Deal 26 AoE damage and apply 2T Mark (+50% dmg taken) to all enemies.',
+      exaltText: 'OVER-EXALT (7 EP): Deal 52 AoE, 3T Mark, and +2 EP!',
+    },
+    {
+      id: 'ego_sable_2', owner: 'sable', name: 'Open Ledger', cost: 4, attr: 'justice',
+      teamShield: 18, teamHeal: 12, draw: 2, text: 'All allies +18 Shield and heal 12. Draw 2 cards.',
+      exaltText: 'OVER-EXALT (7 EP): +36 Shield, heal 24, Draw 3, +2 Resonance!',
     },
   ],
 };
@@ -653,6 +735,15 @@ export const CHARACTER_GUIDES = {
     tips: ['Do the math before End Turn: stacks x 3 (or x4-5 with Potency) is printed on the green POISON icon under the enemy HP bar — a lethal tick kills before it acts again.', 'Long-press / right-click an enemy to inspect exactly how much its Poison will tick for.', 'Poison does not reduce Tenacity by itself. Pair her with a Weakness hitter when you need a Break, or let the tick finish a Ravaged target.'],
     partners: 'Goro (CASCADE adds +1 per status application); Bibi Marks targets (x1.5) so her Poison-scaled Sting and your finishers hit harder while Poison cooks.',
     simGoal: 'Stack 15+ Poison on the Colossus, watch a 45+ End-Turn tick, then land a huge Poison-scaled Venom Sting.',
+  },
+  sable: {
+    difficulty: 'Medium', fantasy: 'A legendary archivist who does not hit harder — she hits by percentage. The bigger the enemy\'s HP pool, the more every one of her cards is worth.',
+    core: 'PERCENT SCALING. Annotate and Titer Lance add damage equal to a % of the target\'s MAX HP, so they are modest against a 34-HP Spore Node (6 + 1) and enormous against a 460-HP boss (6 + 14, before multipliers — and % damage still takes Weakness, Mark, Vulnerable, Burst and Crit multipliers on top). Recall Strike instead adds 12% of the target\'s MISSING HP: an execute that grows as the fight is won. Her defence scales too — Margin Note shields for 14% of HER Max HP, and Second Reading heals 30% of her MISSING HP, so she is hardest to kill exactly when she is closest to death.',
+    loop: ['Open with Living Index: every % effect gains +2% for the whole fight (Annotate becomes 5% of Max HP).', 'Annotate and Titer Lance the biggest HP pool on the field — % damage ignores how tanky the target feels to everyone else. Mark with Titer Lance first when you can.', 'Swap to Recall Strike as the target\'s HP falls: at 50% missing on a boss it adds more than Annotate ever will.', 'Use Second Reading late, never early: 30% of missing HP is a small heal at full HP and a resurrection at 20 HP.'],
+    combo: ['Living Index turn 1 — the +2% applies to every % card for the rest of the fight, including Apex Entry.', 'Titer Lance to Mark (+50%), then Apex Entry: 10 + 10% Max + 10% missing, all multiplied by the Mark.', 'At low HP: Margin Note (Shield = % of her Max HP) buys the turn, Second Reading converts a near-death Sable back to half health.', 'Century Recall when the whole squad is stressed and Sable is wounded — her biggest heal is also the team\'s reset button.'],
+    tips: ['Do the % maths on the card: the live preview number already includes the % bonus for the current target — bigger enemy, bigger number.', 'Percent damage still breaks Tenacity normally when it hits a Weakness (Sable is Justice ✧).', 'Against trash packs Sable is deliberately ordinary — bring a flat-damage partner for the small stuff and save her for the wall behind them.'],
+    partners: 'Bibi Marks and Echoes her % lances (multipliers stack on % damage); Momo\'s Barricade keeps her alive long enough for Second Reading to be enormous.',
+    simGoal: 'With Living Index up, land a 40+ hit on the Colossus from % scaling alone, then execute with Recall Strike.',
   },
 };
 

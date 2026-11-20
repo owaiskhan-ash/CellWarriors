@@ -166,6 +166,12 @@ const CARD_ART = {
   m_reflect: 'images/cards/m_reflect.jpg', m_formation: 'images/cards/m_formation.jpg',
   m_splint: 'images/cards/m_splint.jpg', breakdown_momo: 'images/cards/breakdown_momo.jpg',
   b_up: 'images/cards/b_up.jpg',
+  s_annotate: 'images/cards/s_annotate.jpg', s_margin: 'images/cards/s_margin.jpg',
+  s_index: 'images/cards/s_index.jpg', s_second: 'images/cards/s_second.jpg',
+  s_titer: 'images/cards/s_titer.jpg', s_up: 'images/cards/s_up.jpg',
+  s_apex: 'images/cards/s_apex.jpg', s_century: 'images/cards/s_century.jpg',
+  breakdown_sable: 'images/cards/breakdown_sable.jpg',
+  // s_recall: dedicated art queued (moderation re-prompt) — full-bleed fallback until then.
   g_strike: 'images/cards/g_strike.jpg', g_cleave: 'images/cards/g_cleave.jpg', g_devour: 'images/cards/g_devour.jpg',
   g_guard: 'images/cards/g_guard.jpg', g_hymn: 'images/cards/g_hymn.jpg', g_up: 'images/cards/g_up.jpg',
   g_catalyst: 'images/cards/g_catalyst.jpg', g_purge: 'images/cards/g_purge.jpg',
@@ -180,6 +186,7 @@ const ACTION_ART = {
   goro: 'images/action-goro.jpg',
   bibi: 'images/action-bibi.jpg',
   yuna: 'images/action-yuna.jpg',
+  sable: 'images/char-memoryb.png',
 };
 const ico = (id, cls = '') => `<svg class="ico ${cls}"><use href="#${id}"/></svg>`;
 const KIND_ICON = { attack: 'i-sword', skill: 'i-shield', upgrade: 'i-buff', status: 'i-skull', curse: 'i-skull' };
@@ -358,6 +365,7 @@ const GUIDE_ENTRIES = [
   { cat: 'status', icon: 'i-skull', name: 'Bleed', short: 'Damage that triggers on hits', body: 'Bleed stacks sit on an enemy. Whenever that enemy takes an Attack hit, Bleed ruptures for damage equal to its stacks (then loses 1 stack). Detonate effects trigger it on demand. Because multi-hit attacks trigger it repeatedly, Bleed loves Blade Rush and Flurry. CASCADE synergy adds +1 stack whenever you apply Bleed/Toxin.', example: 'Apply 6 Bleed, then a 4-hit Flurry: the hits keep rupturing the stack while your Strength applies per hit.', tags: ['bleed', 'dot', 'goro', 'kaito', 'rupture'] },
   { cat: 'status', icon: 'i-skull', name: 'Toxin', short: 'Damage when the enemy acts', body: 'Toxin ticks for its full stack value whenever that enemy’s action counter reaches 0 and it acts, also chewing through Tenacity, then slowly decays. It punishes slow enemies and rewards Goro for simply staying alive. Detonating Toxin early trades future ticks for immediate damage + healing via Lysis Detonation.', example: 'A 12-Toxin enemy that acts 3 more times is already dead — it just hasn’t noticed.', tags: ['toxin', 'poison', 'dot', 'goro'] },
   { cat: 'status', icon: 'i-poison', name: 'POISON — Damage over Time (DoT)', short: 'Stacks x 3 at End Turn, and her attacks scale off it', body: 'Poison is Yuna’s DoT and it SCALES. Stacks collect on the enemy during your turn; when you press END TURN each enemy takes damage = Poison stacks x 3, then its Poison falls by 1 (10 Poison ticks 30, then 27, then 24…). Two multipliers make it snowball: Incubate DOUBLES the stacks, and her Potency upgrades (Living Culture / Virulence Engine) add +damage PER STACK (4-5+ per stack), so tick = stacks x per-stack damage. Her attacks scale off it too: Venom Sting deals +1 damage per Poison on the target (+2 upgraded) and Spore Mites +1 per Poison — build the stack, then hit into it. Poison caps at 20 stacks. Necrotic Feast detonates all stacks at once for stacks x 3+ and heals per stack; Apex Parasite triggers a tick immediately. It ignores Strength timing and Shield, does not reduce Tenacity by itself, and can kill before the enemy acts. CASCADE adds +1 stack per application.', example: 'Creeping Dose (4) + Spore Mist (2) + Sting (2) + leader (3) = 11 stacks → Incubate grows it to 17 → End Turn melts for 51, and Venom Sting into 20 Poison hits for 26+.', tags: ['poison', 'dot', 'damage over time', 'yuna', 'eosinophil', 'end turn', 'stacks', 'potency', 'scale'] },
+  { cat: 'scaling', icon: 'i-buff', name: 'PERCENT SCALING (%HP) — Sable', short: 'Damage, Shield and heals as percentages of HP pools', body: 'Sable the Memory B works in percentages, not flat numbers. Her attacks add a % of the target’s HP pool: Annotate/Titer Lance add % of MAX HP (steady — the bigger the enemy, the bigger the bonus: 3% is +1 vs a 34-HP Spore and +14 vs a 460-HP boss), while Recall Strike adds % of MISSING HP, an execute that grows as the target is wounded. Living Index permanently adds +2% to every % effect. Her defence scales too: Margin Note shields for 14% of HER Max HP, and Second Reading/Century Recall heal a % of her MISSING HP — small at full health, enormous near death. % damage still takes Weakness ×1.5, Mark ×1.5, Vulnerable, Burst and Crit multipliers, and the live number on the card (tagged +%HP) already includes the % bonus against the current target.', example: 'Vs Prion Sovereign (460 HP): Living Index → Annotate = 6 + 5% (23) = 29; Titer Lance Marks it, then Apex Entry = 10 + 12% Max (55+) + 12% missing, all ×1.5 Marked.', tags: ['percent', '%', 'scaling', 'sable', 'memory b', 'max hp', 'execute', 'boss'] },
   { cat: 'status', icon: 'i-target', name: 'Mark (×1.5) & Vulnerable (×1.35)', short: 'Paint the target, then everyone hits it', body: 'Marked enemies take ×1.5 damage and Vulnerable enemies take ×1.35 from all direct hits, for a number of enemy actions/turns shown on their chips. They stack multiplicatively with Weakness (×1.5), Ravaged (×1.3), Burst (×1.6) and Crit (×1.75). This multiplication is how 30-damage cards become 200-damage cards. Apply these BEFORE the big spend, not after.', example: 'Flare (Mark+Vuln) → Last Shift into Weakness with Crit can exceed ×6 total multiplication.', tags: ['mark', 'vulnerable', 'vuln', 'multiplier', 'bibi', 'setup'] },
   { cat: 'cards', icon: 'i-sword', name: 'Basic Attack & Synergy/Effect cards', short: '1 basic per character — the rest is the engine', body: 'Every combatant has exactly ONE Basic Attack (flagged BASIC, one copy in their starter deck): Kaito’s Cytokine Jab, Momo’s Order Strike, Goro’s Scalpel, Bibi’s Signal Ping, Yuna’s Venom Sting. Every other starter card is a Synergy or Effect card — buffs, shields, draws, tokens, DoTs and permanent Upgrades that make the basic (and your Egos/finishers) matter. Signature direct-attack finishers (Last Shift, Aegis Slam, Apex Cleaver…) are build-around cards you draft in runs or test in Full Arsenal simulation. Judge a character by their effect loop, not their basic.', example: 'Yuna’s basic only deals 6 — her deck wins because Dose/Mist/Incubate turn End Turn into a weapon.', tags: ['basic attack', 'synergy', 'effect', 'starter deck', 'deckbuilding'] },
   { cat: 'enemy', icon: 'i-eye', name: 'Enemy status icons & long-press inspect', short: 'Icons live under the HP bar', body: 'Directly under each enemy’s HP/Tenacity bars is its status row: green flask = Poison stacks (next End-Turn tick), drop = Bleed, flask = Toxin, target = Mark, down-arrow = Vulnerable/Weaken, plus buffs like ATK UP, CHARGING and innate mods. Click an enemy to target it. HOLD (long-press) or right-click an enemy to open a full inspect panel listing every buff and debuff with stacks, duration, exact numbers and what will happen next — including how much Poison will tick at End Turn.', example: 'See “POISON 14” under the bar? Long-press: it will take 14 (+ Potency) when you End Turn, then drop to 13.', tags: ['enemy', 'buff', 'debuff', 'status icons', 'long press', 'inspect', 'hp bar'] },
@@ -560,6 +568,11 @@ function simTrialsFor(id) {
       { label: 'Reach 8 Resonance', check: (b, t) => t.maxResonance >= 8 },
       { label: 'Mark the Colossus, then hit it', check: (b, t) => t.sawMark },
       { label: 'Land a single hit of 60+ (Prism / Singularity)', check: (b) => b.stats.maxHit >= 60 },
+    ],
+    sable: [
+      { label: 'Play Living Index, then land a 40+ % hit', check: (b) => b.stats.maxHit >= 40 },
+      { label: 'Mark the Colossus with Titer Lance, then hit it', check: (b, t) => t.sawMark },
+      { label: 'Execute: finish with Recall Strike (% missing HP)', check: (b) => b.stats.maxHit >= 25 },
     ],
   };
   return [...(byChar[id] || []), ...common];
@@ -1747,6 +1760,7 @@ function fxBadge(card, p, battleState) {
       p.weak ? 'WEAK' : '',
       p.crit ? 'CRIT!' : '',
       p.burst ? 'BURST' : '',
+      p.pctBonus ? '+%HP' : '',
       p.poison ? `+${p.poison} POISON` : '',
     ].filter(Boolean).join(' · ');
     return `<div class="card-fx ${cls}${p.burst ? ' burst' : ''}${p.lethal ? ' lethal' : ''}">
@@ -1988,6 +2002,16 @@ function showDetailFor(card, battleState) {
     rows.push(`<div class="math-row dmg"><b>${p.total}</b><span>DAMAGE</span><i>${parts.join(' ')}</i></div>`);
   }
   if (card.dmgPerPoison) rows.push(`<div class="math-row poison"><b>+${card.dmgPerPoison}/stack</b><span>POISON SCALING</span><i>+${p.poisonBonus || 0} damage from the target's current Poison — grows as you stack</i></div>`);
+  if (card.pctMaxHp || card.pctCurrentHp || card.pctMissingHp) {
+    const pctParts = [
+      card.pctMaxHp ? `${Math.round(card.pctMaxHp * 100)}% of Max HP` : '',
+      card.pctCurrentHp ? `${Math.round(card.pctCurrentHp * 100)}% of Current HP` : '',
+      card.pctMissingHp ? `${Math.round(card.pctMissingHp * 100)}% of Missing HP` : '',
+    ].filter(Boolean).join(' + ');
+    rows.push(`<div class="math-row dmg"><b>+${p.pctBonus || 0}</b><span>PERCENT SCALING</span><i>${pctParts} — +${p.pctBonus || 0} damage against this target right now. Bigger HP pool, bigger bonus.</i></div>`);
+  }
+  if (card.shieldPctMax) rows.push(`<div class="math-row shield"><b>${Math.round(card.shieldPctMax * 100)}%</b><span>SHIELD % MAX HP</span><i>Shield scales with Sable's Max HP, not a flat number</i></div>`);
+  if (card.healPctMissing) rows.push(`<div class="math-row heal"><b>${Math.round(card.healPctMissing * 100)}%</b><span>HEAL % MISSING HP</span><i>Heals more the closer Sable is to death</i></div>`);
   if (p.poison || p.poisonAll) rows.push(`<div class="math-row poison"><b>+${p.poisonAll || p.poison}</b><span>POISON${p.poisonAll ? ' / ALL' : ''}</span><i>ticks ${p.poisonNextTick || p.poison || p.poisonAll} at End Turn (${p.poisonPerStack || POISON_PER_STACK} per stack), then -1 stack</i></div>`);
   if (card.doublePoison) rows.push(`<div class="math-row poison"><b>×2</b><span>DOUBLE POISON</span><i>doubles current stacks on target</i></div>`);
   if (card.detonatePoison) rows.push(`<div class="math-row poison"><b>DETONATE</b><span>POISON NOW</span><i>consume all stacks as immediate damage + team heal per stack</i></div>`);

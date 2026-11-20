@@ -11,7 +11,7 @@ lines), thick black outlines, flat two-tone cel shading, no text/watermark.
 Output: `images/cards/<card-id>.jpg`, then add the id to `CARD_ART` in
 `src/ui.js`. Generator limit: 10 images per turn — batch by character.
 
-## Done (39/70)
+## Done (48/80)
 - [x] Kaito complete (15): k_jab, k_brace, k_rush, k_first, k_last, k_up,
   k_flurry, k_berserk, k_reap, k_execute, k_rally, k_feint, k_supply,
   tok_cut, breakdown_kaito
@@ -19,6 +19,12 @@ Output: `images/cards/<card-id>.jpg`, then add the id to `CARD_ART` in
   m_up, m_bash, m_bastion, m_aegis, m_reflect, m_formation, m_splint,
   breakdown_momo
 - [x] Bibi (1): b_up (Cross-talk)
+- [x] Goro (10): g_strike, g_guard, g_cleave, g_devour, g_hymn, g_up,
+  g_catalyst, g_purge, g_symbiosis, g_feast_up
+- [x] Sable (9/10): s_annotate, s_margin, s_index, s_second, s_titer, s_up,
+  s_apex, s_century, breakdown_sable
+- [ ] s_recall — blocked once; re-prompt without "strike/execute" wording
+  (uses Sable's full-bleed portrait fallback until then)
 
 Fallback fix: cards without dedicated art now use the owner's full-bleed
 action art (`.card-art-fallback`, slightly darkened) instead of the
@@ -29,12 +35,6 @@ costume, props and vessel backgrounds match the bible. Minor tolerated
 deviations: some blades render a small guard, `k_first` has a tiny sleeve
 glyph, `k_reap` has an inset border, and a few images render the dark lower
 UI third as a hard panel (hidden under the card text overlay in-game).
-
-## Pending — Momo / Platelet (9)
-m_triage, m_up, m_bash, m_bastion,
-m_aegis, m_reflect, m_formation, m_splint, breakdown_momo.
-Locked: child proportions, silver-white messy hair + ahoge, teal eyes, oversized
-hi-vis vest #D6E821, giant red first-aid kit wider than her torso. Never a weapon.
 
 ## Pending — Goro / Macrophage (3)
 g_tonic, g_broth, breakdown_goro.
