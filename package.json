@@ -1,13 +1,20 @@
 {
   "name": "cell-warriors",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "description": "Cell Warriors \u2014 a tactical card RPG inside a human body.",
   "scripts": {
     "dev": "python3 -m http.server 5173 --bind 0.0.0.0",
     "sim:missions": "node scripts/sim-missions.mjs 300",
-    "test:e2e": "node scripts/e2e.mjs"
+    "test:e2e": "node scripts/e2e.mjs",
+    "test:phone": "node scripts/phone-check.mjs",
+    "test:apk": "node scripts/apk-sim.mjs",
+    "test:run": "node scripts/full-run.mjs",
+    "test": "node scripts/e2e.mjs && node scripts/phone-check.mjs && node scripts/full-run.mjs",
+    "apk": "bash android/build.sh",
+    "apk:tools": "bash android/fetch-tools.sh",
+    "preview": "python3 scripts/layout-preview.py"
   },
   "devDependencies": {
     "jsdom": "^31.0.1"

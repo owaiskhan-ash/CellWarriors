@@ -3,7 +3,8 @@
    Light menus (white/pale) + Dark battle. Chakra Petch / Inter.
    Tokens per docs/design-system.md §2. No emoji in UI — SVG line icons only.
    ========================================================================= */
-@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap');
+/* Fonts are self-hosted: see fonts.css (loaded before this file) — no network
+   CDN, so the web build and the offline APK render identically. */
 
 :root {
   /* dark / battle */
@@ -48,7 +49,9 @@ html, body {
   font-family: var(--font-body); user-select: none;
   font-variant-numeric: tabular-nums;
 }
-#app { position: relative; height: 100dvh; width: 100vw; }
+#app { position: relative; height: 100vh; height: 100dvh; width: 100%; }
+/* the game is landscape-only: never let the page scroll or bounce */
+html, body { overscroll-behavior: none; touch-action: manipulation; }
 .view { position: absolute; inset: 0; display: flex; flex-direction: column; }
 .hidden { display: none !important; }
 h1,h2,h3,.btn-primary,.btn-ghost,.chip-btn,.card-name,.detail-head,.cutin-name,.slowmo-banner,.turn-banner { font-family: var(--font-display); }

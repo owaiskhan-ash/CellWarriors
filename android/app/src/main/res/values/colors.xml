@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="cw_bg">#FF050203</color>
+    <color name="cw_bg_raised">#FF0B0507</color>
+    <color name="cw_blood">#FFC2183A</color>
+</resources>

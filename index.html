@@ -2,13 +2,26 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <!-- LANDSCAPE PHONE SHELL
+         Every mobile screen presents the same ~950x430 CSS canvas: this width
+         makes a portrait phone's initial-scale zoom the page to the full
+         landscape design, and desktop browsers are capped at 960px so the
+         phone layout (and its Playwright/jsdom test viewport) is what devs see.
+         assets/sync-shell.mjs keeps this contract; scripts/phone-check.mjs
+         verifies it. -->
+    <meta id="cw-viewport" name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
     <meta name="theme-color" content="#050203" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="description" content="Cell Warriors — a tactical card RPG fought inside the human body." />
     <title>Cell Warriors</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <!-- Self-hosted fonts: no network CDN, so the APK works fully offline. -->
+    <link rel="stylesheet" href="./fonts.css" />
     <link rel="stylesheet" href="./styles.css" />
+    <!-- phone / touch layer: landscape layout, safe areas, >=44px targets -->
+    <link rel="stylesheet" href="./styles-mobile.css" />
+    <link rel="manifest" href="./manifest.webmanifest" />
   </head>
   <body>
     <!-- SVG icon sprite — line icons only, 2px stroke, 24px grid (design-system §8) -->
@@ -69,7 +82,7 @@
               <button class="btn-ghost tiny" id="btn-reset">reset save</button>
             </div>
           </div>
-          <p class="title-ver">CELL WARRIORS v0.1.0 · BUILD 07A · © IMMUNE COMMAND</p>
+          <p class="title-ver">CELL WARRIORS v1.0.0 · BUILD 08A · © IMMUNE COMMAND</p>
         </div>
       </section>
 
@@ -631,6 +644,23 @@
           <div class="overlay-stats" id="overlay-stats"></div>
           <button class="btn-primary big" id="overlay-btn">CONTINUE</button>
           <button class="btn-ghost" id="overlay-retry">RETRY</button>
+        </div>
+      </div>
+      <!-- first-run touch tutorial (phone/tablet only, once per install) -->
+      <div class="touch-tut hidden" id="touch-tut">
+        <div class="tt-card czn-frame">
+          <span class="czn-corner tl"></span><span class="czn-corner tr"></span>
+          <span class="czn-corner bl"></span><span class="czn-corner br"></span>
+          <span class="czn-id">FIELD MANUAL // INPUT·03</span>
+          <h2>THUMB CONTROLS</h2>
+          <ul class="tt-list">
+            <li><b>TAP A CARD</b><span>plays it. Single-target cards hit the enemy you tapped last.</span></li>
+            <li><b>TAP AN ENEMY</b><span>sets your target — it glows while it is selected.</span></li>
+            <li><b>DRAG A CARD</b><span>onto an enemy to play it straight at that one.</span></li>
+            <li><b>HOLD A CARD OR ENEMY</b><span>opens its full maths, statuses and rules.</span></li>
+            <li><b>END TURN</b><span>the big disc, bottom right. Pause is the ☰ button.</span></li>
+          </ul>
+          <button class="btn-primary" id="tt-dismiss">GOT IT</button>
         </div>
       </div>
     </main>

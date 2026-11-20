@@ -1,0 +1,38 @@
+{
+  "name": "Cell Warriors — Chaos Expedition",
+  "short_name": "Cell Warriors",
+  "description": "A tactical deck-battling RPG fought inside the human body. Command immune cells, chain tags, and break the pathogen invasion.",
+  "id": "/cellwarriors/",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#050203",
+  "theme_color": "#050203",
+  "categories": [
+    "games",
+    "entertainment"
+  ],
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
