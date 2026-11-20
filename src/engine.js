@@ -140,8 +140,8 @@ export function startBattle(opts, partyIds, seed) {
   const startShield = (has('plate') ? 10 : 0)
     + (synergy.some((s) => s.id === 'bastion') ? 5 : 0)
     + (leadId === 'momo' ? 5 : 0);
-  const startEp = leadId === 'bibi' ? 2 : 0;
-  const startResonance = (leadId === 'goro' ? 2 : 0) + (leadId === 'bibi' ? 1 : 0) + (has('synapse') ? 1 : 0);
+  const startEp = leadId === 'bibi' ? 2 : leadId === 'sable' ? 1 : 0;
+  const startResonance = (leadId === 'goro' ? 2 : 0) + (leadId === 'bibi' ? 1 : 0) + (leadId === 'sable' ? 1 : 0) + (has('synapse') ? 1 : 0);
 
   const state = {
     mission: { name: config.name || 'Skirmish', place: config.place || '', code: config.missionCode || 'run' },
@@ -162,6 +162,7 @@ export function startBattle(opts, partyIds, seed) {
       onHealFury: 0, onStatusTickHeal: 0, onStatusTickRes: 0, onStatusTickFury: 0,
       onExhaustDmg: 0, onExhaustEp: 0,
       poisonPotency: 0, onPoisonTickRes: 0, onPoisonTickHeal: 0, onPoisonTickFury: 0,
+      pctBoost: 0,
     },
     relics, relicIds, synergy, has: undefined,
     freeFirstLeft: has('scabbard') ? 1 : 0,
@@ -371,6 +372,20 @@ function computeAttackPlan(state, card, target, actor, { simulate = false } = {}
   let poisonBonus = 0;
   if (card.dmgPerPoison && target) { poisonBonus = (target.poison || 0) * card.dmgPerPoison; bonus += poisonBonus; }
 
+  // Percent-scaled attacks (Sable / Memory B): bonus damage as a fraction of
+  // the target's HP pool, so the same card melts bosses and merely annoys
+  // trash — flat Strength cannot do this. pctMaxHp = % of Max HP (steady),
+  // pctCurrentHp = % of Current HP (front-loaded), pctMissingHp = % of
+  // missing HP (execute). Living Index (pctBoost passive) raises all three.
+  let pctBonus = 0;
+  if (target && (card.pctMaxHp || card.pctCurrentHp || card.pctMissingHp)) {
+    const boost = (state.passives && state.passives.pctBoost) || 0;
+    if (card.pctMaxHp) pctBonus += Math.round(target.maxHp * (card.pctMaxHp + boost));
+    if (card.pctCurrentHp) pctBonus += Math.round(target.hp * (card.pctCurrentHp + boost));
+    if (card.pctMissingHp) pctBonus += Math.round((target.maxHp - target.hp) * (card.pctMissingHp + boost));
+    bonus += pctBonus;
+  }
+
   let combo = 0;
   const prevType = simulate ? state.lastTypePlayed : (state.cardsPlayedThisTurn > 1 ? state.lastTypePlayed : null);
   if (card.combo && prevType === card.type && state.cardsPlayedThisTurn > (simulate ? 0 : 1)) {
@@ -407,7 +422,7 @@ function computeAttackPlan(state, card, target, actor, { simulate = false } = {}
   const perHit = Math.max(1, Math.round(per));
   const hits = card.hits || 1;
   return {
-    perHit, hits, dmg: perHit * hits, poisonBonus,
+    perHit, hits, dmg: perHit * hits, poisonBonus, pctBonus,
     weak, ravaged, mark, vuln, crit, burst: canBurst, isChain, combo, finale,
     echoCount: state.echoNext ? state.echoNext.count : 0,
   };
@@ -862,6 +877,8 @@ export function playCard(state, handIndex, targetUid = null) {
 
   // --- Skill / Buff / Engine Effects ---
   if (card.shield) addShield(state, actor, Math.round((card.shield + skillLv) * mult));
+  // Percent shield (Sable): Shield equal to a % of the ACTOR's Max HP.
+  if (card.shieldPctMax && actor) addShield(state, actor, Math.round(actor.maxHp * card.shieldPctMax * mult));
   if (card.teamShield) state.characters.forEach((c) => { if (c.hp > 0) addShield(state, c, Math.round((card.teamShield + skillLv) * mult)); });
   if (card.counter && actor) actor.counter += card.counter;
   if (card.teamCounter) state.characters.forEach((c) => { if (c.hp > 0) c.counter += card.teamCounter; });
@@ -876,6 +893,14 @@ export function playCard(state, handIndex, targetUid = null) {
       actor.str += card.highStressStr.str;
       log(state, `  High-Stress Surge: ${actor.name} gains +${card.highStressStr.str} Strength!`, 'combo');
     }
+  }
+  // Percent heal (Sable): heal a % of the actor's MISSING HP — huge when
+  // she is nearly dead, modest at full HP. Stress is cleared by the generic
+  // stressHeal line below, so pass 0 here to avoid double-clearing.
+  if (card.healPctMissing && actor) {
+    const capHp = actor.maxHp - (actor.lockedHp || 0);
+    const amt = Math.round(Math.max(0, capHp - actor.hp) * card.healPctMissing * mult);
+    if (amt > 0) healCharacter(state, actor, amt, 0);
   }
   if (card.teamHeal) {
     state.characters.forEach((c) => {
@@ -967,6 +992,7 @@ export function playCard(state, handIndex, targetUid = null) {
   if (card.onExhaustDmg) state.passives.onExhaustDmg += card.onExhaustDmg;
   if (card.onExhaustEp) state.passives.onExhaustEp += card.onExhaustEp;
   if (card.poisonPotency) state.passives.poisonPotency += card.poisonPotency;
+  if (card.pctBoost) state.passives.pctBoost += card.pctBoost;
   if (card.onPoisonTickRes) state.passives.onPoisonTickRes += card.onPoisonTickRes;
   if (card.onPoisonTickHeal) state.passives.onPoisonTickHeal += card.onPoisonTickHeal;
   if (card.onPoisonTickFury) state.passives.onPoisonTickFury += card.onPoisonTickFury;
@@ -1337,7 +1363,7 @@ export function previewCard(state, card, targetUid = null) {
     crit: false, burst: false, isChain: hasEdgeChain(state, card), lethal: false,
     shield: 0, teamShield: 0, heal: 0, teamHeal: 0,
     stressHeal: 0, teamStressHeal: 0, ap: 0, draw: 0, targets: 1, combo: 0, finale: 0,
-    poison: 0, poisonAll: 0, poisonPerStack: POISON_PER_STACK, poisonBonus: 0,
+    poison: 0, poisonAll: 0, poisonPerStack: POISON_PER_STACK, poisonBonus: 0, pctBonus: 0,
   };
   const alive = state.enemies.filter((e) => e.hp > 0);
   out.targets = card.aoe ? Math.max(1, alive.length) : (target ? 1 : 0);
@@ -1359,13 +1385,19 @@ export function previewCard(state, card, targetUid = null) {
     out.combo = plan.combo;
     out.finale = plan.finale;
     out.poisonBonus = plan.poisonBonus || 0;
+    out.pctBonus = plan.pctBonus || 0;
     out.lethal = out.dmg >= target.hp;
   }
 
   const mult = card.glint ? 1.4 : 1;
   const blockBonus = actor ? (actor.blockBonus || 0) + (state.startShields || 0) : 0;
   if (card.shield) out.shield = Math.round((card.shield + skillLv) * mult) + blockBonus;
+  if (card.shieldPctMax && actor) out.shield += Math.round(actor.maxHp * card.shieldPctMax * mult);
   if (card.teamShield) out.teamShield = Math.round((card.teamShield + skillLv) * mult) + blockBonus;
+  if (card.healPctMissing && actor) {
+    const capPct = actor.maxHp - (actor.lockedHp || 0);
+    out.heal = Math.min(Math.round(Math.max(0, capPct - actor.hp) * card.healPctMissing * mult), Math.max(0, capPct - actor.hp));
+  }
   if (card.heal && actor) {
     const cap = actor.maxHp - (actor.lockedHp || 0);
     out.heal = Math.min(Math.round((card.heal + skillLv) * mult), Math.max(0, cap - actor.hp));

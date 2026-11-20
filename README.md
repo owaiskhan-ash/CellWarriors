@@ -1,9 +1,9 @@
 # Cell Warriors
 
 A tactical card RPG fought inside a seventeen-year-old's immune system. Anime squad battler:
-pick 3 of 4 combatants, then fight with the cards those characters own.
+pick 3 of 6 combatants, then fight with the cards those characters own.
 
-**Status:** playable — CZN-style battle system, roster, 5 missions, 28 cards, Ego skills,
+**Status:** playable — CZN-style battle system, roster, 5 missions, 80 cards, Ego skills,
 Epiphany, Stress breakdowns, Sands of Time.
 
 ```bash
@@ -49,6 +49,11 @@ Modelled directly on *Chaos Zero Nightmare*:
 | Momo | Platelet | Vanguard | ◈ Order | 104 |
 | Goro | Macrophage | Controller | ✧ Justice | 110 |
 | Bibi | T-Cell | Psionic | ✶ Void | 84 |
+| Sable | Memory B | Mnemonist | ✧ Justice | 96 |
+
+Sable is the percent-scaling combatant: her damage is a % of the enemy's
+Max/Missing HP, her Shield a % of her own Max HP, and her heals a % of
+missing HP — ordinary against trash, devastating against bosses.
 
 Each owns a 7-card pool: two basics, three signatures, one Upgrade that stays active for the fight.
 
