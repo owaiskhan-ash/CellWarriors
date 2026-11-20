@@ -32,17 +32,37 @@ const el = (tag, cls, html) => {
 const attr = (a) => ATTRIBUTES[a] || { name: '—', glyph: '·', color: '#888' };
 
 /* --- game feel: typing effect + click ripple (visuals only, jsdom-safe) --- */
+// Typewriter with run-token cancellation: every call supersedes the
+// previous one on the same element, so rapid clicks can never interleave
+// two texts character-by-character. Clicking while typing completes the
+// line instantly (see typewriterFinish / advanceStory).
+const twRuns = new WeakMap();
 function typewriter(el, text, speed = 26) {
   if (!el) return;
+  const run = (twRuns.get(el) || 0) + 1;
+  twRuns.set(el, run);
   const chars = [...text];
   let i = 0;
-  const tick = () => {
-    if (i >= chars.length) return;
-    el.textContent += chars[i++];
-    setTimeout(tick, speed);
-  };
   el.textContent = '';
-  setTimeout(tick, 120);
+  el._twFull = text;
+  el._twDone = false;
+  const tick = () => {
+    if (twRuns.get(el) !== run) return; // superseded by a newer run
+    if (i >= chars.length) { el._twDone = true; return; }
+    el.textContent += chars[i++];
+    el._twTimer = setTimeout(tick, speed);
+  };
+  el._twTimer = setTimeout(tick, 120);
+}
+// If the element is mid-type, snap it to the full line. Returns true when
+// it consumed the click (caller should NOT also advance).
+function typewriterFinish(el) {
+  if (!el || el._twDone || el._twFull == null) return false;
+  twRuns.set(el, (twRuns.get(el) || 0) + 1);
+  if (el._twTimer) clearTimeout(el._twTimer);
+  el.textContent = el._twFull;
+  el._twDone = true;
+  return true;
 }
 function ripple(btn) {
   if (!btn) return;
@@ -749,11 +769,14 @@ function renderMissions() {
 // { art, who, text } with per-beat art (Mission 01+). Normalise here.
 function storyBeat(s) { return typeof s === 'string' ? { text: s } : s; }
 
+let storyRun = 0; // guards the art crossfade against rapid advancing
 function showStoryBeat() {
   const beat = storyBeat(mission.story[storyIndex]);
   const art = $('story-art');
+  const run = ++storyRun;
   art.style.opacity = '0';
   setTimeout(() => {
+    if (run !== storyRun) return; // a newer beat already took over
     art.style.backgroundImage = `url(${beat.art || 'images/cell-warriors-battle.png'})`;
     art.style.opacity = '1';
   }, 170);
@@ -766,12 +789,15 @@ function openStory(m) {
   mission = m;
   storyIndex = 0;
   // Preload every beat's art so panel swaps never flash empty.
-  m.story.forEach((s) => { const b = storyBeat(s); if (b.art) { const im = new Image(); im.src = b.art; } });
+  m.story.forEach((s) => { const b = storyBeat(s); if (b.art && typeof Image !== 'undefined') { const im = new Image(); im.src = b.art; } });
   showStoryBeat();
   showView('story');
 }
 
 function advanceStory() {
+  // First click while a line is still typing completes it; the next
+  // click advances. Prevents the interleaved-text scramble at speed.
+  if (typewriterFinish($('story-text'))) { sfx('click'); return; }
   sfx('click');
   storyIndex += 1;
   if (storyIndex >= mission.story.length) { beginBattle(mission); return; }
