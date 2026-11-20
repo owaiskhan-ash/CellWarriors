@@ -233,3 +233,13 @@ export const SIGIL = {
   il2: '✧',
   adrenaline: '⚡',
 };
+
+// Region art — the tile is the region's threat, not a description.
+export const REGION_ART = {
+  throat: './images/pathogen-strep.png',
+  lungs: './images/pathogen-toxin.png',
+  gut: './images/pathogen-biofilm.png',
+  wound: './images/pathogen-strep.png',
+  blood: './images/pathogen-toxin.png',
+  meninges: './images/pathogen-biofilm.png',
+};

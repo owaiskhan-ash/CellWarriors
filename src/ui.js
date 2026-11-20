@@ -1,4 +1,4 @@
-import { CARDS, START, REGIONS, UNLOCKABLE, ART, ENEMY_ART, SIGIL } from './data.js';
+import { CARDS, START, REGIONS, UNLOCKABLE, ART, ENEMY_ART, SIGIL, REGION_ART } from './data.js';
 import { createGame, endTurn, playCard, atkOf, previewEndTurn } from './engine.js';
 import {
   loadProgress, saveProgress, resetProgress, regionUnlocked, buildDeck, totalCleared,
@@ -43,15 +43,14 @@ function renderMap() {
     const cleared = progress.cleared.includes(r.id);
     const btn = el('button', `region${unlocked ? '' : ' locked'}${cleared ? ' cleared' : ''}`);
     btn.innerHTML = `
+      <div class="region-art" style="--art:url('${REGION_ART[r.id]}')"></div>
       <div class="region-top">
         <span class="region-name">${r.name}</span>
-        <span class="threat">${'▮'.repeat(r.threat)}${'▯'.repeat(6 - r.threat)}</span>
+        <span class="threat">${'▮'.repeat(r.threat)}</span>
       </div>
-      <div class="region-organ">${r.organ}</div>
-      <p class="region-desc">${r.desc}</p>
       <div class="region-foot">
-        <span>${unlocked ? (cleared ? 'replay · ◈ ' + Math.round(r.reward * 0.25) : 'first clear · ◈ ' + r.reward) : 'locked'}</span>
-        <span>site ${r.coreHp}</span>
+        <span>${unlocked ? '◈ ' + (cleared ? Math.round(r.reward * 0.25) : r.reward) : '🔒'}</span>
+        <span>${r.coreHp}</span>
       </div>`;
     btn.addEventListener('click', () => {
       if (!unlocked) return;
@@ -80,9 +79,12 @@ function renderLab() {
     item.dataset.rarity = card.rarity;
     item.innerHTML = `
       <div class="lab-row">
-        <div>
-          <div class="lab-name">${card.name}</div>
-          <div class="region-organ">${meta.faction} · ${card.rarity}</div>
+        <div class="lab-id">
+          <div class="lab-thumb" style="--art:url('${ART[id] || ''}')"></div>
+          <div>
+            <div class="lab-name">${card.name}</div>
+            <div class="region-organ">${meta.faction} · ${card.rarity}</div>
+          </div>
         </div>
         <button class="buy${owned ? ' owned' : ''}" ${owned || !affordable ? 'disabled' : ''}>
           ${owned ? 'OWNED' : '◈ ' + meta.cost}
@@ -211,8 +213,7 @@ function renderHand() {
         <div class="card-name">${card.name}</div>
         ${card.type === 'cell'
           ? `<div class="card-stats"><span class="atk">⚔ ${card.atk}</span><span class="hp">♥ ${card.hp}</span></div>`
-          : ''}
-        <div class="card-text">${card.text}</div>
+          : `<div class="card-text">${card.text}</div>`}
       </div>`;
     node.addEventListener('click', () => {
       const res = playCard(game, index);
@@ -229,7 +230,7 @@ function renderHand() {
 function renderLog() {
   const box = $('log');
   box.innerHTML = '';
-  for (const entry of game.log.slice(-4)) {
+  for (const entry of game.log.slice(-2)) {
     box.appendChild(el('div', entry.kind, entry.text));
   }
 }
@@ -242,9 +243,9 @@ function renderPreview() {
   }
   const p = previewEndTurn(game);
   const feverWarn = p.feverAtEnd
-    ? '<span class="danger">FEVER fires at end of turn.</span>'
-    : `${game.fever - game.inflammation} Inflammation until fever.`;
-  box.innerHTML = `End turn → you hit for <b>${p.myDamage}</b>, pathogens spread <b>+${p.theirSpread}%</b> (site ${p.coreHp}).<br>${feverWarn}`;
+    ? '<span class="danger">🔥 FEVER</span>'
+    : `<span style="opacity:.6">🌡 ${game.fever - game.inflammation}</span>`;
+  box.innerHTML = `<b>⚔ ${p.myDamage}</b> · <span class="danger">+${p.theirSpread}%</span> · ◆ ${p.coreHp} · ${feverWarn}`;
 }
 
 function settle() {
