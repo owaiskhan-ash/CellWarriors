@@ -1,7 +1,7 @@
 import fs from 'fs';
-import { JSDOM } from '/home/user/Township/node_modules/jsdom/lib/api.js';
+import { JSDOM } from '/home/user/CellWarriors/node_modules/jsdom/lib/api.js';
 
-const ROOT = '/home/user/Township';
+const ROOT = '/home/user/CellWarriors';
 const html = fs.readFileSync(`${ROOT}/index.html`, 'utf8');
 const dom = new JSDOM(html, { url: 'http://localhost/', pretendToBeVisual: true });
 const { window } = dom;
@@ -27,9 +27,9 @@ const ok = (label, cond, extra = '') => {
 // 1. Title & Audio toggle
 ok('title visible', !$('view-title').classList.contains('hidden'));
 click('btn-mute-title');
-ok('mute toggles off/on', $('btn-mute-title').textContent === '🔇');
+ok('mute toggles off/on', $('btn-mute-title').querySelector('use')?.getAttribute('href') === '#i-mute');
 click('btn-mute-title');
-ok('mute restores', $('btn-mute-title').textContent === '🔊');
+ok('mute restores', $('btn-mute-title').querySelector('use')?.getAttribute('href') === '#i-sound');
 
 // 2. Title → Roster (Chaos default)
 click('btn-start');
