@@ -1,61 +1,73 @@
 # Cell Warriors
 
 A tactical card RPG fought inside a seventeen-year-old's immune system. Anime squad battler:
-pick 3 of 4 characters, then fight with the cards those characters own.
+pick 3 of 4 combatants, then fight with the cards those characters own.
 
-**Status:** playable — roster, team select, 5 missions, 12 cards, battle loop.
+**Status:** playable — CZN-style battle system, roster, 5 missions, 28 cards, Ego skills,
+Epiphany, Stress breakdowns, Sands of Time.
 
 ```bash
 npm run dev           # http://localhost:5173
+npm run test:e2e      # jsdom end-to-end run of the whole flow
 npm run sim:missions  # bot win rate per mission
 ```
 
-Rules: **[docs/mechanics.md](docs/mechanics.md)** · Cast and art: **[docs/character-bible.md](docs/character-bible.md)**
-· UI rules: **[docs/design-system.md](docs/design-system.md)**
+Rules: **[docs/mechanics.md](docs/mechanics.md)** — what was copied from Chaos Zero Nightmare and
+how: **[docs/czn-systems.md](docs/czn-systems.md)** · Cast and art:
+**[docs/character-bible.md](docs/character-bible.md)**
 
 ---
 
 ## Flow
 
 ```
-Title → CHARACTERS (pick 3) → MISSIONS → story beat → battle → next mission unlocks
+Title → COMBATANTS (pick 3) → MISSIONS → story beat → battle → next mission unlocks
 ```
 
-## Cast — one per role
+## The battle system
 
-| Character | Cell | Role | Element | HP | ATK |
-| --- | --- | --- | --- | --- | --- |
-| Kaito | Neutrophil | **DPS** | Blood | 30 | 3 |
-| Momo | Platelet | **SHIELD** | Tide | 34 | 1 |
-| Goro | Macrophage | **HEALER** | Ember | 40 | 2 |
-| Bibi | Mast Cell | **SUPPORT DPS** | Void | 24 | 1 |
+Modelled directly on *Chaos Zero Nightmare*:
 
-Each character owns three cards (12 total). Your hand is drawn from the card sets of the three
-characters you deployed — if one falls, their cards stay in hand but become unplayable.
+- **Draw 5 / 3 AP / 10-card hand cap.** Empty draw pile reshuffles the Graveyard.
+- **Action counters.** Every enemy has a counter that drops by 1 for each card played. At zero it
+  acts immediately, on its telegraphed intent. Ego skills and Haste cards do not advance counters.
+- **Attribute weakness.** Passion ✦, Order ◈, Justice ✧, Void ✶, Instinct ✹. A matching hit does
+  ×1.5 damage and 2.5× Tenacity damage.
+- **Tenacity → Ravage.** Break the bar under the HP: +1 AP, stress relief, enemy delayed one counter,
+  and it takes +30% damage.
+- **Stress → Mental Breakdown.** Damage adds Stress. At 100 a third of that character's HP locks,
+  their Ego seals, and their cards become Breakdown cards needing 5 (then 6, 8, …) plays.
+- **EP + Ego skills.** Max 7 EP, 4 per Ego, one Ego per character.
+- **Epiphany.** A lightbulb character adds a free unique card; glinting cards cost 0 AP and hit harder.
+- **Sands of Time.** Three hourglasses: undo card, redraw Ego order, rewind turn.
 
-## Battle
+## Cast
 
-- **4 EP per turn**, resets every turn. Cards cost 1–3.
-- **Attack** cards (crimson frame) hit the marked pathogen. **Skill** cards (teal frame) shield,
-  heal, buff, or generate EP.
-- Tap a pathogen to mark it — damage goes there.
-- Deterministic damage: the exact number is printed on the card face before you commit.
-- Party HP is shown as one pooled bar at the top; enemies carry floating HP + ATK badges.
+| Character | Cell | Class | Attribute | HP |
+| --- | --- | --- | --- | --- |
+| Kaito | Neutrophil | Striker | ✦ Passion | 88 |
+| Momo | Platelet | Vanguard | ◈ Order | 104 |
+| Goro | Macrophage | Controller | ✧ Justice | 110 |
+| Bibi | T-Cell | Psionic | ✶ Void | 84 |
+
+Each owns a 7-card pool: two basics, three signatures, one Upgrade that stays active for the fight.
 
 ## Files
 
 | Path | What |
 | --- | --- |
-| `src/data.js` | roster, card sets, enemies, missions, story |
-| `src/battle.js` | battle engine (pure, no DOM) |
-| `src/ui.js` | viewers, roster, missions, battle rendering |
-| `src/progress.js` | save (`cellwarriors.save.v3`): cleared missions + team |
+| `src/data.js` | combatants, cards, Ego skills, enemies, missions, story |
+| `src/engine.js` | battle engine (pure, no DOM) — the CZN state machine |
+| `src/ui.js` | roster, missions, story, battle rendering |
+| `src/progress.js` | save (`cellwarriors.save.v4`): cleared missions + team |
 | `styles.css` | the visual system |
+| `scripts/e2e.mjs` | jsdom end-to-end test |
+| `scripts/sim-missions.mjs` | balance bot |
 | `scripts/cutout.py` | transparent-background character art pipeline |
-| `docs/` | mechanics, character bible, design system, store pack, privacy |
+| `docs/` | mechanics, CZN mapping, character bible, design system, store pack, privacy |
 
 ## Known gaps
 
-- 6 of 12 card illustrations are still using character cutouts (`artPending` flag in `data.js`) —
-  Goro's and Bibi's sets. Real card art is queued.
-- No character unlocks, upgrades, ultimates, or PvP yet.
+- Goro's and Bibi's card illustrations still use character cutouts; real card art is queued.
+- No Chaos-roguelike map, shops, partners, or gacha (deliberately out of scope).
+- Single player, local save; Supabase authority comes with the APK.

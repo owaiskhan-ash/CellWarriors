@@ -1,120 +1,155 @@
-// Cell Warriors — roster, card sets, enemies, missions.
-// Four characters, one per role. Every character owns their own cards.
+// Cell Warriors — content data. Mechanics mirror Chaos Zero Nightmare (see docs/czn-systems.md).
+
+export const ATTRIBUTES = {
+  passion:  { name: 'Passion',  glyph: '✦', color: '#ff4d6d' },
+  order:    { name: 'Order',    glyph: '◈', color: '#4da3ff' },
+  justice:  { name: 'Justice',  glyph: '✧', color: '#ffc94d' },
+  void:     { name: 'Void',     glyph: '✶', color: '#b06bff' },
+  instinct: { name: 'Instinct', glyph: '✹', color: '#4ddc9a' },
+};
+
+export const CLASSES = {
+  striker:  { name: 'Striker',  desc: 'Frontline damage. Breaks Tenacity fast.' },
+  vanguard: { name: 'Vanguard', desc: 'Shields and holds the line.' },
+  controller:{ name: 'Controller', desc: 'Heals, cleanses, controls stress.' },
+  psionic:  { name: 'Psionic',  desc: 'Buffs the team, AoE pressure.' },
+};
 
 export const ROLES = {
-  dps: { label: 'DPS', cls: 'dps' },
-  shield: { label: 'SHIELD', cls: 'shield' },
-  healer: { label: 'HEALER', cls: 'healer' },
-  support: { label: 'SUPPORT', cls: 'support' },
+  striker: 'Damage', vanguard: 'Shield', controller: 'Healer', psionic: 'Support DPS',
 };
 
-export const ELEMENTS = {
-  blood: { label: 'BLOOD', glyph: '✹', colour: '#c2183a' },
-  tide: { label: 'TIDE', glyph: '❋', colour: '#35d0c0' },
-  ember: { label: 'EMBER', glyph: '✦', colour: '#f0a63c' },
-  void: { label: 'VOID', glyph: '◆', colour: '#b79bd8' },
+// ---------------------------------------------------------------------------
+// Cards. type: attack | skill | upgrade | curse | status
+// ---------------------------------------------------------------------------
+export const CARDS = {
+  // --- Kaito / Striker / Passion -------------------------------------------
+  k_jab:   { name: 'Cytokine Jab', owner: 'kaito', type: 'attack', cost: 1, attr: 'passion', dmg: 7, text: 'Deal 7 damage.' },
+  k_brace: { name: 'Brace', owner: 'kaito', type: 'skill', cost: 1, attr: 'passion', shield: 7, text: 'Gain 7 Shield.' },
+  k_rush:  { name: 'Blade Rush', owner: 'kaito', type: 'attack', cost: 1, attr: 'passion', dmg: 5, hits: 2, text: 'Deal 5 damage twice.' },
+  k_first: { name: 'First In', owner: 'kaito', type: 'skill', cost: 1, attr: 'passion', shield: 5, buffAtk: 3, tags: ['Retain', 'Lead'], text: 'Gain 5 Shield and +3 Attack this turn. Retain. Lead.' },
+  k_last:  { name: 'Last Shift', owner: 'kaito', type: 'attack', cost: 2, attr: 'passion', dmg: 18, selfStress: 14, text: 'Deal 18 damage. Gain 14 Stress.' },
+  k_up:    { name: 'Overclock', owner: 'kaito', type: 'upgrade', cost: 1, attr: 'passion', tags: ['Initiation'], maxAp: 1, text: 'Permanent: +1 AP each turn for this fight.' },
+
+  // --- Momo / Vanguard / Order ---------------------------------------------
+  m_strike:{ name: 'Order Strike', owner: 'momo', type: 'attack', cost: 1, attr: 'order', dmg: 6, text: 'Deal 6 damage.' },
+  m_guard: { name: 'Guard Stance', owner: 'momo', type: 'skill', cost: 1, attr: 'order', shield: 8, text: 'Gain 8 Shield.' },
+  m_patch: { name: 'Patch Up', owner: 'momo', type: 'skill', cost: 1, attr: 'order', teamShield: 4, text: 'All allies gain 4 Shield.' },
+  m_stand: { name: 'Stand Firm', owner: 'momo', type: 'skill', cost: 1, attr: 'order', shield: 10, taunt: 1, text: 'Gain 10 Shield. Taunt this turn.' },
+  m_triage:{ name: 'Triage', owner: 'momo', type: 'skill', cost: 1, attr: 'order', heal: 7, stressHeal: 10, text: 'Heal 7 HP and clear 10 Stress.' },
+  m_up:    { name: 'Field Protocol', owner: 'momo', type: 'upgrade', cost: 1, attr: 'order', tags: ['Initiation'], turnShield: 4, text: 'Permanent: all allies gain 4 Shield each turn.' },
+
+  // --- Goro / Controller / Justice -----------------------------------------
+  g_strike:{ name: 'Scalpel', owner: 'goro', type: 'attack', cost: 1, attr: 'justice', dmg: 6, text: 'Deal 6 damage.' },
+  g_guard: { name: 'Clot', owner: 'goro', type: 'skill', cost: 1, attr: 'justice', shield: 7, text: 'Gain 7 Shield.' },
+  g_cleave:{ name: 'Cleave', owner: 'goro', type: 'attack', cost: 2, attr: 'justice', dmg: 9, aoe: true, text: 'Deal 9 damage to all enemies.' },
+  g_devour:{ name: 'Devour', owner: 'goro', type: 'skill', cost: 2, attr: 'justice', teamHeal: 6, teamStressHeal: 12, text: 'All allies heal 6 HP, clear 12 Stress.' },
+  g_hymn:  { name: 'Lullaby', owner: 'goro', type: 'skill', cost: 1, attr: 'justice', weakenAll: 2, text: 'All enemies deal 35% less damage for 2 turns.' },
+  g_up:    { name: 'The Wall', owner: 'goro', type: 'upgrade', cost: 1, attr: 'justice', tags: ['Initiation'], blockBonus: 2, text: 'Permanent: all Shields gain +2.' },
+
+  // --- Bibi / Psionic / Void ----------------------------------------------
+  b_ping:  { name: 'Signal Ping', owner: 'bibi', type: 'attack', cost: 1, attr: 'void', dmg: 5, text: 'Deal 5 damage.' },
+  b_fuzz:  { name: 'Fuzz', owner: 'bibi', type: 'skill', cost: 1, attr: 'void', shield: 7, text: 'Gain 7 Shield.' },
+  b_flare: { name: 'Flare', owner: 'bibi', type: 'attack', cost: 2, attr: 'void', dmg: 6, aoe: true, text: 'Deal 6 damage to all enemies.' },
+  b_hist:  { name: 'Histamine', owner: 'bibi', type: 'skill', cost: 1, attr: 'void', teamBuffAtk: 4, text: 'All allies gain +4 Attack this turn.' },
+  b_over:  { name: 'Overdrive', owner: 'bibi', type: 'skill', cost: 0, attr: 'void', tags: ['Exhaust', 'Haste'], apGain: 1, text: 'Gain 1 AP. Does not advance enemy counters. Exhaust.' },
+  b_up:    { name: 'Cross-talk', owner: 'bibi', type: 'upgrade', cost: 1, attr: 'void', tags: ['Initiation'], extraDraw: 1, text: 'Permanent: draw +1 card each turn.' },
+
+  // --- Status / Curse ------------------------------------------------------
+  breakdown_kaito: { name: 'Breakdown: Kaito', owner: 'kaito', type: 'status', cost: 0, breakdown: true, text: 'Play 5 times to pull Kaito back. Advances enemy counters.' },
+  breakdown_momo:  { name: 'Breakdown: Momo', owner: 'momo', type: 'status', cost: 0, breakdown: true, text: 'Play 5 times to pull Momo back.' },
+  breakdown_goro:  { name: 'Breakdown: Goro', owner: 'goro', type: 'status', cost: 0, breakdown: true, text: 'Play 5 times to pull Goro back.' },
+  breakdown_bibi:  { name: 'Breakdown: Bibi', owner: 'bibi', type: 'status', cost: 0, breakdown: true, text: 'Play 5 times to pull Bibi back.' },
+  curse_doubt:     { name: 'Doubt', owner: 'enemy', type: 'curse', cost: 0, text: 'Unplayable while in hand.', unplayable: true },
 };
 
+// Character card pools: 2 basics + 3 signature + 1 upgrade = 6 unique, x2 basics in deck.
 export const CHARACTERS = {
   kaito: {
-    name: 'Kaito', cell: 'Neutrophil', role: 'dps', element: 'blood',
-    level: 30, hp: 30, atk: 3,
-    art: './images/cut-kaito-cut.png',
-    bio: 'Arrives first. Dies first. Does it anyway.',
-    cards: ['k_blade', 'k_last', 'k_first'],
+    id: 'kaito', name: 'Kaito', full: 'Kaito — Neutrophil', cls: 'striker', attr: 'passion',
+    art: 'images/cut-kaito-cut.png', skin: '#ff4d6d',
+    hp: 88, blurb: 'First responder. Hits hardest and breaks the fastest.',
+    deck: ['k_jab', 'k_jab', 'k_brace', 'k_rush', 'k_first', 'k_last', 'k_up'],
+    ego: { card: 'k_last' },
   },
   momo: {
-    name: 'Momo', cell: 'Platelet', role: 'shield', element: 'tide',
-    level: 28, hp: 34, atk: 1,
-    art: './images/cut-momo-cut.png',
-    bio: 'Scared of everything. Still stands in front of it.',
-    cards: ['m_patch', 'm_stand', 'm_aid'],
+    id: 'momo', name: 'Momo', full: 'Momo — Platelet', cls: 'vanguard', attr: 'order',
+    art: 'images/cut-momo-cut.png', skin: '#4da3ff',
+    hp: 104, blurb: 'Scaffold and shield. Nothing gets past her.',
+    deck: ['m_strike', 'm_strike', 'm_guard', 'm_patch', 'm_stand', 'm_triage', 'm_up'],
+    ego: { card: 'm_guard' },
   },
   goro: {
-    name: 'Goro', cell: 'Macrophage', role: 'healer', element: 'ember',
-    level: 32, hp: 40, atk: 2,
-    art: './images/cut-goro-cut.png',
-    bio: 'Speaks in three words. Holds the wall in one.',
-    cards: ['g_cleave', 'g_devour', 'g_wall'],
+    id: 'goro', name: 'Goro', full: 'Goro — Macrophage', cls: 'controller', attr: 'justice',
+    art: 'images/cut-goro-cut.png', skin: '#ffc94d',
+    hp: 110, blurb: 'Eats the dead, calms the living. Holds the team together.',
+    deck: ['g_strike', 'g_strike', 'g_guard', 'g_cleave', 'g_devour', 'g_hymn', 'g_up'],
+    ego: { card: 'g_guard' },
   },
   bibi: {
-    name: 'Bibi', cell: 'Mast Cell', role: 'support', element: 'void',
-    level: 26, hp: 24, atk: 1,
-    art: './images/cut-bibi-cut.png',
-    bio: 'Starts the fire. Then charges into it.',
-    cards: ['b_hist', 'b_flare', 'b_over'],
+    id: 'bibi', name: 'Bibi', full: 'Bibi — T-Cell', cls: 'psionic', attr: 'void',
+    art: 'images/cut-bibi-cut.png', skin: '#b06bff',
+    hp: 84, blurb: 'Signals the whole immune system at once.',
+    deck: ['b_ping', 'b_ping', 'b_fuzz', 'b_flare', 'b_hist', 'b_over', 'b_up'],
+    ego: { card: 'b_fuzz' },
   },
 };
 
-export const CARDS = {
-  // Kaito — DPS
-  k_blade: { id: 'k_blade', owner: 'kaito', name: 'Blade Rush', type: 'Attack', cost: 1, target: 'enemy', dmg: 6, art: './images/card-k1.png' },
-  k_last: { id: 'k_last', owner: 'kaito', name: 'Last Shift', type: 'Attack', cost: 3, target: 'enemy', dmg: 12, selfDamage: 3, art: './images/card-k2.png' },
-  k_first: { id: 'k_first', owner: 'kaito', name: 'First In', type: 'Skill', cost: 1, target: 'enemy', dmg: 4, selfShield: 4, art: './images/card-k3.png' },
-
-  // Momo — SHIELD
-  m_patch: { id: 'm_patch', owner: 'momo', name: 'Patch Up', type: 'Skill', cost: 1, target: 'allAllies', shield: 6, art: './images/card-m1.png' },
-  m_stand: { id: 'm_stand', owner: 'momo', name: 'Stand Firm', type: 'Skill', cost: 2, target: 'self', shield: 12, taunt: 2, art: './images/card-m2.png' },
-  m_aid: { id: 'm_aid', owner: 'momo', name: 'First Aid', type: 'Skill', cost: 1, target: 'lowestAlly', heal: 8, art: './images/card-m3.png' },
-
-  // Goro — HEALER (card art pending — using cutout)
-  g_cleave: { id: 'g_cleave', owner: 'goro', name: 'Cleave', type: 'Attack', cost: 2, target: 'enemy', dmg: 8, art: './images/cut-goro-cut.png', artPending: true },
-  g_devour: { id: 'g_devour', owner: 'goro', name: 'Devour', type: 'Skill', cost: 3, target: 'allAllies', heal: 7, art: './images/cut-goro-cut.png', artPending: true },
-  g_wall: { id: 'g_wall', owner: 'goro', name: 'The Wall', type: 'Skill', cost: 2, target: 'self', shield: 14, taunt: 2, art: './images/cut-goro-cut.png', artPending: true },
-
-  // Bibi — SUPPORT DPS (card art pending — using cutout)
-  b_hist: { id: 'b_hist', owner: 'bibi', name: 'Histamine', type: 'Skill', cost: 1, target: 'allAllies', tempAtk: 2, art: './images/cut-bibi-cut.png', artPending: true },
-  b_flare: { id: 'b_flare', owner: 'bibi', name: 'Flare', type: 'Attack', cost: 2, target: 'allEnemies', dmg: 4, art: './images/cut-bibi-cut.png', artPending: true },
-  b_over: { id: 'b_over', owner: 'bibi', name: 'Overdrive', type: 'Skill', cost: 2, target: 'none', energy: 3, art: './images/cut-bibi-cut.png', artPending: true },
+// Ego skills: big flashy finishers, 4 EP, never advance enemy action counters.
+export const EGOS = {
+  kaito: { id: 'ego_kaito', owner: 'kaito', name: 'Last Stand', cost: 4, attr: 'passion', dmg: 30, text: 'Deal 30 damage. Ignores Weakness rules.' },
+  momo:  { id: 'ego_momo', owner: 'momo', name: 'Bulwark', cost: 4, attr: 'order', teamShield: 20, teamStressHeal: 25, text: 'All allies gain 20 Shield, clear 25 Stress.' },
+  goro:  { id: 'ego_goro', owner: 'goro', name: 'Metabolic Feast', cost: 4, attr: 'justice', teamHeal: 14, teamStressHeal: 10, text: 'All allies heal 14 HP and clear 10 Stress.' },
+  bibi:  { id: 'ego_bibi', owner: 'bibi', name: 'Cytokine Storm', cost: 4, attr: 'void', dmg: 11, aoe: true, weakenAll: 2, text: 'Deal 11 to all enemies. They deal 35% less for 2 turns.' },
 };
 
+// ---------------------------------------------------------------------------
+// Enemies: hp, tenacity, action counter, weakness attribute, telegraphed intents
+// ---------------------------------------------------------------------------
 export const ENEMIES = {
-  strep: { id: 'strep', name: 'Strep', hp: 26, atk: 5, art: './images/pathogen-strep.png' },
-  toxin: { id: 'toxin', name: 'Toxin', hp: 22, atk: 4, art: './images/pathogen-toxin.png' },
-  biofilm: { id: 'biofilm', name: 'Biofilm', hp: 38, atk: 7, art: './images/pathogen-biofilm.png' },
-  strain: { id: 'strain', name: 'Strain', hp: 30, atk: 6, art: './images/pathogen-strep.png' },
+  strep:   { id: 'strep', name: 'Strepto Swarm', hp: 58, tenacity: 40, counter: 3, weakness: 'passion',
+             intents: [{ type: 'attack', value: 11 }, { type: 'attack', value: 11 }, { type: 'debuff', value: 14 }] },
+  toxin:   { id: 'toxin', name: 'Endotoxin', hp: 50, tenacity: 30, counter: 2, weakness: 'order',
+             intents: [{ type: 'attack', value: 9 }, { type: 'debuff', value: 18 }] },
+  biofilm: { id: 'biofilm', name: 'Biofilm Mass', hp: 108, tenacity: 88, counter: 4, weakness: 'justice',
+             intents: [{ type: 'attack', value: 14 }, { type: 'defend', value: 14 }] },
+  strain:  { id: 'strain', name: 'Mutant Strain', hp: 74, tenacity: 58, counter: 3, weakness: 'void',
+             intents: [{ type: 'attack', value: 12 }, { type: 'buff', value: 4 }] },
+  prion:   { id: 'prion', name: 'Prion Knot', hp: 86, tenacity: 64, counter: 2, weakness: 'instinct',
+             intents: [{ type: 'attack', value: 17 }, { type: 'attack', value: 17 }] },
+  spore:   { id: 'spore', name: 'Spore Node', hp: 30, tenacity: 18, counter: 2, weakness: 'passion',
+             intents: [{ type: 'attack', value: 7 }] },
 };
 
 export const MISSIONS = [
-  {
-    id: 'm01', code: 'M-01', name: 'Tonsil Breach', place: 'Throat', threat: 1,
-    enemies: ['strep'],
-    story: [
-      { who: '', text: 'Day one. It starts as a scratch.' },
-      { who: 'Kaito', art: 'kaito', text: 'Something got in. No backup, no time.' },
-      { who: 'Kaito', art: 'kaito', text: 'Someone has to go first.' },
-    ],
-  },
-  {
-    id: 'm02', code: 'M-02', name: 'Alveolar Flood', place: 'Lungs', threat: 2,
-    enemies: ['strep', 'toxin'],
-    story: [
-      { who: 'Momo', art: 'momo', text: 'I-I\'m here! Where do you need me?!' },
-      { who: 'Kaito', art: 'kaito', text: 'Behind me. Patch what I miss.' },
-    ],
-  },
-  {
-    id: 'm03', code: 'M-03', name: 'Gut Wall', place: 'Intestine', threat: 3,
-    enemies: ['biofilm', 'toxin'],
-    story: [
-      { who: 'Goro', art: 'goro', text: '...Leave it to me.' },
-      { who: 'Kaito', art: 'kaito', text: 'That\'s the only reason we\'re alive.' },
-    ],
-  },
-  {
-    id: 'm04', code: 'M-04', name: 'Bloodstream Break', place: 'Whole system', threat: 4,
-    enemies: ['strain', 'toxin', 'strep'],
-    story: [
-      { who: 'Bibi', art: 'bibi', text: 'Let\'s make it LOUD.' },
-      { who: 'Kaito', art: 'kaito', text: 'That\'s what I was afraid of.' },
-    ],
-  },
-  {
-    id: 'm05', code: 'M-05', name: 'Meninges', place: 'Blood-brain barrier', threat: 5,
-    enemies: ['biofilm', 'strain', 'biofilm'],
-    story: [
-      { who: 'Goro', art: 'goro', text: 'The last wall. Behind it, everything he is.' },
-      { who: 'Kaito', art: 'kaito', text: 'Then it doesn\'t get through.' },
-    ],
-  },
+  { code: 'm01', name: 'Cutline', place: 'Left Forearm — Epidermis', threat: 'Low', rec: 'passion',
+    enemies: ['strep'], story: [
+      'The scrape happened four hours ago. Nobody told the skin.',
+      'A breach in the left forearm. Strepto is already inside the cut, and the alarm has not been rung.',
+      'Kaito reaches it first. He always does.',
+    ] },
+  { code: 'm02', name: 'Drain Line', place: 'Lymph Node 04', threat: 'Low', rec: 'order',
+    enemies: ['toxin', 'spore'], story: [
+      'Lymph Node 04 runs hot and swollen.',
+      'Endotoxin moved in through the drain and brought its own spores.',
+      'Momo holds the corridor. Nobody else fits.',
+    ] },
+  { code: 'm03', name: 'The Thicket', place: 'Deep Tissue — Biofilm Bloom', threat: 'Medium', rec: 'justice',
+    enemies: ['biofilm', 'strep'], story: [
+      'A biofilm has grown over the wound bed like a city nobody planned.',
+      'Antibodies bounce off it. Goro has to eat through.',
+      'This is the first time the team fights something that fights back with a plan.',
+    ] },
+  { code: 'm04', name: 'Signal Rot', place: 'Spinal Relay — Night', threat: 'High', rec: 'void',
+    enemies: ['strain', 'toxin'], story: [
+      'The signal rot reaches the relay at 03:12.',
+      'The relay starts telling the body the wrong things — heat, fear, pain, all at once.',
+      'Bibi can out-shout it. That is not the same as curing it.',
+    ] },
+  { code: 'm05', name: 'Prion Gate', place: 'The Blood-Brain Barrier', threat: 'Severe', rec: 'instinct',
+    enemies: ['prion', 'strain', 'biofilm'], story: [
+      'The barrier is one cell thick and the prion knot is already folding through it.',
+      'Everything they have learned about each other gets spent here.',
+      'Hold the gate. Nothing gets through.',
+    ] },
 ];

@@ -1,74 +1,96 @@
-# CELL WARRIORS — MECHANICS v3
+# Cell Warriors — Battle Rules (v4, CZN-accurate)
 
-## The loop
+The mechanic set now mirrors *Chaos Zero Nightmare*. The detailed comparison table lives in
+[`czn-systems.md`](./czn-systems.md); this file is the player-facing ruleset.
 
-```
-Title → CHARACTERS (pick exactly 3 of 4) → MISSIONS → story → battle → unlock next mission
-```
+## The team
 
-## Roster
+Pick **three combatants**. Every character owns a six-card personal pool, and all three pools are
+shuffled into one draw pile. Each character also brings one **Ego Skill**.
 
-| Character | Role | Element | HP | ATK | Identity |
-| --- | --- | --- | --- | --- | --- |
-| Kaito | DPS | Blood | 30 | 3 | Cheapest damage in the game, pays HP for it |
-| Momo | SHIELD | Tide | 34 | 1 | Team shields + a taunt wall |
-| Goro | HEALER | Ember | 40 | 2 | Squad heal, self taunt, a cleave when idle |
-| Bibi | SUPPORT DPS | Void | 24 | 1 | Buffs ATK, AoE chip, generates EP |
+## A turn
 
-Elements exist as identity and colour only right now — there is no elemental counter chart yet.
+1. **Draw 5** cards (7 on the opening turn, plus anything your Upgrade cards add).
+2. You have **3 AP**. Cards cost AP; a 2-AP card is a real commitment.
+3. Play cards, use Ego Skills, then press **END TURN**.
+4. Unplayed cards go to the **Graveyard** (unless tagged **Retain**). Empty draw pile reshuffles it.
+5. Hand cap is **10**. Above that, you stop drawing.
 
-## Cards
+## Enemies do not wait
 
-| Card | Owner | Type | Cost | Effect |
-| --- | --- | --- | --- | --- |
-| Blade Rush | Kaito | Attack | 1 | 6 dmg |
-| Last Shift | Kaito | Attack | 3 | 12 dmg, self −3 HP |
-| First In | Kaito | Skill | 1 | 4 dmg + 4 shield |
-| Patch Up | Momo | Skill | 1 | 6 shield to squad |
-| Stand Firm | Momo | Skill | 2 | 12 shield, taunt 2 |
-| First Aid | Momo | Skill | 1 | Heal 8 on weakest ally |
-| Cleave | Goro | Attack | 2 | 8 dmg |
-| Devour | Goro | Skill | 3 | Heal 7 to squad |
-| The Wall | Goro | Skill | 2 | 14 shield, taunt 2 |
-| Histamine | Bibi | Skill | 1 | +2 ATK squad this turn |
-| Flare | Bibi | Attack | 2 | 4 dmg to all pathogens |
-| Overdrive | Bibi | Skill | 2 | +3 EP |
+Every enemy carries an **action counter**. **Every card you play lowers every counter by one.** At
+zero the enemy acts immediately and its counter resets. The number beside the counter is its
+telegraphed intent: attack value, shield, buff or debuff. **Ego Skills and Haste cards never lower
+counters** — that is how you burst without eating a hit.
 
-**Per-character ownership:** a card can only be played by its owner. If the owner is down, the card
-sits in hand as dead weight. That is the cost of losing a unit — not just HP.
+## Weakness and Tenacity
 
-## Turn
+Five attributes: **Passion ✦, Order ◈, Justice ✧, Void ✶, Instinct ✹**. There is no
+rock-paper-scissors chart — a hit only gets a bonus when it *matches* the enemy's listed weakness:
 
-1. 4 EP at the start of each turn (full refresh, no carry-over).
-2. Play cards; tap a pathogen first to mark the target.
-3. END TURN → every living pathogen attacks once (taunts intercept).
-4. Taunts tick, temporary ATK expires, EP refreshes, hand draws back up to 4.
+- matching attribute → **×1.5 damage**
+- matching attribute → **2.5× Tenacity damage**
 
-## Maths
+Under each enemy's HP is its **Tenacity** bar. Break it and the enemy is **Ravaged**:
 
-```
-card damage  = card base + owner ATK + permanent buffs + temporary buffs
-enemy damage = enemy ATK − weaken
-HP lost      = incoming − shield
-```
+- **+1 AP** immediately
+- the team's **Stress** drops by 10
+- the enemy's action counter **+1** (it is delayed)
+- it takes **+30% damage** while Ravaged
 
-All deterministic. The only RNG is the draw.
+## Stress and Mental Breakdown
 
-## Missions
+Damage also adds **Stress** (purple bar). A Shield that fully absorbs a hit adds **no Stress**.
 
-| Code | Mission | Enemies | Bot win rate |
-| --- | --- | --- | --- |
-| M-01 | Tonsil Breach | Strep | 100% |
-| M-02 | Alveolar Flood | Strep, Toxin | 100% |
-| M-03 | Gut Wall | Biofilm, Toxin | 100% |
-| M-04 | Bloodstream Break | Strain, Toxin, Strep | 100% |
-| M-05 | Meninges | Biofilm, Strain, Biofilm | 65% |
+At **100 Stress** the character has a **Mental Breakdown**:
 
-`npm run sim:missions` reproduces these numbers. The early missions are teaching fights for a
-greedy bot; M-05 is the wall.
+- a third of their max HP is **locked** — unhealable until they recover
+- their **Ego Skill is sealed**
+- their cards become **Breakdown cards** in the draw pile
+- these cards advance enemy counters, so recovering can be dangerous
+- recovery needs **5 plays**, then **6**, then **8**, then 10, then 12
 
-## Not built yet
+Recovering clears Stress to zero, restores the locked HP, heals the character and half of what the
+team lost, and makes that character's Ego **cost 0** for the rest of the fight.
 
-- Element counters, ultimates/burst gauge, character unlocks, upgrades
-- Squad reordering / formation
-- Server authority (all logic is client-side; fine for single-player, not for PvP)
+## EP and Ego Skills
+
+- **EP caps at 7.** You gain 1 EP per two cards played, and 1 per enemy killed.
+- Each Ego costs **4 EP**, does something big, and **does not advance enemy counters**.
+- Ego order is shuffled at the start of the fight.
+
+## Epiphany
+
+A lightbulb can appear over a character. Their **next card played adds one of their unique cards to
+your hand at 0 AP**. Separately, individual cards can glint when drawn: those cost **0 AP** and hit
+**1.4× harder**.
+
+## Sands of Time
+
+Three hourglasses per fight:
+
+| Charge | Effect |
+| --- | --- |
+| 1 | Rewind the last card you played |
+| 2 | Redraw the Ego Skill order |
+| 3 | Rewind the whole turn |
+
+## Card types
+
+| Type | Frame | Behaviour |
+| --- | --- | --- |
+| Attack | crimson | damage, sometimes multi-hit or AoE |
+| Skill | teal | shield, heal, buff, AP |
+| Upgrade | gold | leaves the deck for the rest of the fight; permanent effect |
+| Status | grey | Breakdown cards — play to recover |
+| Curse | violet | unplayable, clogs the hand |
+
+## Tags
+
+**Retain** (stays in hand) · **Exhaust** (gone for the fight) · **Initiation** (opening hand) ·
+**Lead** (50% chance to cost 1 less when drawn) · **Haste** (does not advance counters) ·
+**Celestial** (auto-fires when you play a 2+ AP card) · **Unique** (cannot be duplicated).
+
+## Winning and losing
+
+Destroy every enemy to clear the mission. The team collapses when every combatant is at 0 HP.

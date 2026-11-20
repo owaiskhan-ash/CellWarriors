@@ -2,7 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#06070f" />
     <title>Cell Warriors</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
@@ -13,7 +14,8 @@
         <div class="title-bg"></div>
         <div class="title-inner">
           <img class="title-logo" src="./images/logo-transparent.png" alt="Cell Warriors" />
-          <button class="btn-primary big" id="btn-start">START</button>
+          <p class="title-tag">THE BODY IS THE BATTLEFIELD</p>
+          <button class="btn-primary big" id="btn-start">ENTER</button>
           <button class="btn-ghost tiny" id="btn-reset">reset save</button>
         </div>
       </section>
@@ -21,12 +23,13 @@
       <!-- ================= ROSTER ================= -->
       <section id="view-roster" class="view hidden">
         <header class="screen-head">
-          <h1>CHARACTERS</h1>
+          <div class="head-left">
+            <h1>COMBATANTS</h1>
+            <span class="head-sub">Pick three. Their decks shuffle together.</span>
+          </div>
           <span class="team-count" id="team-count">0 / 3</span>
         </header>
-
         <div class="roster" id="roster"></div>
-
         <div class="roster-foot">
           <div class="team-strip" id="team-strip"></div>
           <button class="btn-primary" id="btn-deploy" disabled>DEPLOY</button>
@@ -37,8 +40,7 @@
       <section id="view-missions" class="view hidden">
         <header class="screen-head">
           <button class="btn-ghost tiny" id="btn-missions-back">←</button>
-          <h1>MISSIONS</h1>
-          <span class="team-count" id="mission-team">TEAM 0</span>
+          <div class="head-left"><h1>MISSIONS</h1><span class="head-sub" id="mission-team"></span></div>
         </header>
         <div class="mission-list" id="mission-list"></div>
       </section>
@@ -58,30 +60,47 @@
       <section id="view-battle" class="view hidden">
         <div class="battle-bg"></div>
 
-        <header class="battle-hud">
-          <div class="party-hp">
-            <div class="party-hp-track"><i id="hp-fill"></i></div>
-            <span class="party-hp-num"><b id="hp-now">0</b>/<span id="hp-max">0</span></span>
+        <header class="battle-top">
+          <button class="chip-btn" id="btn-flee" title="Retreat">✕</button>
+          <div class="mission-tag">
+            <b id="b-mission">—</b>
+            <span id="b-place">—</span>
           </div>
-          <span class="turn-badge">TURN <b id="turn">1</b></span>
+          <div class="sands" id="sands"></div>
+          <div class="turn-badge">TURN <b id="b-turn">1</b></div>
         </header>
 
-        <div class="stage">
-          <div class="lineup" id="lineup"></div>
-          <div class="enemy-row" id="enemies"></div>
+        <div class="battle-stage">
+          <aside class="party" id="party"></aside>
+          <div class="arena">
+            <div class="weak-banner" id="weak-banner"></div>
+            <div class="enemy-row" id="enemies"></div>
+            <div class="battle-tips" id="battle-tips"></div>
+          </div>
         </div>
 
-        <div class="combat-log" id="combat-log"></div>
-
-        <footer class="hand-bar">
-          <div class="ep">
-            <div class="ep-label">EP</div>
-            <div class="ep-num" id="ep">4</div>
-            <div class="ep-pips" id="ep-pips"></div>
+        <footer class="hand-zone">
+          <div class="pile draw-pile" id="draw-pile">
+            <b id="draw-count">0</b><span>DRAW</span>
           </div>
+          <div class="ap-orb" id="ap-orb"><b id="ap-now">3</b><span>AP</span></div>
           <div class="hand" id="hand"></div>
-          <button class="end-turn" id="end-turn"><b>END</b><span>TURN</span></button>
+          <div class="ego-dock">
+            <div class="ep-row">
+              <span class="ep-label">EP</span>
+              <div class="ep-pips" id="ep-pips"></div>
+              <span class="ep-num" id="ep-num">0/7</span>
+            </div>
+            <div class="ego-list" id="ego-list"></div>
+          </div>
+          <div class="pile grave-pile" id="grave-pile">
+            <b id="grave-count">0</b><i id="grave-used">+0</i><span>GRAVE</span>
+          </div>
+          <button class="end-turn" id="end-turn"><span class="chk">✓</span><b>END<br />TURN</b></button>
         </footer>
+
+        <div class="battle-log" id="battle-log"></div>
+        <div class="log-toggle" id="log-toggle">LOG</div>
       </section>
 
       <!-- ================= RESULT ================= -->
@@ -89,6 +108,7 @@
         <div class="overlay-card">
           <h1 id="overlay-title">—</h1>
           <p id="overlay-sub">—</p>
+          <div class="overlay-stats" id="overlay-stats"></div>
           <button class="btn-primary big" id="overlay-btn">CONTINUE</button>
           <button class="btn-ghost" id="overlay-retry">RETRY</button>
         </div>

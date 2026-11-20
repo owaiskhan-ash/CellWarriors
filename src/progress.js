@@ -1,23 +1,23 @@
-// Save state v3 — cleared missions and the saved team of three.
+// Save state v4 — cleared missions + the chosen team of three.
 import { MISSIONS, CHARACTERS } from './data.js';
 
-const KEY = 'cellwarriors.save.v3';
+const KEY = 'cellwarriors.save.v4';
 const DEFAULT_TEAM = ['kaito', 'momo', 'goro'];
 
 export function defaultProgress() {
-  return { version: 3, cleared: [], team: [...DEFAULT_TEAM] };
+  return { version: 4, cleared: [], team: [...DEFAULT_TEAM] };
 }
 
 export function loadProgress() {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(KEY) || localStorage.getItem('cellwarriors.save.v3');
     if (!raw) return defaultProgress();
     const p = JSON.parse(raw);
-    if (!p || p.version !== 3) return defaultProgress();
+    if (!p) return defaultProgress();
     const team = Array.isArray(p.team) ? p.team.filter((id) => CHARACTERS[id]).slice(0, 3) : [...DEFAULT_TEAM];
     return {
-      version: 3,
-      cleared: Array.isArray(p.cleared) ? p.cleared.filter((id) => MISSIONS.some((m) => m.id === id)) : [],
+      version: 4,
+      cleared: Array.isArray(p.cleared) ? p.cleared.filter((id) => MISSIONS.some((m) => m.code === id)) : [],
       team: team.length === 3 ? team : [...DEFAULT_TEAM],
     };
   } catch {
@@ -36,6 +36,7 @@ export function saveProgress(p) {
 export function resetProgress() {
   try {
     localStorage.removeItem(KEY);
+    localStorage.removeItem('cellwarriors.save.v3');
   } catch {
     /* ignore */
   }
@@ -43,5 +44,5 @@ export function resetProgress() {
 }
 
 export function missionUnlocked(p, index) {
-  return index === 0 || p.cleared.includes(MISSIONS[index - 1].id);
+  return index === 0 || p.cleared.includes(MISSIONS[index - 1].code);
 }
