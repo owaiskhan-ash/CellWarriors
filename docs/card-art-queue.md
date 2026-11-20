@@ -11,7 +11,7 @@ lines), thick black outlines, flat two-tone cel shading, no text/watermark.
 Output: `images/cards/<card-id>.jpg`, then add the id to `CARD_ART` in
 `src/ui.js`. Generator limit: 10 images per turn — batch by character.
 
-## Done (29/70)
+## Done (39/70)
 - [x] Kaito complete (15): k_jab, k_brace, k_rush, k_first, k_last, k_up,
   k_flurry, k_berserk, k_reap, k_execute, k_rally, k_feint, k_supply,
   tok_cut, breakdown_kaito
@@ -36,9 +36,8 @@ m_aegis, m_reflect, m_formation, m_splint, breakdown_momo.
 Locked: child proportions, silver-white messy hair + ahoge, teal eyes, oversized
 hi-vis vest #D6E821, giant red first-aid kit wider than her torso. Never a weapon.
 
-## Pending — Goro / Macrophage (13)
-g_strike, g_guard, g_cleave, g_devour, g_hymn, g_up, g_catalyst, g_purge,
-g_symbiosis, g_feast_up, g_tonic, g_broth, breakdown_goro.
+## Pending — Goro / Macrophage (3)
+g_tonic, g_broth, breakdown_goro.
 Locked: 198cm hulking, shaved grey stubble, heavy long white coat, brown
 cross-straps, 120cm chipped cleaver on shoulder, calm half-lidded eyes.
 
