@@ -440,6 +440,54 @@ export const ENEMIES = {
                 ],
                 mods: ['regen'],
                 intents: [{ type: 'attack', value: 21 }, { type: 'attack', value: 21 }, { type: 'charge', value: 52, turns: 2 }] },
+
+  // Simulation-only target. HP is forced to 999,999 by the Simulation Chamber;
+  // behaviour / weakness / tenacity are reconfigured there per test.
+  sim_colossus: { id: 'sim_colossus', name: 'Training Colossus', hp: 999999, tenacity: 140, counter: 4, weakness: 'passion', boss: true,
+                intents: [{ type: 'attack', value: 8 }, { type: 'attack', value: 8 }, { type: 'debuff', value: 8 }] },
+};
+
+// ---------------------------------------------------------------------------
+// Character playbooks — shown in Character Details and used for Sim Trials.
+// Written from the actual engine rules so the guide never lies.
+// ---------------------------------------------------------------------------
+export const CHARACTER_GUIDES = {
+  kaito: {
+    difficulty: 'Easy to start · Hard to perfect', fantasy: 'A pressure fighter who turns pain, speed and repeated hits into one enormous Fury payoff.',
+    core: 'Fury is stored damage. It does almost nothing sitting there — cards that say “per Fury”, “consume Fury” or “scale with Fury” turn each stack into real damage.',
+    loop: ['Hit often with cheap Attacks to build Fury (Cytokine Jab, Overclock).', 'Let small Stress gains feed you — every Stress gain gives Kaito +1 Fury — but never drift to 100 Stress.', 'Spend the stack: Last Shift consumes all Fury, Apex Cleaver scales without consuming it.'],
+    combo: ['Turn 1: Overclock → Cytokine Jab ×2 (Fury starts flowing every Attack).', 'Blade Rush after any Attack for Combo + Bleed, which also triggers Bleed again on later hits.', 'Fever Surge when a finisher is in hand: +Strength, +Fury, guaranteed Crit.', 'Last: Last Shift as your final AP spend — Finale + guaranteed Crit + all Fury consumed.'],
+    tips: ['Multi-hit cards love Strength: each hit gets +Strength separately.', 'Retain Apex Cleaver: it gets cheaper and stronger every turn you hold it.', 'At Stress ≥ 50 Apex Cleaver gains +50% — dangerous, deliberate, very Kaito.'],
+    partners: 'Momo feeds him Counter-Fury through PHALANX and keeps him alive; Bibi Marks the target (+50%) before he spends Fury.',
+    simGoal: 'Reach 8 Fury, break the Colossus, then land a 60+ damage hit.',
+  },
+  momo: {
+    difficulty: 'Easy', fantasy: 'A wall that hits back. Momo turns Shield — normally pure defence — into Counter damage and giant Aegis Slams.',
+    core: 'Shield blocks damage and therefore blocks Stress. Barricade lets Shield survive the turn change, so defence can be saved up and spent as offence.',
+    loop: ['Gain Shield every turn (Guard Stance, Stand Firm, Field Protocol).', 'Let enemies hit the wall: Counter retaliates even when Shield absorbs everything.', 'Cash the wall in with Aegis Slam: damage equal to 100% of total team Shield.'],
+    combo: ['Field Protocol early — free Shield every turn, forever.', 'Stand Firm to Taunt + keep 50–100% Shield, then Guard Stance to stack Counter.', 'Platelet Deploy for team Shield + free Micro-Cut attacks.', 'Aegis Slam only when the team Shield total is fat — check the card’s live number.'],
+    tips: ['Counter = Counter stacks + Strength, and it can hit Weakness, Mark and Vulnerable multipliers.', 'A fully blocked hit causes zero Stress. Shield is mental-health care.', 'Spiked Scaffold turns every Shield gain into Counter + thorns damage.'],
+    partners: 'Goro heals and purifies her Shield turns into Strength; Kaito spends the turns she buys him building Fury.',
+    simGoal: 'Hold 30+ Shield at once, deal Counter damage, then land a 50+ Aegis Slam.',
+  },
+  goro: {
+    difficulty: 'Medium', fantasy: 'A slow apocalypse. Goro stacks Bleed and Toxin, doubles them, detonates them, and heals his team with the result.',
+    core: 'Bleed triggers when the enemy is hit and when detonated. Toxin ticks hard whenever the enemy acts. Both ignore the normal “one hit” limit — they scale with patience.',
+    loop: ['Apply Bleed/Toxin with almost every card (Scalpel, Cleave).', 'Double the stacks with Enzyme Catalyst instead of hitting again.', 'Detonate with Lysis Detonation — and heal the team for 30% of the eruption.'],
+    combo: ['The Wall early: bigger Shields and healing that also grants Fury.', 'Cleave into a crowd for Bleed + Vulnerable (+35% taken) on everything.', 'Enzyme Catalyst on the fattest stack — doubling 12 is worth more than adding 3.', 'Lysis Detonation to cash out, heal, and often break Tenacity for free AP.'],
+    tips: ['Detonated status damage can break Tenacity and trigger Ravage — watch the amber bar.', 'Purify: healing someone to full grants Strength. Overhealing is a buff engine.', 'Retrieve (Lullaby) fishes your best Attack out of the Graveyard at a discount.'],
+    partners: 'Bibi adds CASCADE (+1 stack per application) and Mark; Momo keeps everyone alive while the statuses cook.',
+    simGoal: 'Build 12+ combined Bleed/Toxin on the Colossus, then detonate it.',
+  },
+  bibi: {
+    difficulty: 'Hard', fantasy: 'A signal DJ. Bibi floods the hand with free Sparks, Marks one target for deletion, and bends Resonance into double-cast Attacks.',
+    core: 'Resonance is built by Skills and Sparks. At 5+, a heavy Attack Bursts for ×1.6. Prism Echo makes the next Attack fire twice — multipliers stack multiplicatively.',
+    loop: ['Play Skills and 0-AP Sparks to climb Resonance without spending the turn.', 'Mark + Vulnerable the target (Flare) before anyone spends anything big.', 'Prism → biggest Attack in hand. Then do it again next turn.'],
+    combo: ['Cross-talk early: +1 draw every turn and Exhausts that damage + grant EP.', 'Overdrive (0 AP) for AP, Resonance and a Spark — it does not tick enemy counters.', 'Signal Prism, then Resonance Singularity into a Marked target for a screen-shaking number.', 'Degranulate when the hand is thin: 3–4 free Sparks refill both hand and Resonance.'],
+    tips: ['Haste cards (0-AP Sparks, Overdrive) do not advance enemy action counters. Free is really free.', 'Void Cascade scales with every card you have Exhausted all fight — it is a late-game bomb.', 'Echo copies the whole Attack, including Weakness, Mark, Burst and Crit multipliers.'],
+    partners: 'Kaito is her favourite Echo target (EDGE synergy: +1 AP and Chain damage); Goro detonates what her Marks amplify.',
+    simGoal: 'Reach 8 Resonance, Mark the Colossus, and land a 60+ hit.',
+  },
 };
 
 export const ENCOUNTERS = {
