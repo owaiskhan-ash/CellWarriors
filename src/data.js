@@ -774,7 +774,17 @@ export const MISSIONS = [
       { art: 'images/story/m01-08-engage.jpg', who: 'Mission 01 — Cutline', text: 'The chain coils. Three dark eyes. No mouth. It has already answered. Hold the breach.' },
     ] },
   { code: 'm02', name: 'Drain Line', place: 'Lymph Node 04', threat: 'Low', rec: 'order', reward: 50, enemies: ['toxin', 'spore'],
-    story: ['Lymph Node 04 runs hot and swollen.', 'Endotoxin moved in through the drain and brought its own spores.', 'Momo holds the corridor. Nobody else fits.'] },
+    // Scripted story beats: { art, who, text } — art lives in images/story/.
+    story: [
+      { art: 'images/story/m02-01-node.jpg', who: 'Lymph Node 04', text: 'Lymph Node 04 runs hot and swollen — the body\'s filter, cooking in its own fever.' },
+      { art: 'images/story/m02-02-toxin.jpg', who: 'The Drain', text: 'Endotoxin came up through the drain and made itself at home. It does not chase. It leaks — and lets the current do the chasing.' },
+      { art: 'images/story/m02-03-spores.jpg', who: 'The Drain', text: 'And it brought seeds. Spore Nodes riding the lymph, every one a tiny locked door with something growing behind it.' },
+      { art: 'images/story/m02-04-momo.jpg', who: 'Momo — Platelet', text: 'Node\'s at thirty-nine degrees and CLIMBING! If this drain clogs, the whole arm goes septic!' },
+      { art: 'images/story/m02-05-goro.jpg', who: 'Goro — Macrophage', text: '…Corridor\'s too small. I hold the door out here. In there — it\'s you, kid.' },
+      { art: 'images/story/m02-06-hold.jpg', who: 'Momo — Platelet', text: 'Then I hold the corridor! Patch, seal, barrier — that\'s the job. That\'s MY job!' },
+      { art: 'images/story/m02-07-loom.jpg', who: 'Lymph Node 04', text: 'The blob swells to fill the drain. The spores turn, all at once, like seeds hearing rain.' },
+      { art: 'images/story/m02-08-engage.jpg', who: 'Mission 02 — Drain Line', text: 'Kit down. Barrier up. Hold the corridor — nothing gets through Momo.' },
+    ] },
   { code: 'm03', name: 'The Thicket', place: 'Deep Tissue — Biofilm Bloom', threat: 'Medium', rec: 'justice', reward: 65, enemies: ['biofilm', 'strep'],
     story: ['A biofilm has grown over the wound bed like a city nobody planned.', 'Antibodies bounce off it. Goro has to eat through.', 'This is the first time the team fights something that fights back with a plan.'] },
   { code: 'm04', name: 'Signal Rot', place: 'Spinal Relay — Night', threat: 'High', rec: 'void', reward: 80, enemies: ['strain', 'toxin'],
