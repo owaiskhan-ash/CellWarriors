@@ -12,24 +12,42 @@
       <!-- ================= TITLE ================= -->
       <section id="view-title" class="view">
         <div class="title-bg"></div>
+        <div class="title-top">
+          <div class="cells-pill" title="Meta Cells currency">⛁ <b id="title-cells">0</b></div>
+          <button class="icon-btn" id="btn-mute-title" title="Toggle sound">🔊</button>
+        </div>
         <div class="title-inner">
           <img class="title-logo" src="./images/logo-transparent.png" alt="Cell Warriors" />
           <p class="title-tag">THE BODY IS THE BATTLEFIELD</p>
-          <button class="btn-primary big" id="btn-start">ENTER</button>
-          <button class="btn-ghost tiny" id="btn-reset">reset save</button>
+          <div class="title-actions">
+            <button class="btn-primary big hidden" id="btn-resume-run">CONTINUE RUN</button>
+            <button class="btn-primary big" id="btn-start">CHAOS EXPEDITION</button>
+            <div class="title-sub-actions">
+              <button class="btn-ghost" id="btn-missions-mode">STORY MISSIONS</button>
+              <button class="btn-ghost" id="btn-open-lab">CELL LAB</button>
+              <button class="btn-ghost tiny" id="btn-reset">reset save</button>
+            </div>
+          </div>
         </div>
       </section>
 
       <!-- ================= ROSTER ================= -->
       <section id="view-roster" class="view hidden">
         <header class="screen-head">
+          <button class="btn-ghost tiny" id="btn-roster-back">←</button>
           <div class="head-left">
-            <h1>COMBATANTS</h1>
-            <span class="head-sub">Pick three. Their decks shuffle together.</span>
+            <h1 id="roster-title">COMBATANTS</h1>
+            <span class="head-sub">Pick three. Slot 1 is Team Leader. Their decks shuffle together.</span>
           </div>
+          <div class="mode-switch">
+            <button class="chip-btn active" id="mode-chaos">CHAOS RUN</button>
+            <button class="chip-btn" id="mode-story">STORY</button>
+          </div>
+          <div class="cells-pill">⛁ <b id="roster-cells">0</b></div>
           <span class="team-count" id="team-count">0 / 3</span>
         </header>
         <div class="roster" id="roster"></div>
+        <div class="synergy-preview" id="synergy-preview"></div>
         <div class="roster-foot">
           <div class="team-strip" id="team-strip"></div>
           <button class="btn-primary" id="btn-deploy" disabled>DEPLOY</button>
@@ -41,6 +59,7 @@
         <header class="screen-head">
           <button class="btn-ghost tiny" id="btn-missions-back">←</button>
           <div class="head-left"><h1>MISSIONS</h1><span class="head-sub" id="mission-team"></span></div>
+          <div class="cells-pill">⛁ <b id="missions-cells">0</b></div>
         </header>
         <div class="mission-list" id="mission-list"></div>
       </section>
@@ -53,6 +72,124 @@
           <div class="story-who" id="story-who"></div>
           <div class="story-text" id="story-text"></div>
           <button class="btn-primary" id="btn-story-next">NEXT</button>
+        </div>
+      </section>
+
+      <!-- ================= CHAOS MAP ================= -->
+      <section id="view-map" class="view hidden">
+        <header class="screen-head map-head">
+          <div class="head-left">
+            <h1>CHAOS SECTOR</h1>
+            <span class="head-sub" id="map-floor">FLOOR 0 / 11 · PICK A ROUTE</span>
+          </div>
+          <div class="map-team" id="map-team"></div>
+          <div class="map-meta">
+            <span class="meta-chip" title="Sands of Time">⧗ <b id="map-sands">3</b></span>
+            <span class="meta-chip gold" title="Run Currency">⛁ <b id="map-cells">0</b></span>
+            <button class="btn-ghost tiny" id="btn-map-deck">DECK (<span id="map-deck-n">21</span>)</button>
+            <button class="btn-ghost tiny" id="btn-map-quit">EXIT</button>
+          </div>
+        </header>
+        <div class="relic-bar" id="map-relics"></div>
+        <div class="map-wrap" id="map-wrap">
+          <svg class="map-lines" id="map-lines"></svg>
+          <div class="map-floors" id="map-floors"></div>
+        </div>
+      </section>
+
+      <!-- ================= EVENT ================= -->
+      <section id="view-event" class="view hidden">
+        <div class="event-art" id="event-art"></div>
+        <div class="story-scrim"></div>
+        <div class="event-card">
+          <div class="event-tag">CHAOS ANOMALY</div>
+          <h1 id="event-name">—</h1>
+          <p id="event-text">—</p>
+          <div class="event-choices" id="event-choices"></div>
+          <div class="event-outcome hidden" id="event-outcome">
+            <ul id="event-outcome-lines"></ul>
+            <button class="btn-primary" id="btn-event-done">CONTINUE</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SHOP ================= -->
+      <section id="view-shop" class="view hidden">
+        <header class="screen-head">
+          <div class="head-left">
+            <h1>VESICLE EXCHANGE</h1>
+            <span class="head-sub">Buy cards, acquire a relic, or purge dead weight from your deck.</span>
+          </div>
+          <div class="cells-pill">⛁ <b id="shop-cells">0</b></div>
+          <button class="btn-ghost tiny" id="btn-shop-deck">DECK</button>
+          <button class="btn-primary" id="btn-shop-leave">LEAVE SHOP</button>
+        </header>
+        <div class="shop-body">
+          <div class="shop-section">
+            <div class="shop-label">CARDS IN STOCK</div>
+            <div class="shop-cards" id="shop-cards"></div>
+          </div>
+          <div class="shop-side">
+            <div class="shop-label">ANTIBODY RELIC</div>
+            <div class="shop-relic" id="shop-relic"></div>
+            <div class="shop-label" style="margin-top:16px">DECK PURGE</div>
+            <button class="shop-service" id="btn-shop-remove">
+              <b>REMOVE A CARD</b>
+              <span>Permanently purge 1 card (incl. Curses)</span>
+              <i id="shop-remove-cost">⛁ 60</i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= REST ================= -->
+      <section id="view-rest" class="view hidden">
+        <header class="screen-head">
+          <div class="head-left">
+            <h1>MARROW SANCTUARY</h1>
+            <span class="head-sub">Choose ONE action before advancing. Choices are mutually exclusive.</span>
+          </div>
+        </header>
+        <div class="rest-body">
+          <div class="rest-team" id="rest-team"></div>
+          <div class="rest-choices" id="rest-choices">
+            <button class="rest-card" id="btn-rest-heal">
+              <span class="rest-icon">✚</span>
+              <b>REST &amp; REPAIR</b>
+              <span>Heal 30% Max HP for every combatant.</span>
+            </button>
+            <button class="rest-card" id="btn-rest-calm">
+              <span class="rest-icon">☾</span>
+              <b>DE-STRESS</b>
+              <span>Clear 40 Stress across the whole squad.</span>
+            </button>
+            <button class="rest-card" id="btn-rest-upgrade">
+              <span class="rest-icon">✦</span>
+              <b>EVOLVE CARD (+)</b>
+              <span>Upgrade one card in your deck to its + variant.</span>
+            </button>
+          </div>
+          <div class="rest-outcome hidden" id="rest-outcome">
+            <p id="rest-outcome-text">—</p>
+            <button class="btn-primary" id="btn-rest-done">RETURN TO MAP</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= POST-BATTLE DRAFT ================= -->
+      <section id="view-reward" class="view hidden">
+        <div class="reward-panel">
+          <div class="reward-top">
+            <span class="rank-chip" id="reward-rank">S</span>
+            <div>
+              <h1 id="reward-title">SECTOR CLEARED</h1>
+              <span class="head-sub" id="reward-cells">+18 cells gained</span>
+            </div>
+          </div>
+          <div class="reward-relic hidden" id="reward-relic"></div>
+          <div class="shop-label">DRAFT ONE CARD TO YOUR RUN DECK</div>
+          <div class="reward-cards" id="reward-cards"></div>
+          <button class="btn-ghost" id="btn-reward-skip">SKIP DRAFT</button>
         </div>
       </section>
 
@@ -75,18 +212,23 @@
           <div class="hud-title">
             <b id="b-mission">—</b>
             <span id="b-place">—</span>
+            <div class="hud-pills">
+              <div class="battle-relics" id="battle-relics"></div>
+              <div class="battle-synergy" id="battle-synergy"></div>
+            </div>
           </div>
           <div class="hud-tools">
+            <button class="icon-btn" id="btn-mute" title="Toggle sound">🔊</button>
             <button class="icon-btn" id="log-toggle" title="Battle log">▤</button>
             <button class="icon-btn" id="btn-menu" title="Menu">☰</button>
           </div>
         </header>
 
-        <div class="battle-stage">
+        <div class="battle-stage" id="battle-stage">
           <!-- left rail -->
           <aside class="rail rail-left">
             <div class="turn-plate"><span>TURN</span><b id="b-turn">1</b></div>
-            <div class="pile-box" id="draw-pile" title="Draw pile">
+            <div class="pile-box" id="draw-pile" title="Inspect draw pile">
               <b id="draw-count">0</b><span>DRAW</span>
             </div>
             <div class="rail-ep">
@@ -113,7 +255,7 @@
                 <button data-sand="3"><b>3</b><span>Rewind turn</span></button>
               </div>
             </div>
-            <div class="pile-box grave" id="grave-pile" title="Graveyard">
+            <div class="pile-box grave" id="grave-pile" title="Inspect graveyard">
               <b id="grave-count">0</b><i id="grave-used">+0</i><span>GRAVE</span>
             </div>
             <button class="end-turn" id="end-turn" title="End turn"><span>✓</span></button>
@@ -133,6 +275,22 @@
 
         <div class="battle-log hidden" id="battle-log"></div>
         <div class="dmg-rail" id="dmg-rail"></div>
+        <div class="bark-toast hidden" id="bark-toast"></div>
+        <div class="impact-flash hidden" id="impact-flash"></div>
+        <div class="slowmo-banner hidden" id="slowmo-banner"></div>
+      </section>
+
+      <!-- ================= RANK SCREEN ================= -->
+      <section id="view-rank" class="view hidden">
+        <div class="rank-panel">
+          <div class="rank-emblem" id="rank-letter">S</div>
+          <h1 id="rank-title">EXPEDITION CLEAR</h1>
+          <p id="rank-sub">—</p>
+          <div class="rank-stats" id="rank-stats"></div>
+          <div class="rank-cells" id="rank-cells"></div>
+          <div class="rank-xp" id="rank-xp"></div>
+          <button class="btn-primary big" id="btn-rank-done">CONTINUE</button>
+        </div>
       </section>
 
       <!-- card detail (long press) -->
@@ -144,6 +302,7 @@
             <div class="detail-sub" id="detail-sub">—</div>
             <div class="detail-math" id="detail-math"></div>
             <p class="detail-text" id="detail-text">—</p>
+            <div class="detail-up" id="detail-up"></div>
             <div class="detail-tags" id="detail-tags"></div>
             <div class="detail-hint">tap anywhere to close</div>
           </div>
@@ -163,13 +322,43 @@
         <div class="cutin-card" id="cutin-card"></div>
       </div>
 
+      <!-- deck / pile modal (view, remove, or upgrade) -->
+      <div class="modal hidden" id="deck-modal">
+        <div class="modal-panel deck-panel">
+          <header class="modal-head">
+            <div>
+              <h2 id="deck-modal-title">RUN DECK</h2>
+              <span class="head-sub" id="deck-modal-sub">—</span>
+            </div>
+            <button class="btn-ghost tiny" id="deck-modal-close">CLOSE</button>
+          </header>
+          <div class="deck-grid" id="deck-modal-grid"></div>
+        </div>
+      </div>
+
+      <!-- character progression lab modal -->
+      <div class="modal hidden" id="lab-modal">
+        <div class="modal-panel lab-panel">
+          <header class="modal-head">
+            <div>
+              <h2>CELL ENHANCEMENT LAB</h2>
+              <span class="head-sub">Spend earned Cells to raise Levels, Awakenings, and Skill Potency.</span>
+            </div>
+            <div class="cells-pill">⛁ <b id="lab-cells">0</b></div>
+            <button class="btn-ghost tiny" id="lab-close">CLOSE</button>
+          </header>
+          <div class="lab-tabs" id="lab-tabs"></div>
+          <div class="lab-body" id="lab-body"></div>
+        </div>
+      </div>
+
       <!-- pause -->
       <div class="pause hidden" id="pause">
         <div class="pause-card">
           <h1>PAUSED</h1>
           <button class="btn-primary" id="pause-resume">RESUME</button>
           <button class="btn-ghost" id="pause-restart">RESTART FIGHT</button>
-          <button class="btn-ghost" id="pause-quit">QUIT TO MISSIONS</button>
+          <button class="btn-ghost" id="pause-quit">QUIT TO MAP</button>
         </div>
       </div>
 

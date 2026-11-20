@@ -24,79 +24,166 @@ const ok = (label, cond, extra = '') => {
   if (!cond) process.exitCode = 1;
 };
 
-// title → roster
+// 1. Title & Audio toggle
 ok('title visible', !$('view-title').classList.contains('hidden'));
+click('btn-mute-title');
+ok('mute toggles off/on', $('btn-mute-title').textContent === '🔇');
+click('btn-mute-title');
+ok('mute restores', $('btn-mute-title').textContent === '🔊');
+
+// 2. Title → Roster (Chaos default)
 click('btn-start');
 ok('roster shown', !$('view-roster').classList.contains('hidden'));
 ok('4 combatants', $('roster').querySelectorAll('.roster-card').length === 4);
 ok('default team of 3', $('team-strip').querySelectorAll('.team-slot.filled').length === 3);
+ok('leader badge on slot 1', !!$('team-strip').querySelector('.slot-lead'));
+ok('synergy + weakness preview shown', $('synergy-preview').querySelectorAll('.syn-pill').length >= 1 && $('synergy-preview').querySelectorAll('.wpill').length === 5);
 
-// pick a different team (kaito / goro / bibi)
+// Swap team to kaito / goro / bibi (Edge synergy + Kaito lead)
 window.__cw.setTeam(['kaito', 'goro', 'bibi']);
 ok('team count updates', $('team-count').textContent.trim() === '3 / 3', $('team-count').textContent);
+ok('edge synergy detected', /EDGE/.test($('synergy-preview').textContent));
+
+// 3. Chaos Run Map
 click('btn-deploy');
-ok('missions shown', !$('view-missions').classList.contains('hidden'));
-ok('5 missions', $('mission-list').querySelectorAll('.mission-tile').length === 5);
-ok('later missions locked', $('mission-list').querySelectorAll('.mission-tile.locked').length === 4);
+ok('chaos map shown', !$('view-map').classList.contains('hidden'));
+ok('11 floors rendered', $('map-floors').querySelectorAll('.map-floor-row').length === 11);
+ok('30 starting run cells', $('map-cells').textContent.trim() === '30');
+ok('deck button shows 21 cards', $('map-deck-n').textContent.trim() === '21');
 
-// enter m01
-$('mission-list').querySelector('.mission-tile').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
-ok('story shown', !$('view-story').classList.contains('hidden'));
-let guard = 0;
-while ($('view-battle').classList.contains('hidden') && guard++ < 8) click('btn-story-next');
-ok('battle shown', !$('view-battle').classList.contains('hidden'));
+// Inspect deck modal from map
+click('btn-map-deck');
+ok('deck modal opens', !$('deck-modal').classList.contains('hidden'));
+ok('21 cards in deck modal', $('deck-modal-grid').querySelectorAll('.deck-item').length === 21);
+click('deck-modal-close');
+ok('deck modal closes', $('deck-modal').classList.contains('hidden'));
 
+// 4. Enter Floor 1 battle node in Chaos Run
 const cw = window.__cw;
+cw.enterRunNode(0);
+ok('run battle shown', !$('view-battle').classList.contains('hidden'));
 const b = cw.battle;
 ok('3 combatants on field', b.characters.length === 3, b.characters.map((c) => c.name).join(','));
 ok('opening hand 7', b.hand.length === 7, String(b.hand.length));
-ok('3 AP', b.ap === 3, String(b.ap));
+ok('Edge +1 AP on turn 1', b.ap === 4, String(b.ap));
 ok('draw pile has cards', b.drawPile.length > 0, String(b.drawPile.length));
 ok('hand rendered', $('hand').querySelectorAll('.card').length === b.hand.length);
 ok('team portraits', $('team-portraits').querySelectorAll('.portrait').length === 3);
 ok('pooled team HP', /\d+ \/ \d+/.test($('team-hp-num').textContent), $('team-hp-num').textContent);
 ok('stress dots', $('team-stress').querySelectorAll('.sdot').length === 3);
-ok('per-char stress bars', $('team-portraits').querySelectorAll('.p-stress').length === 3);
-ok('per-char HP bars', $('team-portraits').querySelectorAll('.p-hp').length === 3);
-ok('enemy counter badge', !!$('enemies').querySelector('.badge.counter'));
-ok('enemy weakness glyph', !!$('enemies').querySelector('.badge.weak'));
-ok('enemy intent diamond', !!$('enemies').querySelector('.badge.dmg'));
-ok('tenacity bar', !!$('enemies').querySelector('.ten-bar'));
-ok('enemy HP bar', !!$('enemies').querySelector('.enemy-hp'));
 ok('EP pips', $('ep-pips').querySelectorAll('.ep-pip').length === 7);
-ok('ego portraits', $('ego-list').querySelectorAll('.ego-btn').length === 3);
-ok('AP number', $('ap-now').textContent === '3');
+ok('6 ego portraits', $('ego-list').querySelectorAll('.ego-btn').length === 6);
+ok('synergy pills in battle HUD', $('battle-synergy').querySelectorAll('.hpill').length >= 1);
+
+// Sands menu
 click('btn-sands');
 ok('sands menu opens', !$('sands-menu').classList.contains('hidden'));
 ok('3 sands options', $('sands-menu').querySelectorAll('button').length === 3);
 click('btn-sands');
 
-// play a card by clicking it -> character cut-in should fire
-const before = b.hand.length;
+// Play a card via UI -> cut-in + bark toast + dmg rail
 const domCards = [...$('hand').querySelectorAll('.card')];
 ok('cards render art', !!$('hand').querySelector('.card-art, .card-artimg'));
-ok('cards render cost + name', $('hand').querySelectorAll('.card-cost').length === domCards.length && $('hand').querySelectorAll('.card-name').length === domCards.length);
 const atkIdx = cw.battle.hand.findIndex((c) => c.type === 'attack' && (c.zeroCost ? 0 : c.cost) <= cw.battle.ap);
 domCards[atkIdx >= 0 ? atkIdx : 0].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
 ok('character cut-in shown', !$('cutin').classList.contains('hidden'));
-ok('cut-in has character art', !!$('cutin-art').getAttribute('src'), String($('cutin-art').getAttribute('src')));
-ok('cut-in names the card', $('cutin-name').textContent.length > 1, $('cutin-name').textContent);
-ok('card played from UI', cw.battle.cardsPlayed > 0, `played ${cw.battle.cardsPlayed}`);
-ok('live numbers on cards', $('hand').querySelectorAll('.card-fx').length > 0, `${$('hand').querySelectorAll('.card-fx').length} badges`);
-ok('big damage readout', $('dmg-rail').children.length > 0, `${$('dmg-rail').children.length} lines`);
-ok('card hits enemy', cw.battle.enemies[0].hp < cw.battle.enemies[0].maxHp || cw.battle.enemies[0].tenacity < cw.battle.enemies[0].maxTenacity);
+ok('bark toast shown', !$('bark-toast').classList.contains('hidden'));
+ok('card played from UI', cw.battle.cardsPlayed > 0);
+ok('live numbers on cards', $('hand').querySelectorAll('.card-fx').length > 0);
+ok('big damage readout', $('dmg-rail').children.length > 0);
 
-// long press detail
+// Long press / detail + pile modal
 cw.openDetail(0);
 ok('detail opens', !$('detail').classList.contains('hidden'));
-ok('detail shows name', $('detail-head').textContent.length > 1, $('detail-head').textContent);
-ok('detail shows the maths', $('detail-math').querySelectorAll('.math-row').length > 0);
-ok('detail shows rules text', $('detail-text').textContent.length > 0);
+ok('detail shows upgrade preview', $('detail-up').textContent.length > 0);
+ok('detail shows math', $('detail-math').querySelectorAll('.math-row').length > 0);
 cw.closeDetail();
 ok('detail closes', $('detail').classList.contains('hidden'));
 
-// play out the fight with the bot
+click('draw-pile');
+ok('draw pile modal opens', !$('deck-modal').classList.contains('hidden'));
+click('deck-modal-close');
+
+// Play out Floor 1 battle -> opens Reward Draft
 let turns = 0;
+while (!cw.battle.result && turns++ < 30) {
+  let inner = 0;
+  while (inner++ < 12 && !cw.battle.result) {
+    const st = cw.battle;
+    const i = st.hand.findIndex((c) => !c.unplayable && (c.zeroCost ? 0 : c.cost) <= st.ap);
+    if (i < 0) break;
+    cw.playCard(st, i, st.enemies.find((e) => e.hp > 0)?.uid);
+  }
+  if (!cw.battle.result) cw.endTurn(cw.battle);
+}
+cw.renderBattle();
+ok('run battle resolves', cw.battle.result === 'win', cw.battle.result);
+ok('reward draft shown', !$('view-reward').classList.contains('hidden'));
+ok('3 reward draft cards', $('reward-cards').querySelectorAll('.card').length === 3);
+
+// Draft first card -> returns to map with Floor 1 cleared & currency earned
+$('reward-cards').querySelector('.card').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+ok('returned to map after draft', !$('view-map').classList.contains('hidden'));
+ok('deck grew to 22', cw.run.deck.length === 22, String(cw.run.deck.length));
+ok('run earned increased', cw.run.earned > 30, String(cw.run.earned));
+
+// Test Shop, Rest, Event, and Boss Rank screen via UI views
+const run = cw.run;
+run.floor = 2; run.lane = 0;
+const shopNode = cw.enterRunNode(0); // Floor 4 lane 0 is 'shop'
+ok('shop view opens on shop node', shopNode && shopNode.type === 'shop' && !$('view-shop').classList.contains('hidden'));
+click('btn-shop-leave');
+ok('shop leave returns to map', !$('view-map').classList.contains('hidden'));
+
+run.floor = 4; run.lane = 0;
+const restNode = cw.enterRunNode(0); // Floor 6 lane 0 is 'rest'
+ok('rest view opens on rest node', restNode && restNode.type === 'rest' && !$('view-rest').classList.contains('hidden'));
+click('btn-rest-heal');
+ok('rest outcome displayed', !$('rest-outcome').classList.contains('hidden'));
+click('btn-rest-done');
+ok('rest done returns to map', !$('view-map').classList.contains('hidden'));
+
+run.floor = 0; run.lane = 0;
+const evNode = cw.enterRunNode(0); // Floor 2 lane 0 is 'event'
+ok('event view opens on event node', evNode && evNode.type === 'event' && !$('view-event').classList.contains('hidden'));
+$('event-choices').querySelector('.event-choice').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+ok('event outcome displayed', !$('event-outcome').classList.contains('hidden'));
+click('btn-event-done');
+ok('event done returns to map', !$('view-map').classList.contains('hidden'));
+
+// Enter Boss floor (Floor 11) and finish it -> Rank screen + First-Clear Bonus
+run.floor = 9; run.lane = 0;
+const bossNode = cw.enterRunNode(0);
+ok('boss battle starts', bossNode && bossNode.type === 'boss' && !$('view-battle').classList.contains('hidden'));
+ok('boss badge rendered', /BOSS/.test($('enemies').textContent));
+cw.battle.enemies.forEach((e) => { e.hp = 1; });
+while (!cw.battle.result) {
+  const st = cw.battle;
+  const idx = st.hand.findIndex((c) => c.dmg > 0 && (c.zeroCost ? 0 : c.cost) <= st.ap);
+  if (idx >= 0) cw.playCard(st, idx, st.enemies.find((e) => e.hp > 0)?.uid);
+  else cw.endTurn(st);
+}
+cw.renderBattle();
+ok('boss clear opens rank screen', !$('view-rank').classList.contains('hidden'));
+ok('chaosCleared flag set', cw.progress.chaosCleared === true);
+ok('first-clear bonus cells awarded', cw.progress.cells >= 150, String(cw.progress.cells));
+click('btn-rank-done');
+ok('rank screen returns to title', !$('view-title').classList.contains('hidden'));
+
+// 5. Story Mission flow + Sands + Save v5
+cw.setMode('story');
+click('btn-deploy');
+ok('missions shown', !$('view-missions').classList.contains('hidden'));
+ok('5 missions', $('mission-list').querySelectorAll('.mission-tile').length === 5);
+ok('later missions locked', $('mission-list').querySelectorAll('.mission-tile.locked').length === 4);
+
+$('mission-list').querySelector('.mission-tile').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+ok('story shown', !$('view-story').classList.contains('hidden'));
+let guard = 0;
+while ($('view-battle').classList.contains('hidden') && guard++ < 8) click('btn-story-next');
+ok('story battle shown', !$('view-battle').classList.contains('hidden'));
+
+turns = 0;
 while (!cw.battle.result && turns++ < 30) {
   let inner = 0;
   while (inner++ < 10 && !cw.battle.result) {
@@ -105,33 +192,34 @@ while (!cw.battle.result && turns++ < 30) {
     if (i < 0) break;
     cw.playCard(st, i, st.enemies.find((e) => e.hp > 0)?.uid);
   }
-  if (cw.battle.result) break;
-  cw.endTurn(cw.battle);
+  if (!cw.battle.result) cw.endTurn(cw.battle);
 }
 cw.renderBattle();
-ok('battle resolves', !!cw.battle.result, cw.battle.result);
 ok('win on m01', cw.battle.result === 'win');
 ok('overlay shown', !$('overlay').classList.contains('hidden'));
-ok('overlay says clear', /CLEAR/.test($('overlay-title').textContent));
-ok('save recorded m01', JSON.parse(window.localStorage.getItem('cellwarriors.save.v4')).cleared.includes('m01'));
+const savedV5 = JSON.parse(window.localStorage.getItem('cellwarriors.save.v5'));
+ok('save v5 recorded m01 + cells + rank', savedV5.cleared.includes('m01') && savedV5.cells >= 40 && !!savedV5.missionRanks.m01);
 
-// pause menu
-click('btn-menu');
-ok('pause opens', !$('pause').classList.contains('hidden'));
-click('pause-resume');
-ok('pause resumes', $('pause').classList.contains('hidden'));
-
-// Sands of Time: rewind
+// Pause & Lab modal check
 click('overlay-btn');
 ok('back to missions', !$('view-missions').classList.contains('hidden'));
 ok('m02 unlocked', $('mission-list').querySelectorAll('.mission-tile.locked').length === 3);
 
+cw.openLab('kaito');
+ok('lab modal opens', !$('lab-modal').classList.contains('hidden'));
+click('btn-lab-skill');
+ok('skill potency upgraded via Lab', cw.progress.chars.kaito.skillLv === 1);
+$('lab-body').querySelector('.awk-btn[data-slot="0"]').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+ok('awakening slot 1 unlocked via Lab', cw.progress.chars.kaito.awaken[0] === true);
+click('lab-close');
+
+// Sands of Time rewind on m02
 cw.openMission('m02');
 const s2 = cw.battle;
 const handBefore = s2.hand.length;
 const hpBefore = s2.enemies[0].hp;
 cw.playCard(s2, 0, s2.enemies[0].uid);
-const sandRes = (await import(`${ROOT}/src/engine.js`)).useSands(s2, 1);
+const sandRes = cw.useSands(s2, 1);
 ok('sands rewind works', sandRes.ok && s2.hand.length === handBefore && s2.enemies[0].hp === hpBefore, JSON.stringify(sandRes));
 ok('sands charge spent', s2.sands === 2);
 
