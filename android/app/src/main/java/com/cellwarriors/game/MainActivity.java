@@ -1,6 +1,7 @@
 package com.cellwarriors.game;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -216,8 +217,29 @@ public class MainActivity extends Activity {
         }
     }
 
-    /** JS-facing bridge: lets the web layer quit the app on a confirmed back. */
+    /** JS-facing bridge: quit, platform id, and a tiny key/value store. */
     public class AppBridge {
+        /* WebView DOM storage can be evicted by the system, and on some file://
+           origins it is not available at all. These two calls give the web layer
+           a durable place for small flags (tutorial seen, settings). */
+        @android.webkit.JavascriptInterface
+        public String getPref(String key) {
+            try {
+                return getSharedPreferences("cellwarriors", Context.MODE_PRIVATE).getString(key, null);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+
+        @android.webkit.JavascriptInterface
+        public void setPref(String key, String value) {
+            try {
+                getSharedPreferences("cellwarriors", Context.MODE_PRIVATE).edit()
+                        .putString(key, value).apply();
+            } catch (Exception ignored) {
+            }
+        }
+
         @android.webkit.JavascriptInterface
         public void finishActivity() {
             runOnUiThread(new Runnable() {

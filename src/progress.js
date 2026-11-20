@@ -24,13 +24,30 @@ export function defaultProgress() {
   };
 }
 
+/* localStorage can throw on an opaque origin (some file:// WebViews) or in
+   private mode. Every access is behind try/catch, and a session fallback keeps
+   the game playable (just not resumable across relaunches) if it is missing. */
+function ls() {
+  try { return window.localStorage; } catch { return null; }
+}
+const memoryStore = new Map();
+
+export function storageAvailable() {
+  const s = ls();
+  if (!s) return false;
+  try {
+    const k = '__cw_probe__';
+    s.setItem(k, '1');
+    s.removeItem(k);
+    return true;
+  } catch { return false; }
+}
+
 export function loadProgress() {
   try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) {
-      for (const k of OLD) { if (localStorage.getItem(k)) break; }
-      return defaultProgress();
-    }
+    const store = ls();
+    const raw = store ? store.getItem(KEY) : (memoryStore.get(KEY) || null);
+    if (!raw) return defaultProgress();
     const p = JSON.parse(raw);
     if (!p || p.version !== 5) return defaultProgress();
     const team = Array.isArray(p.team) ? p.team.filter((id) => CHARACTERS[id]).slice(0, 3) : [...DEFAULT_TEAM];
@@ -58,11 +75,17 @@ export function loadProgress() {
 }
 
 export function saveProgress(p) {
-  try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* private mode */ }
+  const raw = JSON.stringify(p);
+  memoryStore.set(KEY, raw);
+  try { const s = ls(); if (s) s.setItem(KEY, raw); } catch { /* private mode / opaque origin */ }
 }
 
 export function resetProgress() {
-  try { localStorage.removeItem(KEY); OLD.forEach((k) => localStorage.removeItem(k)); } catch { /* ignore */ }
+  memoryStore.clear();
+  try {
+    const s = ls();
+    if (s) { s.removeItem(KEY); OLD.forEach((k) => s.removeItem(k)); }
+  } catch { /* ignore */ }
   return defaultProgress();
 }
 

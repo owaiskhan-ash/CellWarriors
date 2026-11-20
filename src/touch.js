@@ -24,6 +24,36 @@ export const isAndroidApp = (() => {
   try { return !!(window.CWApp && typeof window.CWApp.platform === 'function'); } catch { return false; }
 })();
 
+/* ------------------------------------------------------------ 0. storage
+   localStorage throws outright on an opaque origin (file:// in some Android
+   WebViews, sandboxed frames). Every read in the game is already wrapped, but
+   calling it in the wrong place still aborts a module. This guard is the one
+   helper the rest of the code can rely on. */
+export function storageGet(key) {
+  try {
+    const v = window.localStorage.getItem(key);
+    if (v !== null && v !== undefined) return v;
+  } catch { /* opaque origin / private mode */ }
+  try {
+    if (window.CWApp && typeof window.CWApp.getPref === 'function') {
+      const v = window.CWApp.getPref(key);
+      return v === undefined ? null : v;
+    }
+  } catch { /* bridge missing */ }
+  return null;
+}
+export function storageSet(key, value) {
+  let done = false;
+  try { window.localStorage.setItem(key, value); done = true; } catch { /* ignore */ }
+  try {
+    if (window.CWApp && typeof window.CWApp.setPref === 'function') {
+      window.CWApp.setPref(key, String(value));
+      done = true;
+    }
+  } catch { /* ignore */ }
+  return done;
+}
+
 /* ---------------------------------------------------------------- 1. viewport */
 const VISUAL_MIN_W = 560; // below this the UI is unreadable in landscape
 

@@ -21,7 +21,7 @@ import {
   canSkillUp, skillUp, SKILL_COST,
 } from './progress.js';
 import { sfx, bark, isMuted, toggleMute, setSfxVolume, sfxDamage, sfxMajor, sfxBadgeHover, badgeHeartbeatStop, duckMix } from './audio.js';
-import { installPlatformBridge, installDoubleTapGuard, syncRootVars, updateAdaptiveUI, isAndroidApp } from './touch.js';
+import { installPlatformBridge, installDoubleTapGuard, syncRootVars, updateAdaptiveUI, storageGet, storageSet, isAndroidApp } from './touch.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, html) => {
@@ -3071,13 +3071,15 @@ function bind() {
   const TUT_KEY = 'cw_touch_tut_v1';
   const tut = $('touch-tut');
   const touchDevice = (() => { try { return (navigator.maxTouchPoints || 0) > 0 || 'ontouchstart' in window; } catch { return false; } })();
-  let tutSeen = true;
-  try { tutSeen = window.localStorage.getItem(TUT_KEY) === '1'; } catch { /* private mode */ }
+  // Default to "not seen": a player who has never dismissed it should learn the
+  // gestures. The flag is persisted through localStorage OR the Android
+  // SharedPreferences bridge, so it survives a WebView storage eviction.
+  const tutSeen = storageGet(TUT_KEY) === '1';
   if (tut && touchDevice && !tutSeen) {
     tut.classList.remove('hidden');
     const dismiss = () => {
       tut.classList.add('hidden');
-      try { window.localStorage.setItem(TUT_KEY, '1'); } catch { /* ignore */ }
+      storageSet(TUT_KEY, '1');
       sfx('click');
     };
     $('tt-dismiss').addEventListener('click', dismiss);
