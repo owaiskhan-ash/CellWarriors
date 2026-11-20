@@ -21,6 +21,7 @@ import {
   canSkillUp, skillUp, SKILL_COST,
 } from './progress.js';
 import { sfx, bark, isMuted, toggleMute, setSfxVolume, sfxDamage, sfxMajor, sfxBadgeHover, badgeHeartbeatStop, duckMix } from './audio.js';
+import { installPlatformBridge, installDoubleTapGuard, syncRootVars, updateAdaptiveUI, isAndroidApp } from './touch.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, html) => {
@@ -146,13 +147,27 @@ let exaltArmed = false;
 
 const VIEWS = ['title', 'roster', 'missions', 'story', 'map', 'event', 'shop', 'rest', 'reward', 'battle', 'rank', 'guide', 'character', 'sim'];
 const raf = (fn) => (typeof requestAnimationFrame !== 'undefined' ? requestAnimationFrame(fn) : fn());
+/* THE PHONE CONTRACT — one query, shared by CSS (styles-mobile.css) and JS
+   (hand sizing, back routing). Landscape phones are short and wide; this is
+   the single source of truth for "we are in the phone layout". */
+const PHONE_QUERY = '(orientation: landscape) and (min-width: 560px) and (max-width: 1000px) and (max-height: 560px)';
+const isPhoneLayout = () => {
+  try {
+    if (window.matchMedia) return window.matchMedia(PHONE_QUERY).matches;
+  } catch { /* jsdom without matchMedia */ }
+  const w = window.innerWidth || 0, h = window.innerHeight || 0;
+  return h > 0 && h <= 560 && w >= 560 && w <= 1000 && w > h;
+};
+let currentView = 'title';
 const showView = (name) => {
   VIEWS.forEach((v) => $('view-' + v).classList.toggle('hidden', v !== name));
   // Belt-and-braces: leaving the battle view always dismisses the
   // body-level result overlay so it can never strand the player.
   if (name !== 'battle') { const ov = $('overlay'); if (ov) ov.classList.add('hidden'); }
+  currentView = name;
   syncMeta();
   if (name === 'map') raf(drawMapLines);
+  raf(syncRootVars);
 };
 
 const ENEMY_ART = {
@@ -232,6 +247,18 @@ function syncMeta() {
   if ($('btn-mute')) $('btn-mute').innerHTML = ico(muteIcon);
   const hasActiveRun = !!(progress.run && !progress.run.finished);
   if ($('btn-resume-run')) $('btn-resume-run').classList.toggle('hidden', !hasActiveRun);
+}
+
+/* Touch-only feedback: the finger just picked a target, and without hover
+   there is nothing else on screen that says so. Reuses the bark toast slot. */
+let targetToastTimer = null;
+function toastTarget(name) {
+  const toast = $('bark-toast');
+  if (!toast) return;
+  toast.innerHTML = `<b style="color:#7ff3ea">TARGET</b>${name} · all single-target cards now hit this enemy`;
+  toast.classList.remove('hidden');
+  clearTimeout(targetToastTimer);
+  targetToastTimer = setTimeout(() => toast.classList.add('hidden'), 1500);
 }
 
 function showBark(charId, kind) {
@@ -1742,12 +1769,23 @@ function renderEnemies() {
         <div class="enemy-hint">HOLD TO INSPECT STATUS</div>
       </div>`;
 
-    let enemyPressTimer = null, enemyLongPressed = false;
-    node.addEventListener('pointerdown', () => {
+    let enemyPressTimer = null, enemyLongPressed = false, enemyDownX = 0, enemyDownY = 0;
+    node.addEventListener('pointerdown', (ev) => {
+      enemyDownX = ev.clientX; enemyDownY = ev.clientY;
       clearTimeout(enemyPressTimer);
-      enemyPressTimer = setTimeout(() => { enemyLongPressed = true; openEnemyDetail(e.uid); }, 380);
+      enemyPressTimer = setTimeout(() => {
+        enemyLongPressed = true;
+        node.classList.add('pressing');
+        openEnemyDetail(e.uid);
+      }, ev.pointerType === 'touch' ? 430 : 380);
     });
-    ['pointerup', 'pointerleave', 'pointercancel'].forEach((evName) => node.addEventListener(evName, () => clearTimeout(enemyPressTimer)));
+    node.addEventListener('pointermove', (ev) => {
+      if (!enemyPressTimer) return;
+      if (Math.hypot(ev.clientX - enemyDownX, ev.clientY - enemyDownY) > 12) clearTimeout(enemyPressTimer);
+    });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach((evName) => node.addEventListener(evName, () => {
+      clearTimeout(enemyPressTimer); enemyPressTimer = null; node.classList.remove('pressing');
+    }));
     node.addEventListener('contextmenu', (ev) => { ev.preventDefault(); openEnemyDetail(e.uid); });
     node.addEventListener('click', () => {
       if (enemyLongPressed) { enemyLongPressed = false; return; }
@@ -1755,6 +1793,8 @@ function renderEnemies() {
       sfx('click');
       battle.targetUid = e.uid;
       renderBattle();
+      // Touch has no hover to explain what the tap did — say it out loud once.
+      if (isPhoneLayout()) toastTarget(e.name);
     });
     row.appendChild(node);
   });
@@ -1946,10 +1986,23 @@ function renderHand() {
   hand.innerHTML = '';
   const n = Math.max(1, battle.hand.length);
   const avail = hand.clientWidth || window.innerWidth * 0.72;
-  const w = Math.max(104, Math.min(158, Math.floor(avail / (n + 0.42 * (n - 1)))));
-  const overlap = Math.round(w * 0.42);
+  // Phone layout drives the card height from the height left under the stage;
+  // desktop keeps the fixed 148x200 card. Both are read from the same vars so
+  // the two paths can never drift apart.
+  const compact = isPhoneLayout();
+  // A phone hand is a bottom strip: the card height comes from the space the
+  // stage leaves over, and the width follows the 0.74 art ratio. Whatever the
+  // height allows, the cards must still fit side by side.
+  const hCap = compact ? Math.max(88, Math.min(156, Math.round(window.innerHeight * 0.34))) : 200;
+  let w = compact
+    ? Math.min(Math.round(hCap * 0.74), Math.floor(avail / (n + 0.3 * (n - 1))))
+    : Math.max(104, Math.min(158, Math.floor(avail / (n + 0.42 * (n - 1)))));
+  w = Math.max(compact ? 70 : 104, w);
+  const h = compact ? Math.round(w / 0.74) : 200;
+  const overlap = Math.round(w * (compact ? 0.26 : 0.42));
   hand.style.setProperty('--card-w', `${w}px`);
   hand.style.setProperty('--card-m', `${-Math.floor(overlap / 2)}px`);
+  hand.style.setProperty('--card-h', `${h}px`);
   const endTurnLabel = battle.drawStarted
     ? 'Draw started — ends on next turn'
     : (battle.cardsPlayedThisTurn > 0 ? `Draw: +${DRAW_NEXT} on End Turn` : 'End Turn');
@@ -1986,33 +2039,43 @@ function renderHand() {
     node.classList.toggle('hoverable', canPlay(battle, card));
     if (card.source === 'draw' || card.draw) node.querySelector('.card-tags')?.prepend(el('span', 'tag', '↓ drawn'));
 
-    let startX = 0, startY = 0, moved = false, upHandled = false;
+    let startX = 0, startY = 0, upHandled = false;
+    let dragStartX = 0, dragStartY = 0;
     const playIfPlaced = () => { if (!upHandled && node._placed && Math.abs(node._offX) > 4) { upHandled = true; playFromUI(i); } };
     node._placed = false;
     node.addEventListener('pointerdown', (ev) => {
-      startX = ev.clientX; startY = ev.clientY; moved = false;
+      startX = ev.clientX; startY = ev.clientY; upHandled = false;
+      // A touch pointer is one-shot: if we ignore its follow-up click the card
+      // can only be played by dragging, which is not discoverable with a thumb.
+      node._touch = ev.pointerType === 'touch';
+      dragStartX = ev.clientX; dragStartY = ev.clientY;
       clearTimeout(pressTimer);
       pressTimer = setTimeout(() => {
         longPressed = true;
         openDetail(i);
-      }, 320);
+      }, node._touch ? 430 : 320);
     });
     node.addEventListener('pointermove', (ev) => {
-      if (Math.abs(ev.clientX - startX) > 4 || Math.abs(ev.clientY - startY) > 4) {
-        moved = true;
+      // A drag lifts the card by its CENTRE under the finger. Freshly drawn
+      // cards start near the bottom edge, so they must first travel far enough
+      // to clear the thumb; until then the press can still become a long-press.
+      if (!node._dragging) {
+        if (Math.hypot(ev.clientX - dragStartX, ev.clientY - dragStartY) < 18) return;
         clearTimeout(pressTimer);
-        if (canPlay(battle, card)) {
-          node._placed = true;
-          node._offX = ev.clientX - startX;
-        }
-        dragMoveNode(ev, node, i);
-      } else {
-        dragMoveNode(ev, node, i);
+        node._dragging = true;
       }
+      if (canPlay(battle, card)) {
+        node._placed = true;
+        node._offX = ev.clientX - startX;
+      }
+      dragMoveNode(ev, node, i);
     });
     node.addEventListener('pointerup', (ev) => {
       clearTimeout(pressTimer);
       hideTargetLine();
+      const wasTouch = node._touch;
+      const dragged = !!node._dragging;
+      node._dragging = false;
       // Alt+Gesture — Attack Draw: the card stays out, card enters your hand, Draw+1 starts.
       if (node._altDraw) {
         node._altDraw = false;
@@ -2022,12 +2085,19 @@ function renderHand() {
         void drew;
         return;
       }
-      playIfPlaced();
-      if (!upHandled) { const x = ev.clientX - startX; if (x > 4) { upHandled = true; playFromUI(i); } }
-      else upHandled = false;
+      if (dragged) playIfPlaced();                  // dropped on/over an enemy
+      if (!upHandled && !dragged) {
+        // Tap (or short drag) = play. On touch this is the primary gesture:
+        // no synthetic click ever follows a consumed pointerup.
+        upHandled = true;
+        node._swallowClick = true;                  // the click below must not re-play
+        playFromUI(i);
+      }
+      if (wasTouch) node._swallowClick = true;      // swallow the ghost click
+      upHandled = false;
     });
-    node.addEventListener('pointerleave', () => { clearTimeout(pressTimer); hideTargetLine(); });
-    node.addEventListener('pointercancel', () => { clearTimeout(pressTimer); hideTargetLine(); });
+    node.addEventListener('pointerleave', () => { clearTimeout(pressTimer); hideTargetLine(); node._dragging = false; });
+    node.addEventListener('pointercancel', () => { clearTimeout(pressTimer); hideTargetLine(); node._dragging = false; });
     node.addEventListener('mouseenter', () => {
       if (node.classList.contains('hoverable')) node.classList.add('hovering');
       // Side-badge audio: charge whine pitched by the previewed number,
@@ -2050,6 +2120,9 @@ function renderHand() {
     node.addEventListener('click', (ev) => {
       ev.stopPropagation();
       if (longPressed) { longPressed = false; return; }
+      // The pointerup above already played the card — never play it twice.
+      if (node._swallowClick) { node._swallowClick = false; if (node._touch) node._touch = false; return; }
+      if (node._touch) { node._touch = false; return; }
       playFromUI(i, ev);
     });
     hand.appendChild(node);
@@ -2886,14 +2959,85 @@ function bind() {
     if (n >= 1 && n <= battle.hand.length) playFromUI(n - 1);
   });
 
+  let resizeRaf = 0;
   window.addEventListener('resize', () => {
-    if (!$('view-map').classList.contains('hidden')) raf(drawMapLines);
+    if (resizeRaf) return;
+    resizeRaf = raf(() => {
+      resizeRaf = 0;
+      if (!$('view-map').classList.contains('hidden')) drawMapLines();
+      syncRootVars();
+      // Rotation / split-screen changes the hand strip: re-lay the cards out
+      // with the new width instead of leaving stale pixel sizes behind.
+      if (battle && !$('view-battle').classList.contains('hidden')) renderHand();
+    });
   });
 
   document.addEventListener('click', (ev) => {
     const b = ev.target.closest('.btn-primary, .btn-ghost, .chip-btn');
     if (b) ripple(b);
   });
+
+  /* ------------------------- platform / touch wiring ------------------------ */
+  /* Android hardware back: close the topmost thing, then walk the screen graph.
+     Returns true when the press was consumed; false means "quit the app". */
+  const backFromOverlay = () => {
+    const anyOpen = (id) => { const n = $(id); return n && !n.classList.contains('hidden'); };
+    if (anyOpen('settings-modal')) { closeSettings(); return true; }
+    if (anyOpen('deck-modal')) { closeDeckModal(); return true; }
+    if (anyOpen('lab-modal')) { $('lab-modal').classList.add('hidden'); return true; }
+    if (anyOpen('epi-modal')) { return true; }          // a run choice must be made
+    if (anyOpen('detail')) { closeDetail(); return true; }
+    if (anyOpen('enemy-detail')) { closeEnemyDetail(); return true; }
+    if (anyOpen('pause')) { $('pause').classList.add('hidden'); return true; }
+    if (anyOpen('overlay')) { const b = $('overlay-btn'); if (b) b.click(); return true; }
+    return false;
+  };
+  const backFromView = () => {
+    const view = currentView;
+    if (view === 'battle') {
+      if (battle && battle.result) return false;        // the overlay handles it
+      $('pause').classList.remove('hidden');
+      return true;
+    }
+    if (view === 'title') return false;                 // exiting from here quits
+    if (view === 'map' || view === 'roster' || view === 'missions') {
+      showView(view === 'map' ? 'map' : 'title');
+      if (view === 'map') return false;                 // map has its own EXIT
+      showView('title');
+      return true;
+    }
+    if (view === 'character' || view === 'guide' || view === 'sim') { showView('title'); return true; }
+    if (view === 'story' || view === 'event' || view === 'shop' || view === 'rest' || view === 'reward') {
+      return false;                                     // run decisions block back
+    }
+    showView('title');
+    return true;
+  };
+  installPlatformBridge({
+    goBack() {
+      if (backFromOverlay()) return true;
+      return backFromView();
+    },
+    onAppPause() {
+      // Android backgrounded us: stop audio loops and drop into pause.
+      badgeHeartbeatStop();
+      if (currentView === 'battle' && battle && !battle.result) {
+        $('pause').classList.remove('hidden');
+      }
+    },
+  });
+
+  /* Long-press inspect: the touch equivalent of a right-click / hover tooltip.
+     The battle card + enemy renderers already bind their own hold timers, so we
+     only guard the document against long-press text selection + context menus. */
+  document.addEventListener('contextmenu', (ev) => {
+    if (!(ev.target.closest && ev.target.closest('input, textarea'))) ev.preventDefault();
+  });
+
+  /* Touch hardware: never let a stray double-tap zoom the canvas. */
+  installDoubleTapGuard();
+  raf(syncRootVars);
+  updateAdaptiveUI();
 }
 
 bind();

@@ -2,13 +2,26 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <!-- LANDSCAPE PHONE SHELL
+         Every mobile screen presents the same ~950x430 CSS canvas: this width
+         makes a portrait phone's initial-scale zoom the page to the full
+         landscape design, and desktop browsers are capped at 960px so the
+         phone layout (and its Playwright/jsdom test viewport) is what devs see.
+         assets/sync-shell.mjs keeps this contract; scripts/phone-check.mjs
+         verifies it. -->
+    <meta id="cw-viewport" name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
     <meta name="theme-color" content="#050203" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="description" content="Cell Warriors — a tactical card RPG fought inside the human body." />
     <title>Cell Warriors</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <!-- Self-hosted fonts: no network CDN, so the APK works fully offline. -->
+    <link rel="stylesheet" href="./fonts.css" />
     <link rel="stylesheet" href="./styles.css" />
+    <!-- phone / touch layer: landscape layout, safe areas, >=44px targets -->
+    <link rel="stylesheet" href="./styles-mobile.css" />
+    <link rel="manifest" href="./manifest.webmanifest" />
   </head>
   <body>
     <!-- SVG icon sprite — line icons only, 2px stroke, 24px grid (design-system §8) -->
