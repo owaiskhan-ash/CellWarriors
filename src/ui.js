@@ -29,6 +29,38 @@ const el = (tag, cls, html) => {
 };
 const attr = (a) => ATTRIBUTES[a] || { name: '—', glyph: '·', color: '#888' };
 
+/* --- game feel: typing effect + click ripple (visuals only, jsdom-safe) --- */
+function typewriter(el, text, speed = 26) {
+  if (!el) return;
+  const chars = [...text];
+  let i = 0;
+  const tick = () => {
+    if (i >= chars.length) return;
+    el.textContent += chars[i++];
+    setTimeout(tick, speed);
+  };
+  el.textContent = '';
+  setTimeout(tick, 120);
+}
+function ripple(btn) {
+  if (!btn) return;
+  const r = el('span', 'ripple');
+  btn.appendChild(r);
+  setTimeout(() => r.remove(), 660);
+}
+function apFlash(ap) {
+  const n = $('ap-now');
+  if (!n) return;
+  n.classList.add('ap-flash');
+  clearTimeout(n._af); n._af = setTimeout(() => n.classList.remove('ap-flash'), 320);
+}
+function touchFlash() {
+  const st = $('battle-stage');
+  const d = el('div', 'tx');
+  if (st) st.appendChild(d);
+  setTimeout(() => d.remove(), 500);
+}
+
 let progress = loadProgress();
 let mode = 'chaos'; // 'chaos' | 'story'
 let battle = null;
@@ -208,7 +240,7 @@ function renderRoster() {
       </div>
       <div class="roster-art"><img src="${c.art}" alt="${c.name}" /></div>
       <div class="roster-info">
-        <span class="roster-name">${c.name}</span>
+        <span class="roster-name"><svg class="ico" style="vertical-align:-2px;margin-right:4px"><use href="#i-hp"/></svg>${c.name}</span>
         <span class="roster-cell">${c.full.split('— ')[1] || ''}</span>
         <span class="roster-leader">${c.leader ? c.leader.desc : ''}</span>
         <div class="roster-xp" title="${xpPct}/100 XP"><i style="width:${xpPct}%"></i></div>
@@ -687,7 +719,7 @@ function openStory(m) {
   storyIndex = 0;
   $('story-art').style.backgroundImage = 'url(images/cell-warriors-battle.png)';
   $('story-who').textContent = m.place.toUpperCase();
-  $('story-text').textContent = m.story[0];
+  typewriter($('story-text'), m.story[0]);
   $('btn-story-next').textContent = 'NEXT';
   showView('story');
 }
@@ -696,7 +728,7 @@ function advanceStory() {
   sfx('click');
   storyIndex += 1;
   if (storyIndex >= mission.story.length) { beginBattle(mission); return; }
-  $('story-text').textContent = mission.story[storyIndex];
+  typewriter($('story-text'), mission.story[storyIndex]);
   if (storyIndex === mission.story.length - 1) $('btn-story-next').textContent = 'ENGAGE';
 }
 
@@ -1118,6 +1150,8 @@ function showTurnBanner(turn) {
   $('turn-banner-text').textContent = `TURN ${turn}`;
   $('turn-banner-sub').textContent = turn === 1 ? 'ENGAGE' : 'YOUR MOVE';
   b.classList.remove('hidden');
+  const tp = $('turn-plate');
+  if (tp) { tp.classList.add('just-changed'); clearTimeout(tp._tp); tp._tp = setTimeout(() => tp.classList.remove('just-changed'), 800); }
   clearTimeout(b._t);
   b._t = setTimeout(() => b.classList.add('hidden'), 1200);
 }
@@ -1530,6 +1564,7 @@ function renderEnemies() {
     const node = el('div', `enemy enemy-${e.id}${e.hp <= 0 ? ' dead' : ''}${isSel ? ' selected' : ''}${e.ravaged ? ' ravaged' : ''}`);
     e._dom = node;
     node.classList.toggle('idle', e.hp > 0 && e.counter > 0);
+    if (!e._entered) { e._entered = true; node.classList.add('entered'); }
 
     const isAttack = intent.type === 'attack';
     const isCharge = intent.type === 'charge';
@@ -1887,6 +1922,8 @@ function playFromUI(index, ev) {
   else if (card.type === 'attack') sfx('slash');
   renderBattle();
   if (cardNode && rect) launchPlayArc(cardNode, rect, card);
+  apFlash(battle.ap);
+  touchFlash();
   if (!battle.result) showCutIn(card);
 }
 
@@ -2629,6 +2666,11 @@ function bind() {
 
   window.addEventListener('resize', () => {
     if (!$('view-map').classList.contains('hidden')) raf(drawMapLines);
+  });
+
+  document.addEventListener('click', (ev) => {
+    const b = ev.target.closest('.btn-primary, .btn-ghost, .chip-btn');
+    if (b) ripple(b);
   });
 }
 

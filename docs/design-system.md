@@ -293,3 +293,23 @@ Rules:
 - All animations respect `body.reduce-motion` (settings toggle + OS preference); durations collapse.
 - Game feel must never change data readback order: textContent sets are synchronous; CSS is for visuals.
 - `motion: false` users get zero behavioural motion (all keyframes are visual-only).
+
+---
+
+## 15. Visual Overhaul v4 — game-like look & feel
+
+On top of the game-feel animation layer (§14), a fuller visual overhaul gives the app a
+cohesive dark fog atmosphere with tasteful glow pulses — meant to make the app feel like an
+actual game when you open it:
+
+| Area | Effect |
+| --- | --- |
+| Title screen | Fog drift animation over `images/bg-title-v2.jpg`, glow-pulse version line, glow pulses on CTAs, glow on cells pill |
+| Roster screen | New dark board bg, selection ring pulse, glow ring on hover, glow on card shadows, glow on highlight bars |
+| Story screen | Typing effect on story text (`typewriter()`), staggered entrance (`story-in`), glow accent on buttons |
+| Battle screen | `#view-battle:not(.hidden)` fade-in; global fog overlay (`#battle-fog`), glow hp bars, glow on boss top-stack, enemy entrance stagger, death flash, "wave" AP glow (`ap-flash`) |
+| Misc | Ripple on button clicks (`.ripple`), scroll shadows on buttons (`box-shadow` on hover), glow pulses on EP pips / resonance burst gauge |
+
+New icons: `i-hp` (roster cards) + `i-pulse` (turn plate) — 24px line icons, drawn inline in `index.html` per §8 iconography rules.
+
+Generated artwork: `images/bg-title-v2.jpg`, `images/bg-battle-v2.jpg`, `images/bg-roster-v2.jpg`, `images/icons/i-hp.png`, `images/icons/i-pulse.png` (via `generate_image`).

@@ -19,6 +19,8 @@
         <symbol id="i-log" viewBox="0 0 24 24"><path d="M5 4h14M5 9h14M5 14h9M5 19h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
         <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
         <symbol id="i-cell" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="currentColor"/><path d="M12 4v3M12 17v3M4 12h3M17 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+        <symbol id="i-hp" viewBox="0 0 24 24"><path d="M3 11h1.5l3-4.5L12 11.5l4.5-5.5L19.5 11H21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12.5 11h.01" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+        <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M4 14.5h1v-5L6.5 8.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 14.5L9.5 8.5a4 4 0 0 1 6.5 3h1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M20 12v1.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18 9a2.5 2.5 0 0 1-2.5 2.5 2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="1.5 2.5" stroke-linecap="round"/></symbol>
         <symbol id="i-sands" viewBox="0 0 24 24"><path d="M7 3h10M7 21h10M8 3c0 5 8 5 8 9s-8 4-8 9M16 3c0 5-8 5-8 9s8 4 8 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
         <symbol id="i-sword" viewBox="0 0 24 24"><path d="M4 20l3-3M14 4l6 6-9 9H5v-6l9-9z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M13 7l4 4" stroke="currentColor" stroke-width="2"/></symbol>
         <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
@@ -45,7 +47,7 @@
     <main id="app">
       <!-- ================= TITLE ================= -->
       <section id="view-title" class="view view-light">
-        <div class="title-bg"><img src="./images/bg-title.jpg" alt="" /><div class="title-bg-shade"></div></div>
+        <div class="title-bg"><img src="./images/bg-title-v2.jpg" alt="" /><div class="title-bg-shade"></div><div class="title-fog" id="title-fog"></div></div>
         <div class="title-top">
           <div class="cells-pill" title="Meta Cells currency"><svg class="ico"><use href="#i-cell"/></svg><b id="title-cells">0</b><span class="czn-id">ID·07A</span></div>
           <button class="icon-btn" id="btn-mute-title" title="Toggle sound"><svg class="ico"><use href="#i-sound"/></svg></button>
@@ -73,7 +75,7 @@
 
       <!-- ================= ROSTER ================= -->
       <section id="view-roster" class="view view-light hidden">
-        <div class="roster-bg"><img src="./images/bg-roster.jpg" alt="" /></div>
+        <div class="roster-bg"><img src="./images/bg-roster-v2.jpg" alt="" /></div>
         <header class="screen-head">
           <button class="btn-ghost tiny" id="btn-roster-back"><svg class="ico"><use href="#i-back"/></svg></button>
           <div class="head-left">
@@ -312,10 +314,11 @@
           </div>
         </header>
 
+        <div class="battle-fog" id="battle-fog"></div>
         <div class="battle-stage" id="battle-stage">
           <!-- left rail -->
           <aside class="rail rail-left">
-            <div class="turn-plate"><span>TURN</span><b id="b-turn">1</b></div>
+            <div class="turn-plate"><span class="plate-eye"><svg class="ico"><use href="#i-pulse"/></svg>TURN</span><b id="b-turn">1</b></div>
             <div class="res-box" id="res-box" title="Resonance: Skills & Tag Chains build to 5+ for ×1.6 Resonance Burst!">
               <span class="res-lbl">RES</span>
               <b id="res-num">0</b>
