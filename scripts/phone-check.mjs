@@ -160,6 +160,22 @@ ok('.dmg-rail clears the right rail', /\.dmg-rail\s*\{[\s\S]{0,80}right:\s*calc\
 ok('no mobile overlay rule keeps a hard desktop `bottom:` on the battle view',
   !/\.bark-toast[^}]*bottom:\s*34%/.test(mobile));
 
+/* --- A7c. title screen must fit one phone screen (it is the first thing
+   anyone sees, and a clipped CHAOS EXPEDITION button would be fatal) --- */
+group('A7c · title stack arithmetic');
+{
+  const W = 892, H = 412;
+  // mirror the mobile rules: logo <= 40vw/340px and <= 44vh, then the stack
+  const logoW = Math.min(0.40 * W, 340);
+  const logoH = Math.min(logoW / 1.45, 0.44 * H);   // logo-transparent.png is 1212x836
+  const stack = logoH + 13 + 44 + 38 + 9 + 7 * 4 + 16;
+  ok('title stack fits 412px with slack', stack <= H - 20, `${Math.round(stack)}px of ${H}px`);
+  const subRow = 6 * 92 + 5 * 6;
+  ok('six sub-action buttons fit one row', subRow <= Math.min(0.86 * W, 620), `${subRow}px`);
+  ok('title panel can scroll instead of clipping', /\.title-inner\s*\{[\s\S]{0,200}overflow:\s*auto/.test(mobile));
+  ok('logo is height-capped as well as width-capped', /\.title-logo\s*\{[^}]*max-height:\s*44vh/.test(mobile));
+}
+
 /* --- A8. PWA / install metadata --- */
 group('A8 · install metadata');
 ok('webmanifest linked', /rel="manifest"/.test(index));

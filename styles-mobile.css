@@ -270,17 +270,45 @@ html, body { overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
     padding: 6px 10px; font-size: 10px;
   }
 
-  /* --- title --- */
-  .title-inner { padding: calc(var(--safe-t) + 10px) 20px calc(var(--safe-b) + 10px); gap: 7px; max-height: 100%; }
-  .title-logo { width: min(38vw, 300px); }
+  /* --- title: one screen, no scroll — and it must survive a large system
+         font/zoom, so the panel is centred but allowed to scroll if it has to. --- */
+  .title-inner {
+    padding: calc(var(--safe-t) + 8px) 16px calc(var(--safe-b) + 8px);
+    gap: 7px;
+    max-height: calc(100% - var(--safe-t) - var(--safe-b));
+    overflow: auto;
+    justify-content: center;
+  }
+  .title-logo { width: min(40vw, 340px); max-height: 44vh; object-fit: contain; }
   .title-tag { font-size: 10px; letter-spacing: 0.24em; margin: 0; }
   .title-fake { display: none; }
-  .title-actions { gap: 6px; margin-top: 2px; }
-  #btn-start, .btn-primary.big { padding: 11px 34px; font-size: 13px; }
-  .title-sub-actions { gap: 6px; flex-wrap: wrap; justify-content: center; max-width: 78vw; }
-  .title-sub-actions .btn-ghost { padding: 8px 11px; font-size: 9.5px; min-height: 36px; }
-  .title-ver { font-size: 7px; margin: 0; }
+  .title-actions { gap: 6px; margin-top: 2px; width: 100%; }
+  #btn-start, .btn-primary.big {
+    padding: 12px 30px;
+    font-size: 13px;
+    min-height: var(--tap-min);
+    letter-spacing: 0.16em;
+  }
+  /* six secondary entries in one row on a wide phone, two rows on a narrow one */
+  .title-sub-actions {
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    max-width: min(86vw, 620px);
+    margin: 0 auto;
+  }
+  .title-sub-actions .btn-ghost {
+    padding: 8px 10px;
+    font-size: 9px;
+    min-height: 38px;
+    flex: 0 1 auto;
+    white-space: nowrap;
+  }
+  .title-ver { font-size: 7px; margin: 0; letter-spacing: 0.14em; }
   .title-top { top: calc(var(--safe-t) + 6px); right: calc(var(--safe-r) + 10px); }
+  .title-top .icon-btn { width: var(--tap-min); height: var(--tap-min); }
+  .cells-pill { min-height: 34px; }
 
   /* --- roster: 3 across, so a 6-character roster needs no scrolling --- */
   .roster { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; padding: 8px 12px calc(var(--safe-b) + 10px); }
