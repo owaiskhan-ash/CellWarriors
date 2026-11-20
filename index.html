@@ -13,10 +13,34 @@
         <div class="title-bg"></div>
         <div class="title-inner">
           <img class="title-logo" src="./images/logo-transparent.png" alt="Cell Warriors" />
-          <p class="title-line">Six infections. One body. No backup.</p>
-          <button class="primary big" id="btn-start">START</button>
-          <button class="ghost tiny" id="btn-reset">reset save</button>
+          <button class="btn-primary big" id="btn-start">START</button>
+          <button class="btn-ghost tiny" id="btn-reset">reset save</button>
         </div>
+      </section>
+
+      <!-- ================= ROSTER ================= -->
+      <section id="view-roster" class="view hidden">
+        <header class="screen-head">
+          <h1>CHARACTERS</h1>
+          <span class="team-count" id="team-count">0 / 3</span>
+        </header>
+
+        <div class="roster" id="roster"></div>
+
+        <div class="roster-foot">
+          <div class="team-strip" id="team-strip"></div>
+          <button class="btn-primary" id="btn-deploy" disabled>DEPLOY</button>
+        </div>
+      </section>
+
+      <!-- ================= MISSIONS ================= -->
+      <section id="view-missions" class="view hidden">
+        <header class="screen-head">
+          <button class="btn-ghost tiny" id="btn-missions-back">←</button>
+          <h1>MISSIONS</h1>
+          <span class="team-count" id="mission-team">TEAM 0</span>
+        </header>
+        <div class="mission-list" id="mission-list"></div>
       </section>
 
       <!-- ================= STORY ================= -->
@@ -26,40 +50,37 @@
         <div class="story-bar">
           <div class="story-who" id="story-who"></div>
           <div class="story-text" id="story-text"></div>
-          <button class="primary" id="btn-story-next">NEXT</button>
+          <button class="btn-primary" id="btn-story-next">NEXT</button>
         </div>
-      </section>
-
-      <!-- ================= MAP ================= -->
-      <section id="view-map" class="view hidden">
-        <header class="topbar">
-          <h1>THE BODY</h1>
-          <button class="ghost tiny" id="btn-title">←</button>
-        </header>
-        <div class="chapter-grid" id="chapter-grid"></div>
       </section>
 
       <!-- ================= BATTLE ================= -->
       <section id="view-battle" class="view hidden">
         <div class="battle-bg"></div>
 
-        <header class="topbar battle-top">
-          <span class="chapter-chip" id="battle-title">I · THE THROAT</span>
-          <span class="turn-chip">TURN <b id="turn">1</b></span>
+        <header class="battle-hud">
+          <div class="party-hp">
+            <div class="party-hp-track"><i id="hp-fill"></i></div>
+            <span class="party-hp-num"><b id="hp-now">0</b>/<span id="hp-max">0</span></span>
+          </div>
+          <span class="turn-badge">TURN <b id="turn">1</b></span>
         </header>
 
-        <div class="arena">
-          <div class="side party" id="party"></div>
-          <div class="arena-mid"><span>VS</span></div>
-          <div class="side foes" id="foes"></div>
+        <div class="stage">
+          <div class="lineup" id="lineup"></div>
+          <div class="enemy-row" id="enemies"></div>
         </div>
 
-        <div class="battle-log" id="battle-log"></div>
+        <div class="combat-log" id="combat-log"></div>
 
         <footer class="hand-bar">
-          <div class="energy" id="energy"></div>
+          <div class="ep">
+            <div class="ep-label">EP</div>
+            <div class="ep-num" id="ep">4</div>
+            <div class="ep-pips" id="ep-pips"></div>
+          </div>
           <div class="hand" id="hand"></div>
-          <button class="primary" id="end-turn">END<br />TURN</button>
+          <button class="end-turn" id="end-turn"><b>END</b><span>TURN</span></button>
         </footer>
       </section>
 
@@ -68,8 +89,8 @@
         <div class="overlay-card">
           <h1 id="overlay-title">—</h1>
           <p id="overlay-sub">—</p>
-          <button class="primary big" id="overlay-btn">CONTINUE</button>
-          <button class="ghost" id="overlay-retry">RETRY</button>
+          <button class="btn-primary big" id="overlay-btn">CONTINUE</button>
+          <button class="btn-ghost" id="overlay-retry">RETRY</button>
         </div>
       </div>
     </main>
