@@ -13,56 +13,56 @@ export const START = {
 
 export const CARDS = {
   neutrophil: {
-    id: 'neutrophil', type: 'cell', name: 'Neutrophil', cost: 2, atk: 3, hp: 3,
+    id: 'neutrophil', type: 'cell', name: 'Neutrophil', cost: 2, rarity: 'common', atk: 3, hp: 3,
     inflamOnAttack: 1,
     text: 'Brute. +1 Inflammation every time it attacks.',
   },
   macrophage: {
-    id: 'macrophage', type: 'cell', name: 'Macrophage', cost: 3, atk: 2, hp: 7, regen: 1,
+    id: 'macrophage', type: 'cell', name: 'Macrophage', cost: 3, rarity: 'rare', atk: 2, hp: 7, regen: 1,
     text: 'Devours remains. Heals 1 HP each turn.',
   },
   mast: {
-    id: 'mast', type: 'cell', name: 'Mast Cell', cost: 2, atk: 0, hp: 4, aura: 1,
+    id: 'mast', type: 'cell', name: 'Mast Cell', cost: 2, rarity: 'rare', atk: 0, hp: 4, aura: 1,
     inflamOnPlay: 2,
     text: 'Aura: your other cells get +1 dmg. +2 Inflammation on play.',
   },
   killerT: {
-    id: 'killerT', type: 'cell', name: 'Killer T', cost: 4, atk: 5, hp: 4, pierce: true,
+    id: 'killerT', type: 'cell', name: 'Killer T', cost: 4, rarity: 'epic', atk: 5, hp: 4, pierce: true,
     inflamOnAttack: 1,
     text: 'Pierces armour. +1 Inflammation on attack.',
   },
   bcell: {
-    id: 'bcell', type: 'cell', name: 'B Cell', cost: 3, atk: 1, hp: 5, antibody: 1,
+    id: 'bcell', type: 'cell', name: 'B Cell', cost: 3, rarity: 'rare', atk: 1, hp: 5, antibody: 1,
     text: 'Makes 1 Antibody per turn (max 3). Each adds +1 dmg to all your attacks.',
   },
   platelet: {
-    id: 'platelet', type: 'cell', name: 'Platelet', cost: 1, atk: 1, hp: 3, guard: true,
+    id: 'platelet', type: 'cell', name: 'Platelet', cost: 1, rarity: 'common', atk: 1, hp: 3, guard: true,
     text: 'Guard. Pathogens hit it first.',
   },
   dendritic: {
-    id: 'dendritic', type: 'cell', name: 'Dendritic', cost: 3, atk: 1, hp: 4,
+    id: 'dendritic', type: 'cell', name: 'Dendritic', cost: 3, rarity: 'epic', atk: 1, hp: 4,
     onPlay: 'dendritic',
     text: 'On play: -4% Infection and draw a card.',
   },
 
   histamine: {
-    id: 'histamine', type: 'cytokine', name: 'Histamine', cost: 1, inflam: 2,
+    id: 'histamine', type: 'cytokine', name: 'Histamine', cost: 1, rarity: 'common', inflam: 2,
     text: '+2 dmg to all your cells this turn. +2 Inflammation.',
   },
   antipyretic: {
-    id: 'antipyretic', type: 'cytokine', name: 'Antipyretic', cost: 1, inflam: -3,
+    id: 'antipyretic', type: 'cytokine', name: 'Antipyretic', cost: 1, rarity: 'common', inflam: -3,
     text: '-3 Inflammation. Buys you a turn.',
   },
   interferon: {
-    id: 'interferon', type: 'cytokine', name: 'Interferon', cost: 2,
+    id: 'interferon', type: 'cytokine', name: 'Interferon', cost: 2, rarity: 'rare',
     text: 'All pathogens -2 ATK for 2 turns.',
   },
   il6: {
-    id: 'il6', type: 'cytokine', name: 'IL-6', cost: 1, inflam: 1,
+    id: 'il6', type: 'cytokine', name: 'IL-6', cost: 1, rarity: 'epic', inflam: 1,
     text: 'Draw 2 cards. +1 Inflammation.',
   },
   opsonin: {
-    id: 'opsonin', type: 'cytokine', name: 'Opsonin', cost: 2,
+    id: 'opsonin', type: 'cytokine', name: 'Opsonin', cost: 2, rarity: 'rare',
     text: 'Your next cell attack deals double damage.',
   },
 };

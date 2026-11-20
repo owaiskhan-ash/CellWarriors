@@ -224,3 +224,44 @@ button.primary:active { transform: translateY(1px); }
   75% { transform: translateX(4px); }
 }
 .fevering { animation: shake 0.25s ease 2; }
+
+/* ============================================================
+   DESIGN SYSTEM v1 — see docs/design-system.md
+   Rarity is border + glow only. No foil, no stars, no particles.
+   ============================================================ */
+
+:root {
+  --bg-raised: #0b0507;
+  --cyan-pale: #7ff3ea;
+  --violet: #b79bd8;
+  --danger: #ff6b8a;
+  --font-display: 'Chakra Petch', 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --space-1: 4px; --space-2: 6px; --space-3: 8px;
+  --space-4: 12px; --space-5: 16px; --space-6: 24px; --space-7: 32px;
+  --tap: 120ms ease-out;
+  --state: 250ms ease-out;
+}
+
+html, body { font-family: var(--font-body); }
+.card-name, .turn, button.primary, .overlay-card h1, .zone-label, .meter-label, .community, .card-cost {
+  font-family: var(--font-display);
+}
+.card-cost { font-variant-numeric: tabular-nums; }
+
+/* rarity */
+.card[data-rarity='common']   { border-color: #9a7b84; }
+.card[data-rarity='rare']     { border-color: var(--teal); box-shadow: 0 0 0 1px rgba(53, 208, 192, 0.25); }
+.card[data-rarity='epic']     { border-color: var(--violet); box-shadow: 0 0 12px rgba(183, 155, 216, 0.35); }
+.card[data-rarity='legendary'] {
+  border-color: var(--amber);
+  box-shadow: 0 0 14px rgba(240, 166, 60, 0.4);
+  animation: sheen 3s ease-in-out infinite;
+}
+@keyframes sheen {
+  0%, 100% { box-shadow: 0 0 14px rgba(240, 166, 60, 0.4); }
+  50%      { box-shadow: 0 0 22px rgba(240, 166, 60, 0.65); }
+}
+
+/* rarity also changes border weight: colour is never the only signal */
+.card[data-rarity='epic'], .card[data-rarity='legendary'] { border-width: 2px; }

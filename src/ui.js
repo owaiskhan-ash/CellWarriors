@@ -85,6 +85,7 @@ function renderHand() {
     const card = CARDS[id];
     const affordable = card.cost <= state.atp && !state.result;
     const node = el('div', `card type-${card.type}${affordable ? '' : ' unaffordable'}`);
+    node.dataset.rarity = card.rarity || 'common';
     node.innerHTML = `
       <div class="card-top">
         <span class="card-cost">${card.cost}</span>
