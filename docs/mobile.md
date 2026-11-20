@@ -119,9 +119,9 @@ unreferenced files never ship.
 android/fetch-tools.sh
 
 # build + sign + smoke-verify
-android/build.sh                 # → dist/CellWarriors-1.0.0.apk (+ .sha256)
+android/build.sh                 # → dist/CellWarriors-<version>.apk (+ .sha256)
 
-CW_VERSION=1.0.1 CW_VERSION_CODE=9 android/build.sh
+CW_VERSION=1.0.2 CW_VERSION_CODE=10 android/build.sh
 CW_DEBUG=1 android/build.sh      # debuggable (chrome://inspect)
 ```
 

@@ -15,7 +15,7 @@
 # Usage:
 #   android/build.sh                 # build + sign a release APK
 #   CW_DEBUG=1 android/build.sh      # debuggable build (chrome://inspect)
-#   CW_VERSION=1.0.1 CW_VERSION_CODE=8 android/build.sh
+#   CW_VERSION=1.0.2 CW_VERSION_CODE=10 android/build.sh
 #
 # Output: dist/CellWarriors-<version>.apk (+ .sha256)
 # =============================================================================
@@ -25,8 +25,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 # ---------------------------------------------------------------- 0. settings
-VERSION="${CW_VERSION:-1.0.0}"
-VERSION_CODE="${CW_VERSION_CODE:-8}"
+VERSION="${CW_VERSION:-1.0.2}"
+VERSION_CODE="${CW_VERSION_CODE:-10}"
 MIN_SDK=24
 TARGET_SDK=34
 OUT_DIR="dist"
@@ -166,13 +166,20 @@ CLASS_LIST=$(find "$BUILD_DIR/classes" -name '*.class')
 [ -f "$BUILD_DIR/dex/classes.dex" ] || { echo "!! d8 produced no classes.dex"; exit 1; }
 
 # ----------------------------------------------------- 8. package + zipalign
+# Android 11+ (API 30) refuses to install any APK whose resources.arsc is
+# DEFLATED: the package parser raises INSTALL_PARSE_FAILED_RESOURCES_ARSC_COMPRESSED
+# before the install even starts. aapt2 links the table stored, but a naive
+# re-zip compresses it again, which is why this step stores it explicitly and
+# then asserts it in step 10. Stored entries must also stay 4-byte aligned.
 echo "· packaging"
 rm -rf "$BUILD_DIR/apk" && mkdir -p "$BUILD_DIR/apk"
 cd "$BUILD_DIR/apk"
 unzip -q -o ../base-unsigned.apk
 cp ../dex/classes.dex .
-# Rebuild deterministically: stored (uncompressed) for .so-free APKs, dex first.
-zip -q -X -9 -r ../unaligned.apk . -x '*.dex' >/dev/null
+rm -f ../unaligned.apk
+# Compressed payload first, then the entries Android requires to be stored.
+zip -q -X -9 -r ../unaligned.apk . -x '*.dex' 'resources.arsc' >/dev/null
+zip -q -X -0 ../unaligned.apk resources.arsc >/dev/null
 zip -q -X -0 ../unaligned.apk classes.dex >/dev/null
 cd "$ROOT"
 
@@ -180,8 +187,10 @@ if [ -x "$TOOLS/zipalign" ]; then
   "$TOOLS/zipalign" -f -p 4 "$BUILD_DIR/unaligned.apk" "$BUILD_DIR/aligned.apk"
   echo "   zipalign ok"
 else
-  cp "$BUILD_DIR/unaligned.apk" "$BUILD_DIR/aligned.apk"
-  echo "   !! zipalign unavailable — APK is installable but pages unaligned"
+  # No zipalign binary available: align the stored entries ourselves instead of
+  # shipping a mis-aligned APK. Android only requires 4-byte alignment.
+  python3 "$ROOT/scripts/align-apk.py" "$BUILD_DIR/unaligned.apk" "$BUILD_DIR/aligned.apk" \
+    | sed 's/^/   /'
 fi
 
 # ------------------------------------------------------------------ 9. signing
@@ -208,10 +217,29 @@ echo "· apksigner"
   --out "$OUT_DIR/$APK_NAME" \
   "$BUILD_DIR/aligned.apk"
 
+# The app's install identity must not move between releases. Pin the SHA-1 of
+# the signing certificate so a fresh clone that mints a new key fails the build
+# instead of shipping an APK that cannot upgrade an existing install
+# (INSTALL_FAILED_UPDATE_INCOMPATIBLE).
+CERT_SHA1="${CW_CERT_SHA1:-94F919DC6F4C038FE993A6D3DB637980E67C1AF0}"
+
 echo "· verifying signature"
 "$JAVA" -jar "$TOOLS/apksigner.jar" verify --min-sdk-version "$MIN_SDK" -v "$OUT_DIR/$APK_NAME" \
   | head -8 | sed 's/^/   /'
 "$JAVA" -jar "$TOOLS/apksigner.jar" verify --print-certs "$OUT_DIR/$APK_NAME" | sed 's/^/   /'
+
+SIGNER_SHA1="$("$JAVA" -jar "$TOOLS/apksigner.jar" verify --print-certs "$OUT_DIR/$APK_NAME" 2>/dev/null \
+  | sed -n 's/.*certificate SHA-1 digest: //p' | head -1 | tr -d ' :' | tr 'a-f' 'A-F')"
+SIGNER_SHA1="${SIGNER_SHA1^^}"
+if [ -n "$CERT_SHA1" ] && [ "$SIGNER_SHA1" != "$CERT_SHA1" ]; then
+  echo "!! signing certificate changed"
+  echo "   expected $CERT_SHA1"
+  echo "   got      $SIGNER_SHA1"
+  echo "   Users with the previous release installed would get"
+  echo "   INSTALL_FAILED_UPDATE_INCOMPATIBLE. Restore android/release.keystore"
+  echo "   (or set CW_CERT_SHA1 deliberately when doing a one-off key rotation)."
+  exit 1
+fi
 
 # ------------------------------------------------------- 10. smoke-verify APK
 # A signed APK that opens to a black screen is worse than no release, so the
@@ -269,6 +297,15 @@ verify_apk() {
       *) echo "   !! APK missing $f"; bad=1 ;;
     esac
   done
+
+  # --- the install blocker that shipped in 1.0.0 -----------------------------
+  # Android 11+ aborts the install of any APK with a DEFLATED resources.arsc
+  # (INSTALL_PARSE_FAILED_RESOURCES_ARSC_COMPRESSED). Check the compression
+  # method and the alignment of every stored entry in one pass.
+  local acheck
+  acheck="$(python3 "$ROOT/scripts/check-apk.py" "$apk" 2>&1)" || {
+    echo "$acheck" | sed 's/^/   !! /'; bad=1;
+  }
 
   # a tiny dex would mean the activity was never compiled
   local dexsz

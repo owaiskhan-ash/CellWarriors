@@ -90,19 +90,51 @@ html, body { overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
   .boss-bar-track { height: 9px; }
   /* the boss bar hangs just under the HUD, centred — NOT at the bottom of the
      viewport, which would cover the hand strip */
-  .top-stack { top: calc(var(--safe-t) + 54px); bottom: auto; width: min(420px, 46vw); }
-  .objective-bar { font-size: 8px; margin-top: 3px; }
+  /* The objective line is ONE line of text, in its own band *below* the HUD.
+     It used to be drawn at HUD height, where it wrapped to two lines and sat on
+     top of both the synergy pills and the enemy intent badges. The arena now
+     reserves that band (padding-top) so nothing can collide with it. */
+  /* .top-stack is a direct child of the view (not of .arena), so it must stay
+     absolute — making it relative dropped it above the HUD. It gets the band
+     immediately under the HUD, and the arena reserves that band above its own
+     banner, so the two can never share pixels at any width. */
+  .top-stack {
+    position: absolute;
+    top: calc(var(--safe-t) + 58px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(420px, 62vw);
+    z-index: 16;
+  }
+  .objective-bar {
+    font-size: 7.5px;
+    margin-top: 2px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
   .battle-stage {
     grid-template-columns: 74px minmax(0, 1fr) 96px;
+    /* The row MUST be constrained. With an implicit `auto` row the track grew
+       to fit the enemy column's min-content height (~447px on a 412px screen),
+       pushing the arena, the enemies and END TURN hundreds of px below the
+       fold — they were painted underneath the hand strip. minmax(0,1fr) makes
+       the row exactly the space the flex parent gives it. */
+    grid-template-rows: minmax(0, 1fr);
     gap: 4px;
     padding: 0 calc(var(--safe-r) + 6px) 0 calc(var(--safe-l) + 6px);
     min-height: 0;
+    overflow: hidden;
   }
+  /* Every grid child must be allowed to be smaller than its content. */
+  .battle-stage > * { min-height: 0; }
+  .arena { min-height: 0; }
   /* left rail: turn + res + draw + ep, compressed into a single column */
   .rail { gap: 4px; padding-top: 0; }
   .res-track { background: rgba(255,255,255,0.12); }
-  .rail-right { padding-bottom: 4px; gap: 6px; }
+  .rail-right { padding-bottom: 4px; gap: 3px; }
   .turn-plate { width: 58px; height: 40px; border-radius: 7px; }
   .turn-plate span { font-size: 7px; }
   .turn-plate b { font-size: 19px; }
@@ -123,24 +155,61 @@ html, body { overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
   .ego-btn .ego-cost { min-width: 15px; height: 15px; font-size: 8px; }
   .exalt-toggle { font-size: 8px; padding: 3px 4px; }
 
-  /* right rail: sands / grave / end-turn stacked tight to the thumb */
+  /* right rail: sands / grave / end-turn stacked tight to the thumb.
+     END TURN must always be reachable, so it is positioned against the viewport
+     rather than being the last item in a column that can overflow. */
+  /* The right rail is a fixed stack: sands, grave, AUTO, then END TURN. END
+     TURN gets the bottom slot and everything above it must leave that space
+     alone — absolutely positioning it over the stack is what buried the grave
+     and AUTO buttons. */
+  .rail-right { position: relative; justify-content: flex-start; }
+  .rail-right #btn-autoplay { flex: 0 0 auto; }
+  /* END TURN only gets position:relative when nothing else sets it; the base
+     stylesheet absolutely positions it against the rail, so it must be pinned
+     to the bottom slot explicitly (margin-top:auto does not apply to abs). */
+  #end-turn, .end-turn {
+    margin-top: 0;
+    margin-bottom: 0;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    width: 66px;
+    /* 56px + the AUTO toggle's 14px + gaps has to fit under the grave box on a
+       360px-tall screen; 52px keeps a comfortable target and stops the disc
+       growing up over AUTO. */
+    height: 52px;
+    min-width: 0;
+    min-height: 0;
+    border-radius: 12px;
+    font-size: 10.5px;
+    line-height: 1.15;
+    padding: 4px;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    flex: 0 0 auto;
+  }
+  /* keep the stack compact so the reserved END TURN slot always fits */
+  .rail-right #grave-pile { padding: 1px 4px; height: 34px; }
+  .rail-right #grave-pile b { font-size: 13px; line-height: 1; }
+  .rail-right #grave-pile span { font-size: 5.5px; }
+  .rail-right .sands-btn { flex: 0 0 auto; }
+  .rail-right .auto-btn { font-size: 7.5px; padding: 2px 4px; min-height: 0; line-height: 1.1; }
+  /* On the shortest screens the rail cannot hold four stacked controls, so the
+     secondary AUTO toggle moves into the pause menu (it is also the A key). */
+  @media (max-height: 400px) {
+    .rail-right #btn-autoplay { display: none; }
+  }
   .sands-btn { width: var(--tap-min); height: var(--tap-min); }
   .sands-btn .ico { width: 19px; height: 19px; }
   .sands-btn i { width: 17px; height: 17px; font-size: 10px; right: -4px; top: -4px; }
-  .end-turn,
-  #end-turn {
-    width: min(76px, 19vh);
-    height: min(76px, 19vh);
-    min-width: 62px;
-    min-height: 62px;
-    font-size: 8.5px;
-    line-height: 1.05;
-    padding: 4px;
-    text-align: center;
-  }
-  .end-turn .ico { width: 24px; height: 24px; }
+  /* END TURN sizing lives in ONE place (see the .rail-right block above).
+     A second rule here used to override it and grow the disc until it covered
+     the AUTO toggle on short screens. */
+  .end-turn .ico { width: 20px; height: 20px; }
   #end-turn { letter-spacing: 0.02em; }
-  .auto-btn { font-size: 8px; padding: 4px 6px; min-height: 34px; min-width: 46px; }
+  .auto-btn { font-size: 7.5px; padding: 2px 4px; min-height: 0; min-width: 46px; }
   .auto-plan:not(.hidden) { font-size: 8.5px; max-width: 40vw; max-height: 40%; overflow: auto; }
   .pile-box.grave { width: 58px; padding: 4px 3px; }
   .pile-box.grave b { font-size: 15px; }
@@ -148,7 +217,20 @@ html, body { overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
   /* arena: enemies scale to the height we actually have */
   .enemy { width: clamp(120px, 19vw, 210px); }
   .enemy.solo { width: clamp(160px, 26vw, 280px); }
-  .enemy-art { height: clamp(112px, 27vh, 190px) !important; }
+  /* The enemy column must fit the row it lives in: art + plate + badges. Using
+     a fixed art height let the column be taller than the row, and because the
+     row aligns to flex-end the whole column overflowed *upwards* — straight
+     onto the break banner and the objective line. `flex: 1 1 0` on the art
+     makes the column exactly as tall as the row. */
+  .enemy { height: 100%; justify-content: flex-end; }
+  .enemy-art {
+    height: auto !important;
+    flex: 1 1 0;
+    min-height: 0;
+    overflow: visible;
+  }
+  .enemy-plate { flex: 0 0 auto; margin-top: 2px; }
+  .enemy-badges { position: absolute; }
   .enemy.solo .enemy-art { height: clamp(130px, 32vh, 220px) !important; }
   .enemy-name { font-size: 9px; }
   .enemy-hp { height: 11px; }
@@ -160,20 +242,61 @@ html, body { overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
   .status-icon b { font-size: 7px; }
   .status-icon i { font-size: 8px; }
   .enemy-hint { display: none; }
-  .weak-banner { font-size: 8px; padding: 2px 10px; margin: 1px 0 0; }
+  /* The arena is a 2-row grid: a reserved status band for the break banner,
+     then the enemy row. Being in flow is what keeps it off the intent badges
+     (which are absolutely positioned at the top of each enemy column). */
+  .arena {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    /* top band: the objective line lives here, drawn by .top-stack */
+    padding-top: 24px;
+    gap: 2px;
+  }
+  .weak-banner {
+    font-size: 8px; padding: 1px 7px; margin: 2px auto 0;
+    /* one line, clipped rather than wrapped: it is a status pill */
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 100%;
+    position: relative;
+    top: auto; left: auto; transform: none;
+    z-index: 2;
+    min-height: 12px;
+    align-self: center;
+  }
   .enemy-row { gap: 4px; }
   .enemy-row { flex-wrap: nowrap; justify-content: center; }
-  .enemy-badges { transform: scale(0.82); transform-origin: 50% 0; }
+  .enemy-badges { transform: scale(0.78); transform-origin: 50% 0; }
+  /* badges sit at the top of the enemy column; push the column down so the
+     badges clear the objective line instead of overlapping it */
+  .enemy-row { padding-top: 14px; }
+  .enemy-art { margin-top: 2px; }
   .enemy-mods { display: none; }
-  .action-timeline { width: 86px; top: 2px; right: 0; gap: 3px; }
+  /* The action queue is a right-edge column. At `top: 2px` it started inside
+     the HUD and ran under the objective text; it belongs in the stage area,
+     below the HUD and clear of the objective band. */
+  .action-timeline {
+    width: 86px;
+    top: auto;
+    bottom: 2px;
+    right: 0;
+    gap: 3px;
+    z-index: 8;
+  }
   .action-timeline .tl-chip { padding: 3px 5px; }
   .action-timeline .tl-chip b { font-size: 7px; }
   .action-timeline .tl-chip span { font-size: 8px; }
   .action-timeline .tl-chip i { font-size: 6.5px; }
 
   /* hand: the single most important strip on a phone. Big cards, no lift. */
+  /* The hand strip gets a FIXED height. It used to be content-sized, so tall
+     cards made the strip taller, which pushed the arena (and the enemies) up
+     and off the screen — a feedback loop between card size and stage size. */
   .hand-zone {
     min-height: 0;
+    height: clamp(132px, 42vh, 196px);
+    flex: 0 0 auto;
     padding: 0 calc(var(--safe-r) + 6px) calc(var(--safe-b) + 2px) calc(var(--safe-l) + 6px);
     background: linear-gradient(0deg, rgba(5,2,3,0.99) 42%, rgba(5,2,3,0.6) 82%, transparent);
   }
@@ -191,13 +314,36 @@ html, body { overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
   .card-cost { width: 22px; height: 22px; font-size: 12px; border-width: 1.5px; }
   .card-topline { padding: 3px 4px; }
   .card-type-pill { font-size: 6px; padding: 2px 4px; }
-  .card-info { padding: 0 5px 5px; }
-  .card-name { font-size: 9.5px; }
+  /* --card-cover is the strip the next card covers; keeping text out of it means
+     the visible text is complete, and truncation shows as an ellipsis instead of
+     a word sliced in half by a neighbouring frame. */
+  .card-info { padding: 0 calc(5px + var(--card-cover, 0px)) 5px 5px; }
+  .card-fx { right: calc(6px + var(--card-cover, 0px)); }
+  /* A card only shows ~85 of its 105px in the fan, so a name that WRAPS breaks
+     mid-word ("Overclo / ck"). One line, clipped with an ellipsis. */
+  .card-name {
+    font-size: 9.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+  }
+  .card-name .ico { flex: 0 0 auto; }
   .card-name .ico { width: 10px; height: 10px; }
   .card-kind { font-size: 6.5px; margin-top: 0; }
+  /* A clamped block silently cuts the last line in half ("Permanent: every S").
+     The card is a glanceable summary; the full text is in the detail sheet, so
+     the phone version shows a *complete* number of lines and fades the rest. */
   .card-text {
-    font-size: 8px; line-height: 1.28; margin-top: 2px; padding-top: 2px;
-    max-height: 3.9em;
+    font-size: 7.5px; line-height: 1.3; margin-top: 2px; padding-top: 2px;
+    /* Use the -webkit- clamp ONLY. Adding the standard `line-clamp` resets
+       display to flow-root (the clamp properties imply -webkit-box), which
+       silently disabled the clamp and let text spill past the card. */
+    max-height: none;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
   .card-tags { display: none; } /* tags also live in the card detail sheet */
   .card-corner { width: 24px; height: 24px; }
