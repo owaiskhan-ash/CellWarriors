@@ -135,12 +135,12 @@ const showView = (name) => {
 const ENEMY_ART = {
   // Character-only transparent cutouts (images/enemy-*-cut.png) — no scenery,
   // no background rectangle: the creature floats over the battle stage.
-  strep: 'images/pathogen-strep-cut.png',
+  strep: 'images/enemy-strep-cut.png',
   toxin: 'images/enemy-toxin-cut.png',
   biofilm: 'images/enemy-biofilm-cut.png',
   strain: 'images/enemy-strain-cut.png',
   prion: 'images/enemy-prion-cut.png',
-  spore: 'images/pathogen-strep-cut.png',
+  spore: 'images/enemy-spore-cut.png',
   elite_hive: 'images/enemy-hive-cut.png',
   elite_wall: 'images/enemy-cathedral-cut.png',
   elite_prime: 'images/pathogen-prime-cut.png',
@@ -148,9 +148,7 @@ const ENEMY_ART = {
   boss_prion: 'images/enemy-sovereign-cut.png',
   sim_colossus: 'images/enemy-colossus-cut.png',
 };
-const ENEMY_HUE = {
-  spore: 'hue-rotate(60deg)',
-};
+const ENEMY_HUE = {};
 const CARD_ART = {
   // New per-card art (images/cards/<id>.jpg) — generated from docs/character-bible.md.
   // Cards not yet listed keep the legacy shared art below until their batch lands.
@@ -1626,7 +1624,8 @@ function renderEnemies() {
     const a = attr(e.weakness);
     const intent = intentOf(e);
     const isSel = battle.targetUid === e.uid && e.hp > 0;
-    const node = el('div', `enemy enemy-${e.id}${e.hp <= 0 ? ' dead' : ''}${isSel ? ' selected' : ''}${e.ravaged ? ' ravaged' : ''}${e.boss ? ' is-boss' : e.elite ? ' is-elite' : ''}`);
+    const solo = battle.enemies.filter((x) => x.hp > 0).length === 1 && e.hp > 0;
+    const node = el('div', `enemy enemy-${e.id}${e.hp <= 0 ? ' dead' : ''}${isSel ? ' selected' : ''}${e.ravaged ? ' ravaged' : ''}${e.boss ? ' is-boss' : e.elite ? ' is-elite' : ''}${solo ? ' solo' : ''}`);
     e._dom = node;
     node.classList.toggle('idle', e.hp > 0 && e.counter > 0);
     if (!e._entered) { e._entered = true; node.classList.add('entered'); }
