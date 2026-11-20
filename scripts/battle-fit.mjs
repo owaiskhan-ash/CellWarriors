@@ -328,6 +328,51 @@ for (const vp of VIEWPORTS.filter((v) => v.h <= 560)) {
   await page.close();
 }
 
+/* =========================================================================
+   UI SCALE (Settings → UI SCALE, 85-110%)
+   At anything above 100% the app used to paint itself 10% taller than the
+   screen: the bottom of the hand strip and the resonance footer fell off the
+   bottom edge. The scale is applied as a transform with an inverse-sized box,
+   so "the app is exactly one screen" is the invariant to hold.
+   ========================================================================= */
+for (const vp of VIEWPORTS.filter((v) => v.w <= 915 && v.h <= 412)) {
+  for (const scale of [85, 110]) {
+    const page = await browser.newPage();
+    await page.setViewport({ width: vp.w, height: vp.h, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+    await page.goto(`file://${REPO}/index.html`, { waitUntil: 'networkidle0' });
+    await page.evaluate((sc) => {
+      localStorage.setItem('cw_settings', JSON.stringify({ volume: 90, fxSize: 'm', shake: true, motion: false, cb: false, uiScale: sc }));
+    }, scale);
+    await page.reload({ waitUntil: 'networkidle0' });
+    await page.evaluate(() => {
+      const el = document.getElementById('tt-dismiss');
+      if (el && !document.getElementById('touch-tut').classList.contains('hidden')) el.click();
+      window.__cw.setTeam(['kaito', 'momo', 'goro']);
+      window.__cw.openMission('m02');
+    });
+    await new Promise((r) => setTimeout(r, 1200));
+    // freeze everything EXCEPT the app's own scale transform
+    await page.addStyleTag({ content: `
+      *,*::before,*::after{animation:none!important;transition:none!important;transform:none!important}
+      #app{transform:scale(${scale / 100})!important;transform-origin:0 0!important}` });
+    await new Promise((r) => setTimeout(r, 140));
+    const m = await page.evaluate(() => {
+      const g = (s) => { const e = document.querySelector(s); if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, b: r.bottom, r: r.right }; };
+      return { vp: [innerWidth, innerHeight], app: g('#app'), handZone: g('.hand-zone'), endTurn: g('#end-turn'), stage: g('.battle-stage') };
+    });
+    const tag = `scale ${scale}% ${vp.name} ${vp.w}x${vp.h}`;
+    if (!m.app) { fail(tag, 'app is not rendered'); await page.close(); continue; }
+    if (Math.abs(m.app.w - m.vp[0]) > 2) fail(tag, `app is ${Math.round(m.app.w)}px wide in a ${m.vp[0]}px viewport`);
+    if (Math.abs(m.app.b - m.vp[1]) > 2) fail(tag, `app is ${Math.round(m.app.b)}px tall in a ${m.vp[1]}px viewport`);
+    pass(`${tag} app fills the screen`);
+    if (m.handZone && m.handZone.b > m.vp[1] + 2) fail(tag, `hand strip ends at ${Math.round(m.handZone.b)}, past the ${m.vp[1]}px fold`);
+    pass(`${tag} hand strip on screen`);
+    if (!m.endTurn || m.endTurn.b > m.vp[1] + 2) fail(tag, 'END TURN is off screen');
+    pass(`${tag} END TURN on screen`);
+    await page.close();
+  }
+}
+
 await browser.close();
 console.log(`\n${passes} checks passed, ${fails} failed`);
 if (fails) process.exit(1);
