@@ -445,35 +445,35 @@ export const EPIPHANY_BRANCHES = [
 export const CHARACTERS = {
   kaito: {
     id: 'kaito', name: 'Kaito', full: 'Kaito — Neutrophil', cls: 'striker', attr: 'passion',
-    art: 'images/cut-kaito-cut.png', skin: '#ff4d6d',
+    art: 'images/cut-kaito-cut.png', skin: '#ff4d6d', dob: '1987-03-19',
     hp: 88, blurb: 'First responder. Builds Fury from pressure and breaks bosses wide open.',
     leader: { name: 'Vanguard Point', desc: 'Leader: Kaito starts with +2 Strength & +2 Fury.' },
     deck: ['k_jab', 'k_brace', 'k_first', 'k_rally', 'k_feint', 'k_supply', 'k_up'],
   },
   momo: {
     id: 'momo', name: 'Momo', full: 'Momo — Platelet', cls: 'vanguard', attr: 'order',
-    art: 'images/cut-momo-cut.png', skin: '#4da3ff',
+    art: 'images/cut-momo-cut.png', skin: '#4da3ff', dob: '1992-07-19',
     hp: 104, blurb: 'Barricade Shield, Counter spikes, and turns defense into Aegis Slams.',
     leader: { name: 'Iron Line', desc: 'Leader: All allies start with +5 Shield and +2 Counter.' },
     deck: ['m_strike', 'm_guard', 'm_patch', 'm_stand', 'm_triage', 'm_formation', 'm_up'],
   },
   goro: {
     id: 'goro', name: 'Goro', full: 'Goro — Macrophage', cls: 'controller', attr: 'justice',
-    art: 'images/cut-goro-cut.png', skin: '#ffc94d',
+    art: 'images/cut-goro-cut.png', skin: '#ffc94d', dob: '1984-11-03',
     hp: 110, blurb: 'Stacks Toxin & Bleed, purifies Stress into Strength, retrieves finishers.',
     leader: { name: 'Steady Pulse', desc: 'Leader: All allies gain +6 Max HP and +2 Resonance on Turn 1.' },
     deck: ['g_strike', 'g_guard', 'g_devour', 'g_hymn', 'g_tonic', 'g_broth', 'g_up'],
   },
   bibi: {
     id: 'bibi', name: 'Bibi', full: 'Bibi — Mast Cell', cls: 'psionic', attr: 'void',
-    art: 'images/cut-bibi-cut.png', skin: '#b06bff',
+    art: 'images/cut-bibi-cut.png', skin: '#b06bff', dob: '1998-03-15',
     hp: 84, blurb: 'Marks targets, spawns 0-AP Sparks, echoes Attacks, detonates Resonance.',
     leader: { name: 'Cytokine Surge', desc: 'Leader: Start every battle with +2 EP and +1 Resonance.' },
     deck: ['b_ping', 'b_fuzz', 'b_hist', 'b_over', 'b_static', 'b_veil', 'b_up'],
   },
   yuna: {
     id: 'yuna', name: 'Yuna', full: 'Yuna — Eosinophil', cls: 'alchemist', attr: 'instinct',
-    art: 'images/cut-yuna-cut.png', skin: '#57e389',
+    art: 'images/cut-yuna-cut.png', skin: '#57e389', dob: '2001-08-22',
     hp: 92, blurb: 'Poison apothecary. Stacks Poison that melts enemies at End Turn, then incubates or detonates it.',
     leader: { name: 'Toxic Bloom', desc: 'Leader: Enemies start with 3 Poison — already a 9-damage tick at the first End Turn.' },
     deck: ['y_sting', 'y_dose', 'y_mist', 'y_incubate', 'y_antidote', 'y_hatch', 'y_culture'],
@@ -590,7 +590,7 @@ export const ENEMIES = {
                   { at: 0.33, weakness: 'passion', name: 'Chaos Bloom — Unbound' },
                 ],
                 intents: [{ type: 'attack', value: 19 }, { type: 'charge', value: 46, turns: 2 }, { type: 'debuff', value: 22, curse: 'curse_fever' }] },
-  boss_prion: { id: 'boss_prion', name: 'Prion Sovereign', hp: 460, tenacity: 170, counter: 3, weakness: 'instinct', boss: true,
+    boss_prion: { id: 'boss_prion', name: 'Prion Sovereign', hp: 460, tenacity: 170, counter: 3, weakness: 'instinct', boss: true, // weakness-direction stat = worker's Instinct level.
                 phases: [
                   { at: 0.66, weakness: 'order', name: 'Prion Sovereign — Folded' },
                   { at: 0.33, weakness: 'passion', name: 'Prion Sovereign — Apex' },

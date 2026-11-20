@@ -2,8 +2,10 @@ import {
   CARDS, CHARACTERS, EGOS, MISSIONS, ENEMIES, ATTRIBUTES, CLASSES, ROLES,
   RELICS, EVENTS, MOD_INFO, CHAOS_WEAKNESSES, CHARACTER_GUIDES,
 } from './data.js';
+const DRAW_NEXT = 5; // DRAW_PER_TURN from engine.js — we show it ahead of your first turn.
 import {
-  startBattle, playCard, endTurn, playEgo, useSands, canPlay, previewCard, intentOf,
+  startBattle, playCard, startDraw, endTurn, playEgo, useSands, canPlay, previewCard, intentOf,
+  statusEnemyHealthScale, STATUS_SENSITIVE, attackCardScore,
   chooseEpiphany, computeSynergy, battleSummary, rankOf, MAX_EP, MAX_RESONANCE, BURST_COST, RECOVERY_PLAYS,
   POISON_PER_STACK, poisonPerStack,
 } from './engine.js';
@@ -1647,6 +1649,15 @@ function renderTopBar() {
     $('boss-bar-fill').style.width = `${(pri.hp / pri.maxHp) * 100}%`;
     $('boss-bar-tenfill').style.width = `${pri.maxTenacity ? (pri.tenacity / pri.maxTenacity) * 100 : 0}%`;
     $('boss-bar-status').innerHTML = statusIconsHTML(pri);
+    if (pri.hpStat) {
+      const stats = [];
+      if (pri.atkBuff > 0) stats.push(`atkBuff ${pri.atkBuff}`);
+      if (pri.hpStat > 0) stats.push(`hpStat ${pri.hpStat}`);
+      if (pri.weaken > 0) stats.push(`weaken ${pri.weaken}`);
+      if (pri.mark > 0) stats.push(`mark ${pri.mark}`);
+      const statChip = el('span', 'stat-detail', `<i class="ico">🟡</i>${stats.join(' · ')}`);
+      $('boss-bar-status').prepend(statChip);
+    }
   }
   const obj = $('objective-bar');
   if (obj) {
@@ -1751,6 +1762,22 @@ function cardArtHTML(card, owner) {
   return `<img class="card-artimg" src="${owner ? owner.art : ''}" alt="" />`;
 }
 
+/* Game-feel: drag a card across the hand to play it, then drop. */
+function dragMoveNode(ev, node, i) {
+  if (!node) return;
+  const rect = node.getBoundingClientRect();
+  const inside = ev && document.elementFromPoint && document.elementFromPoint(ev.clientX, ev.clientY);
+  const overEnemy = inside && inside.closest('.enemy');
+  node.classList.toggle('dragging', !!overEnemy);
+  node.classList.toggle('drag-fast', !!overEnemy);
+  if (ev && overEnemy) {
+    node.style.transform = `translate(${ev.clientX - rect.left - rect.width / 2}px, ${ev.clientY - rect.top - rect.height / 2}px)`;
+  }
+  // ALT GESTURE — Attack Draw: Alt + hover enemy during drag
+  node._altDraw = !!(ev && overEnemy && ev.altKey);
+  node.classList.toggle('drag-draw', node._altDraw);
+}
+
 function cardHTML(card, battleState = battle) {
   const freeFirst = battleState && battleState.freeFirstLeft > 0 && card.cost > 0;
   const cost = (card.zeroCost || freeFirst) ? 0 : card.cost;
@@ -1758,6 +1785,12 @@ function cardHTML(card, battleState = battle) {
   const a = attr(card.attr);
   const p = previewOf(card, battleState);
   const playable = battleState ? (canPlay(battleState, card) && !battleState.result) : true;
+  // Status-heavy enemies (their own upgrades matter) read bigger than raw damage.
+  if (STATUS_SENSITIVE.has(card.type) && battleState && !battleState.result && p.dmg > 0 && p.total > 0) {
+    const scale = statusEnemyHealthScale(battleState);
+    p.dmg = Math.round(p.dmg * scale);
+    p.total = Math.round(p.total * scale);
+  }
   return {
     className: `card ${card.type}${playable ? '' : ' unaffordable'}${card.glint ? ' glint' : ''}${card.upgraded ? ' upgraded' : ''}${card.rare ? ' rare' : ''}${card.token ? ' token' : ''}${p.burst ? ' burst-ready' : ''}${cost === 0 ? ' card-free' : ''}`,
     html: `
@@ -1789,19 +1822,47 @@ function renderHand() {
   const overlap = Math.round(w * 0.42);
   hand.style.setProperty('--card-w', `${w}px`);
   hand.style.setProperty('--card-m', `${-Math.floor(overlap / 2)}px`);
+  const endTurnLabel = battle.drawStarted
+    ? 'Draw started — ends on next turn'
+    : (battle.cardsPlayedThisTurn > 0 ? `Draw: +${DRAW_NEXT} on End Turn` : 'End Turn');
+  const endTurn = $('end-turn');
+  if (endTurn) {
+    endTurn.textContent = endTurnLabel;
+    endTurn.classList.toggle('draw-started', !!battle.drawStarted);
+    endTurn.style.fontSize = (endTurn.textContent.length > 22 ? 9 : 11) + 'px';
+    endTurn.title = 'Press End Turn to end your turn';
+  }
 
   const mid = (battle.hand.length - 1) / 2;
+  let priorityIdx = -1;
+  let priorityAtk = 0;
+  battle.hand.forEach((c, i) => {
+    if (!STATUS_SENSITIVE.has(c.type) || !c.dmg) return;
+    const p = previewOf(c, battle);
+    if (p.total > 0 && p.total > priorityAtk) { priorityIdx = i; priorityAtk = p.total; }
+  });
   battle.hand.forEach((card, i) => {
     const { className, html } = cardHTML(card, battle);
     const node = el('div', className, html);
+    if (i === priorityIdx) node.dataset.priority = 'weak';
+    // Native tooltip: attack preview + status note (hovering an attack card while an enemy is selected)
+    const ai = attr(card.attr);
+    const tt = [`${card.name} — ${ai.glyph} ${ai.name} · ${card.type}`];
+    const pp = previewOf(card, battle);
+    if (pp.total > 0 && pp.targets > 0) tt.push(`→ ${pp.total} dmg on ${pp.targets} target(s)`);
+    if (STATUS_SENSITIVE.has(card.type) && pp.total > 0) tt.push('⚖ Takes longer to land on status-heavy enemies');
+    node.title = tt.join(' · ');
     const rot = battle.hand.length > 1 ? (i - mid) * 1.8 : 0;
     node.style.setProperty('--rot', `${rot.toFixed(2)}deg`);
     node.style.setProperty('--lift', `${(Math.abs(i - mid) * 2.5).toFixed(1)}px`);
     node.classList.toggle('hoverable', canPlay(battle, card));
+    if (card.source === 'draw' || card.draw) node.querySelector('.card-tags')?.prepend(el('span', 'tag', '↓ drawn'));
 
-    let startX = 0, startY = 0;
+    let startX = 0, startY = 0, moved = false, upHandled = false;
+    const playIfPlaced = () => { if (!upHandled && node._placed && Math.abs(node._offX) > 4) { upHandled = true; playFromUI(i); } };
+    node._placed = false;
     node.addEventListener('pointerdown', (ev) => {
-      startX = ev.clientX; startY = ev.clientY;
+      startX = ev.clientX; startY = ev.clientY; moved = false;
       clearTimeout(pressTimer);
       pressTimer = setTimeout(() => {
         longPressed = true;
@@ -1809,9 +1870,35 @@ function renderHand() {
       }, 320);
     });
     node.addEventListener('pointermove', (ev) => {
-      if (Math.abs(ev.clientX - startX) > 12 || Math.abs(ev.clientY - startY) > 12) clearTimeout(pressTimer);
+      if (Math.abs(ev.clientX - startX) > 4 || Math.abs(ev.clientY - startY) > 4) {
+        moved = true;
+        clearTimeout(pressTimer);
+        if (canPlay(battle, card)) {
+          node._placed = true;
+          node._offX = ev.clientX - startX;
+        }
+        dragMoveNode(ev, node, i);
+      } else {
+        dragMoveNode(ev, node, i);
+      }
     });
-    node.addEventListener('pointerup', () => { clearTimeout(pressTimer); hideTargetLine(); });
+    node.addEventListener('pointerup', (ev) => {
+      clearTimeout(pressTimer);
+      hideTargetLine();
+      // Alt+Gesture — Attack Draw: the card stays out, card enters your hand, Draw+1 starts.
+      if (node._altDraw) {
+        node._altDraw = false;
+        node.classList.remove('drag-draw');
+        const drew = startDraw(battle, 1);
+        renderHand();
+        if (!battle.result) showCutIn(node);
+        void drew;
+        return;
+      }
+      playIfPlaced();
+      if (!upHandled) { const x = ev.clientX - startX; if (x > 4) { upHandled = true; playFromUI(i); } }
+      else upHandled = false;
+    });
     node.addEventListener('pointerleave', () => { clearTimeout(pressTimer); hideTargetLine(); });
     node.addEventListener('pointercancel', () => { clearTimeout(pressTimer); hideTargetLine(); });
     node.addEventListener('mouseenter', () => {
