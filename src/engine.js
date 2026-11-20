@@ -101,7 +101,7 @@ export function startBattle(opts, partyIds, seed) {
       tenacity: e.tenacity, maxTenacity: e.tenacity, weakness: e.weakness,
       counter: e.counter, maxCounter: e.counter, counterBonus: 0,
       ravaged: false, weaken: 0, atkBuff: 0, mark: 0, vuln: 0,
-      bleed: 0, toxin: 0, charging: null,
+      bleed: 0, toxin: 0, poison: 0, charging: null,
       intentIndex: 0, intents: e.intents,
       mods: e.mods || [], phases: e.phases || [], phaseIndex: 0,
       elite: !!e.elite, boss: !!e.boss,
@@ -155,6 +155,7 @@ export function startBattle(opts, partyIds, seed) {
       onAtkFury: 0, onShieldCounter: 0, onShieldThorns: 0, teamBarricade: 0,
       onHealFury: 0, onStatusTickHeal: 0, onStatusTickRes: 0, onStatusTickFury: 0,
       onExhaustDmg: 0, onExhaustEp: 0,
+      poisonPotency: 0, onPoisonTickRes: 0, onPoisonTickHeal: 0, onPoisonTickFury: 0,
     },
     relics, relicIds, synergy, has: undefined,
     freeFirstLeft: has('scabbard') ? 1 : 0,
@@ -167,6 +168,7 @@ export function startBattle(opts, partyIds, seed) {
   };
   state.has = has;
 
+  if (leadId === 'yuna') enemies.forEach((e) => { e.poison += 4; });
   if (startShield) characters.forEach((c) => { c.shield += startShield; });
   if (has('plate')) characters.forEach((c) => { c.counter += 3; });
   if (has('adrenal') && characters[0]) characters[0].fury += 2;
@@ -206,7 +208,7 @@ export function computeSynergy(characters) {
   if (cls.includes('vanguard') && cls.includes('controller')) out.push({ id: 'bastion', name: 'BASTION', desc: 'Start with +5 Shield & +1 Resonance on Shields.' });
   if (cls.includes('striker') && cls.includes('psionic')) out.push({ id: 'edge', name: 'EDGE', desc: '+1 AP Turn 1 & Cross-Chain Attacks +20% dmg.' });
   if (cls.includes('striker') && cls.includes('vanguard')) out.push({ id: 'counterstrike', name: 'PHALANX', desc: 'Counter hits grant Kaito +1 Fury.' });
-  if (cls.includes('controller') && cls.includes('psionic')) out.push({ id: 'catalyst', name: 'CASCADE', desc: 'Bleed/Toxin stacks +1 extra on application.' });
+  if ((cls.includes('controller') && cls.includes('psionic')) || (cls.includes('alchemist') && (cls.includes('controller') || cls.includes('psionic')))) out.push({ id: 'catalyst', name: 'CASCADE', desc: 'Bleed/Toxin/Poison stacks +1 extra on application.' });
   return out;
 }
 
@@ -401,10 +403,46 @@ function computeAttackPlan(state, card, target, actor, { simulate = false } = {}
   };
 }
 
-function applyStatusStacks(state, enemy, { bleed = 0, toxin = 0 }) {
+function applyStatusStacks(state, enemy, { bleed = 0, toxin = 0, poison = 0 }) {
   const cascade = state.synergy && state.synergy.some((s) => s.id === 'catalyst') ? 1 : 0;
   if (bleed > 0) enemy.bleed += bleed + cascade;
   if (toxin > 0) enemy.toxin += toxin + cascade;
+  if (poison > 0) enemy.poison += poison + cascade;
+}
+
+// POISON — Damage over Time. Stacks collect during the turn; at End Turn the
+// enemy takes damage equal to its stacks (+ Potency), then Poison -1.
+function poisonTickDamage(state, enemy) {
+  return Math.max(0, (enemy.poison || 0) + (state.passives.poisonPotency || 0));
+}
+function tickPoison(state, enemy, { consumeAll = false } = {}) {
+  if (!enemy || enemy.hp <= 0 || (enemy.poison || 0) <= 0) return 0;
+  const stacks = enemy.poison;
+  const dmg = poisonTickDamage(state, enemy);
+  enemy.hp = Math.max(0, enemy.hp - dmg);
+  state.stats.damage += dmg;
+  enemy.poison = consumeAll ? 0 : Math.max(0, enemy.poison - 1);
+  pushFx(state, { kind: 'poison', uid: enemy.uid, name: enemy.name, amt: dmg });
+  log(state, `  POISON — ${enemy.name} takes ${dmg} DoT damage (${stacks} stack${stacks === 1 ? '' : 's'}${consumeAll ? ', consumed' : ', -1 stack'}).`, 'weak');
+  if (state.passives.onPoisonTickRes) addResonance(state, state.passives.onPoisonTickRes);
+  if (state.passives.onPoisonTickHeal) {
+    const y = state.characters.find((c) => c.id === 'yuna') || state.characters[0];
+    if (y && y.hp > 0) healCharacter(state, y, state.passives.onPoisonTickHeal, 0);
+  }
+  if (state.passives.onPoisonTickFury) {
+    const k = state.characters.find((c) => c.id === 'kaito') || state.characters[0];
+    if (k && k.hp > 0) k.fury += state.passives.onPoisonTickFury;
+  }
+  onStatusTickPassives(state);
+  if (enemy.hp <= 0) {
+    log(state, `${enemy.name} melts to Poison! +1 EP`, 'kill');
+    state.ep = Math.min(MAX_EP, state.ep + 1);
+  }
+  checkPhase(state, enemy);
+  return dmg;
+}
+function resolveEndTurnPoison(state) {
+  state.enemies.forEach((e) => { if (e.hp > 0) tickPoison(state, e); });
 }
 
 function onStatusTickPassives(state) {
@@ -773,6 +811,31 @@ export function playCard(state, handIndex, targetUid = null) {
     if (isChain && card.chainMult) { state.ap += 1; log(state, '  Chain bonus: +1 AP!', 'combo'); }
   }
 
+  // --- Poison & status application (attacks + skills alike, applied once) ---
+  if (card.poison) {
+    const list = card.aoe ? state.enemies.filter((e) => e.hp > 0) : [target].filter((e) => e && e.hp > 0);
+    list.forEach((e) => applyStatusStacks(state, e, { poison: card.poison }));
+    if (list.length) log(state, `  +${card.poison} Poison${card.aoe ? ' to all enemies' : ''} (ticks at End Turn).`, 'weak');
+  }
+  if (card.poisonAll) {
+    state.enemies.filter((e) => e.hp > 0).forEach((e) => applyStatusStacks(state, e, { poison: card.poisonAll }));
+    log(state, `  +${card.poisonAll} Poison to ALL enemies.`, 'weak');
+  }
+  if (card.toxin && !(card.dmg > 0) && target && target.hp > 0) applyStatusStacks(state, target, { toxin: card.toxin });
+  if (card.bleed && !(card.dmg > 0) && target && target.hp > 0) applyStatusStacks(state, target, { bleed: card.bleed });
+  if (card.vulnAll) state.enemies.forEach((e) => { if (e.hp > 0) e.vuln = Math.max(e.vuln, card.vulnAll); });
+  if (card.doublePoison && target && target.hp > 0) {
+    target.poison *= 2;
+    log(state, `  INCUBATE — ${target.name} Poison DOUBLED to ${target.poison}!`, 'epiphany');
+  }
+  if (card.triggerPoisonTick && target) tickPoison(state, target);
+  if (card.detonatePoison && target && target.hp > 0 && target.poison > 0) {
+    const stacks = target.poison;
+    const healed = tickPoison(state, target, { consumeAll: true });
+    if (healed > 0) state.characters.forEach((c) => { if (c.hp > 0) healCharacter(state, c, stacks, 0); });
+    log(state, `  NECROTIC FEAST — detonated ${stacks} Poison for ${healed} and healed the team.`, 'epiphany');
+  }
+
   // --- Skill / Buff / Engine Effects ---
   if (card.shield) addShield(state, actor, Math.round((card.shield + skillLv) * mult));
   if (card.teamShield) state.characters.forEach((c) => { if (c.hp > 0) addShield(state, c, Math.round((card.teamShield + skillLv) * mult)); });
@@ -823,7 +886,8 @@ export function playCard(state, handIndex, targetUid = null) {
     list.forEach((e) => {
       e.bleed *= 2;
       e.toxin *= 2;
-      log(state, `CATALYST — ${e.name} Bleed (${e.bleed}) & Toxin (${e.toxin}) DOUBLED!`, 'epiphany');
+      e.poison = (e.poison || 0) * 2;
+      log(state, `CATALYST — ${e.name} Bleed (${e.bleed}), Toxin (${e.toxin}) & Poison (${e.poison}) DOUBLED!`, 'epiphany');
     });
   }
 
@@ -870,6 +934,10 @@ export function playCard(state, handIndex, targetUid = null) {
   if (card.onStatusTickFury) state.passives.onStatusTickFury += card.onStatusTickFury;
   if (card.onExhaustDmg) state.passives.onExhaustDmg += card.onExhaustDmg;
   if (card.onExhaustEp) state.passives.onExhaustEp += card.onExhaustEp;
+  if (card.poisonPotency) state.passives.poisonPotency += card.poisonPotency;
+  if (card.onPoisonTickRes) state.passives.onPoisonTickRes += card.onPoisonTickRes;
+  if (card.onPoisonTickHeal) state.passives.onPoisonTickHeal += card.onPoisonTickHeal;
+  if (card.onPoisonTickFury) state.passives.onPoisonTickFury += card.onPoisonTickFury;
 
   // Epiphany 3-choice trigger
   if (state.epiphany && owner && state.epiphany === owner.id && !state.pendingEpiphany) {
@@ -1027,6 +1095,12 @@ export function endTurn(state) {
   if (state.result) return state;
   if (state.pendingEpiphany) chooseEpiphany(state, 0);
 
+  // POISON (Damage over Time) resolves when the turn ends, before the next
+  // turn begins — stacks collected this turn melt the enemy now.
+  resolveEndTurnPoison(state);
+  checkResult(state);
+  if (state.result) return state;
+
   const retained = [];
   state.hand.forEach((c) => {
     if ((c.tags || []).includes('Retain')) {
@@ -1094,11 +1168,17 @@ export function playEgo(state, index, { exalt = false } = {}) {
       damageEnemy(state, e, d, { attr: ego.attr, cost: 3, isCrit: isExalt });
       if (ego.bleed) applyStatusStacks(state, e, { bleed: ego.bleed * mult });
       if (ego.toxin) applyStatusStacks(state, e, { toxin: ego.toxin * mult });
+      if (ego.poison) applyStatusStacks(state, e, { poison: ego.poison * mult });
       if (ego.mark) e.mark = Math.max(e.mark, ego.mark + (isExalt ? 1 : 0));
       if (isExalt && ego.owner === 'kaito') applyStatusStacks(state, e, { bleed: 10 });
       if (isExalt && ego.owner === 'bibi') e.vuln = Math.max(e.vuln, 3);
       if (ego.detonateAll) detonateEnemy(state, e, ego.detonateAll * mult, false);
     });
+  }
+
+  if (ego.poison && !ego.dmg) {
+    targets.forEach((e) => applyStatusStacks(state, e, { poison: ego.poison * mult }));
+    if (isExalt && ego.id === 'ego_yuna_1') targets.forEach((e) => tickPoison(state, e));
   }
 
   if (ego.teamShield) {
@@ -1180,6 +1260,7 @@ export function previewCard(state, card, targetUid = null) {
     crit: false, burst: false, isChain: hasEdgeChain(state, card), lethal: false,
     shield: 0, teamShield: 0, heal: 0, teamHeal: 0,
     stressHeal: 0, teamStressHeal: 0, ap: 0, draw: 0, targets: 1, combo: 0, finale: 0,
+    poison: 0, poisonAll: 0,
   };
   const alive = state.enemies.filter((e) => e.hp > 0);
   out.targets = card.aoe ? Math.max(1, alive.length) : (target ? 1 : 0);
@@ -1222,6 +1303,12 @@ export function previewCard(state, card, targetUid = null) {
   out.teamStressHeal = card.teamStressHeal || 0;
   out.ap = card.apGain || card.maxAp || 0;
   out.draw = card.draw || 0;
+  out.poison = card.poison || 0;
+  out.poisonAll = card.poisonAll || 0;
+  if (target) {
+    out.poisonNextTick = (target.poison || 0) + out.poison + (card.poisonAll || 0) + (state.passives.poisonPotency || 0);
+    out.poisonStacks = target.poison || 0;
+  }
   return out;
 }
 

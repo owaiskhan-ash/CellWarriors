@@ -37,6 +37,8 @@
         <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="1" fill="currentColor"/></symbol>
         <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
         <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+        <symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 3s6 6.6 6 11a6 6 0 11-12 0c0-4.4 6-11 6-11z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+        <symbol id="i-poison" viewBox="0 0 24 24"><path d="M10 2h4M10 2v5L4.8 19a2 2 0 001.8 3h10.8a2 2 0 001.8-3L14 7V2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.5 15h9" stroke="currentColor" stroke-width="2"/><circle cx="10.5" cy="18" r="0.6" fill="currentColor"/><circle cx="14" cy="17" r="0.6" fill="currentColor"/></symbol>
       </defs>
     </svg>
 
@@ -477,6 +479,26 @@
           </div>
         </div>
       </section>
+
+      <!-- enemy buff/debuff detail (long press / right-click an enemy) -->
+      <div class="detail hidden" id="enemy-detail">
+        <div class="detail-panel czn-frame enemy-detail-panel">
+          <span class="czn-corner tl"></span><span class="czn-corner tr"></span>
+          <img class="enemy-detail-art" id="enemy-detail-art" alt="" />
+          <div class="detail-info">
+            <div class="detail-head" id="enemy-detail-head">—</div>
+            <div class="detail-sub" id="enemy-detail-sub">—</div>
+            <div class="enemy-bars" id="enemy-detail-bars"></div>
+            <div class="enemy-status-cols">
+              <div><h4 class="buff-title">BUFFS</h4><div id="enemy-buffs"></div></div>
+              <div><h4 class="debuff-title">DEBUFFS · STATUS</h4><div id="enemy-debuffs"></div></div>
+            </div>
+            <h4>PASSIVES &amp; NEXT ACTIONS</h4>
+            <div id="enemy-passives"></div>
+            <div class="detail-hint">tap anywhere to close · click enemy to target it</div>
+          </div>
+        </div>
+      </div>
 
       <!-- card detail (long press) -->
       <div class="detail hidden" id="detail">

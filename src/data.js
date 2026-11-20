@@ -13,18 +13,21 @@ export const CLASSES = {
   vanguard:   { name: 'Vanguard',   desc: 'Barricade Shield retention, Counter, and Aegis Slam.' },
   controller: { name: 'Controller', desc: 'Toxin/Bleed catalyst, Stress cleanse, and Overheal Strength.' },
   psionic:    { name: 'Psionic',    desc: 'Mark, Exhaust scaling, Token swarm, and Echo amplification.' },
+  alchemist:  { name: 'Alchemist',  desc: 'Poison damage-over-time: stack it, incubate it, detonate it at end of turn.' },
 };
 
-export const ROLES = { striker: 'Fury DPS', vanguard: 'Shield / Counter', controller: 'Catalyst / Heal', psionic: 'Amplify / Swarm' };
+export const ROLES = { striker: 'Fury DPS', vanguard: 'Shield / Counter', controller: 'Catalyst / Heal', psionic: 'Amplify / Swarm', alchemist: 'Poison DoT' };
 
 // ---------------------------------------------------------------------------
-// Cards: 10 per character (6-card core starter + 4 build-around engine cards)
-// plus 0-AP Tokens, Statuses, and Curses.
+// Cards: 10+ per character. Design rule (all combatants): exactly ONE Basic
+// Attack per character (flagged `basic: true`, 1 copy in the starter deck);
+// every other starter card is a Synergy / Effect card (skills & upgrades).
+// Signature direct-attack finishers live in the build-around (draft) pool.
 // ---------------------------------------------------------------------------
 export const CARDS = {
   // === KAITO / Striker / Passion (Fury, Multi-Hit, Stress-to-Power, Crit) ===
   k_jab: {
-    name: 'Cytokine Jab', owner: 'kaito', type: 'attack', cost: 1, attr: 'passion',
+    name: 'Cytokine Jab', owner: 'kaito', type: 'attack', cost: 1, attr: 'passion', basic: true,
     dmg: 8, fury: 1,
     text: 'Deal 8 damage. Gain +1 Fury.',
     up: { dmg: 11, fury: 2, text: 'Deal 11 damage. Gain +2 Fury.' },
@@ -87,7 +90,7 @@ export const CARDS = {
 
   // === MOMO / Vanguard / Order (Barricade Shield Retain, Counter, Aegis Slam) ===
   m_strike: {
-    name: 'Order Strike', owner: 'momo', type: 'attack', cost: 1, attr: 'order',
+    name: 'Order Strike', owner: 'momo', type: 'attack', cost: 1, attr: 'order', basic: true,
     dmg: 7, shieldHalfDmg: true,
     text: 'Deal 7 damage. Gain Shield equal to half damage dealt.',
     up: { dmg: 10, shieldHalfDmg: true, text: 'Deal 10 damage. Gain Shield equal to half damage dealt.' },
@@ -150,7 +153,7 @@ export const CARDS = {
 
   // === GORO / Controller / Justice (Toxin/Bleed Catalyst, Overheal->Str, Retrieve) ===
   g_strike: {
-    name: 'Scalpel', owner: 'goro', type: 'attack', cost: 1, attr: 'justice',
+    name: 'Scalpel', owner: 'goro', type: 'attack', cost: 1, attr: 'justice', basic: true,
     dmg: 7, toxin: 3,
     text: 'Deal 7 damage and apply 3 Toxin.',
     up: { dmg: 10, toxin: 5, text: 'Deal 10 damage and apply 5 Toxin.' },
@@ -213,7 +216,7 @@ export const CARDS = {
 
   // === BIBI / Psionic / Void (Mark, Exhaust Scaling, Token Swarm, Echo) ===
   b_ping: {
-    name: 'Signal Ping', owner: 'bibi', type: 'attack', cost: 1, attr: 'void',
+    name: 'Signal Ping', owner: 'bibi', type: 'attack', cost: 1, attr: 'void', basic: true,
     dmg: 6, spawnTokens: { id: 'tok_spark', count: 1 },
     text: 'Deal 6 damage. Add a 0-AP Neuro-Spark to hand.',
     up: { dmg: 9, spawnTokens: { id: 'tok_spark', count: 2 }, text: 'Deal 9 damage. Add 2 Neuro-Sparks (0 AP) to hand.' },
@@ -274,6 +277,133 @@ export const CARDS = {
     up: { dmg: 20, scaleResonance: 14, draw: 2, forceBurst: true, text: 'Deal 20 (+14 per Resonance stack) and Draw 2. Triggers Resonance Burst.' },
   },
 
+  // === Synergy / Effect cards (starter-deck effects for the original four) ===
+  k_rally: {
+    name: 'War Cry', owner: 'kaito', type: 'skill', cost: 1, attr: 'passion',
+    teamBuffAtk: 4, fury: 2, tags: ['Synergy'],
+    text: 'All allies +4 Attack this turn. Kaito gains +2 Fury. Play before attacking.',
+    up: { teamBuffAtk: 6, fury: 3, text: 'All allies +6 Attack this turn. Kaito gains +3 Fury.' },
+  },
+  k_feint: {
+    name: 'Feint Step', owner: 'kaito', type: 'skill', cost: 1, attr: 'passion',
+    shield: 6, draw: 1, fury: 1, tags: ['Synergy'],
+    text: 'Gain 6 Shield, +1 Fury, and Draw 1 card.',
+    up: { shield: 9, draw: 1, fury: 2, text: 'Gain 9 Shield, +2 Fury, and Draw 1 card.' },
+  },
+  k_supply: {
+    name: 'Combat Stims', owner: 'kaito', type: 'skill', cost: 0, attr: 'passion',
+    spawnTokens: { id: 'tok_cut', count: 1 }, fury: 1, tags: ['Synergy', 'Haste', 'Exhaust'],
+    text: 'Add a 0-AP Micro-Cut to hand and gain +1 Fury. Haste. Exhaust.',
+    up: { spawnTokens: { id: 'tok_cut', count: 2 }, fury: 2, tags: ['Synergy', 'Haste', 'Exhaust'], text: 'Add 2 Micro-Cuts to hand and gain +2 Fury. Haste. Exhaust.' },
+  },
+  m_formation: {
+    name: 'Formation', owner: 'momo', type: 'skill', cost: 1, attr: 'order',
+    teamShield: 6, teamCounter: 2, tags: ['Synergy'],
+    text: 'All allies gain 6 Shield and +2 Counter.',
+    up: { teamShield: 9, teamCounter: 3, text: 'All allies gain 9 Shield and +3 Counter.' },
+  },
+  m_splint: {
+    name: 'Field Splint', owner: 'momo', type: 'skill', cost: 1, attr: 'order',
+    heal: 6, shield: 6, stressHeal: 8, tags: ['Synergy'],
+    text: 'Heal 6 HP, gain 6 Shield, and clear 8 Stress.',
+    up: { heal: 10, shield: 9, stressHeal: 12, text: 'Heal 10 HP, gain 9 Shield, and clear 12 Stress.' },
+  },
+  g_tonic: {
+    name: 'Toxic Tonic', owner: 'goro', type: 'skill', cost: 1, attr: 'justice',
+    toxin: 4, teamStressHeal: 6, tags: ['Synergy'],
+    text: 'Apply 4 Toxin to the target and clear 6 Stress from the squad.',
+    up: { toxin: 6, teamStressHeal: 10, text: 'Apply 6 Toxin to the target and clear 10 Stress from the squad.' },
+  },
+  g_broth: {
+    name: 'Marrow Broth', owner: 'goro', type: 'skill', cost: 1, attr: 'justice',
+    teamHeal: 5, shield: 7, tags: ['Synergy'],
+    text: 'Heal all allies 5 HP. Goro gains 7 Shield.',
+    up: { teamHeal: 8, shield: 11, text: 'Heal all allies 8 HP. Goro gains 11 Shield.' },
+  },
+  b_static: {
+    name: 'Static Bloom', owner: 'bibi', type: 'skill', cost: 1, attr: 'void',
+    resonance: 2, draw: 1, spawnTokens: { id: 'tok_spark', count: 1 }, tags: ['Synergy'],
+    text: 'Gain +2 Resonance, Draw 1, and add a 0-AP Neuro-Spark to hand.',
+    up: { resonance: 3, draw: 1, spawnTokens: { id: 'tok_spark', count: 2 }, tags: ['Synergy'], text: 'Gain +3 Resonance, Draw 1, and add 2 Neuro-Sparks.' },
+  },
+  b_veil: {
+    name: 'Signal Veil', owner: 'bibi', type: 'skill', cost: 1, attr: 'void',
+    teamShield: 5, teamBuffAtk: 3, tags: ['Synergy'],
+    text: 'All allies gain 5 Shield and +3 Attack this turn.',
+    up: { teamShield: 8, teamBuffAtk: 5, text: 'All allies gain 8 Shield and +5 Attack this turn.' },
+  },
+
+  // === Yuna / Alchemist / Instinct (POISON Damage-over-Time) ===
+  // Poison rule: stacks collect on the enemy. When you End Turn, each enemy
+  // takes damage equal to its Poison stacks (+ Potency), then Poison -1.
+  y_sting: {
+    name: 'Venom Sting', owner: 'yuna', type: 'attack', cost: 1, attr: 'instinct', basic: true,
+    dmg: 6, poison: 3,
+    text: 'BASIC ATTACK — Deal 6 damage and apply 3 Poison (ticks at end of turn).',
+    up: { dmg: 9, poison: 4, text: 'BASIC ATTACK — Deal 9 damage and apply 4 Poison.' },
+  },
+  y_dose: {
+    name: 'Creeping Dose', owner: 'yuna', type: 'skill', cost: 1, attr: 'instinct',
+    poison: 5, tags: ['Poison'],
+    text: 'Apply 5 Poison. It will deal 5, 4, 3… damage at each End Turn.',
+    up: { poison: 7, text: 'Apply 7 Poison. It ticks down at each End Turn.' },
+  },
+  y_mist: {
+    name: 'Spore Mist', owner: 'yuna', type: 'skill', cost: 1, attr: 'instinct',
+    poisonAll: 3, tags: ['Poison'],
+    text: 'Apply 3 Poison to ALL enemies.',
+    up: { poisonAll: 4, text: 'Apply 4 Poison to ALL enemies.' },
+  },
+  y_incubate: {
+    name: 'Incubate', owner: 'yuna', type: 'skill', cost: 1, attr: 'instinct',
+    doublePoison: true, draw: 1, tags: ['Poison'],
+    text: 'Double the target’s Poison stacks, then Draw 1 card.',
+    up: { doublePoison: true, draw: 1, resonance: 1, tags: ['Poison'], text: 'Double the target’s Poison, +1 Resonance, and Draw 1.' },
+  },
+  y_antidote: {
+    name: 'Sweet Antidote', owner: 'yuna', type: 'skill', cost: 1, attr: 'instinct',
+    shield: 8, heal: 5, stressHeal: 10, tags: ['Synergy'],
+    text: 'Gain 8 Shield, heal 5 HP, and clear 10 Stress. She poisons enemies, not friends.',
+    up: { shield: 12, heal: 8, stressHeal: 16, text: 'Gain 12 Shield, heal 8 HP, and clear 16 Stress.' },
+  },
+  y_hatch: {
+    name: 'Hatchery', owner: 'yuna', type: 'skill', cost: 0, attr: 'instinct',
+    spawnTokens: { id: 'tok_spore', count: 2 }, tags: ['Poison', 'Haste', 'Exhaust'],
+    text: 'Add 2 free Spore Mites (0 AP, +Poison) to hand. Haste. Exhaust.',
+    up: { spawnTokens: { id: 'tok_spore', count: 3 }, tags: ['Poison', 'Haste', 'Exhaust'], text: 'Add 3 free Spore Mites to hand. Haste. Exhaust.' },
+  },
+  y_culture: {
+    name: 'Living Culture', owner: 'yuna', type: 'upgrade', cost: 1, attr: 'instinct',
+    poisonPotency: 2, onPoisonTickRes: 1, tags: ['Initiation', 'Unique'],
+    text: 'Permanent: Poison ticks deal +2 damage, and every Poison tick grants +1 Resonance.',
+    up: { poisonPotency: 3, onPoisonTickRes: 1, onPoisonTickHeal: 1, tags: ['Initiation', 'Unique'], text: 'Permanent: Poison ticks +3 damage, +1 Resonance per tick, and Yuna heals 1 per tick.' },
+  },
+  // --- Yuna Build-Around Cards ---
+  y_epidemic: {
+    name: 'Epidemic Bloom', owner: 'yuna', type: 'skill', cost: 2, attr: 'instinct', rare: true,
+    poisonAll: 6, vulnAll: 1, tags: ['Poison'],
+    text: 'Apply 6 Poison and 1T Vulnerable (+35% taken) to ALL enemies.',
+    up: { poisonAll: 8, vulnAll: 2, tags: ['Poison'], text: 'Apply 8 Poison and 2T Vulnerable to ALL enemies.' },
+  },
+  y_necrosis: {
+    name: 'Necrotic Feast', owner: 'yuna', type: 'skill', cost: 2, attr: 'instinct', rare: true,
+    detonatePoison: true, tags: ['Poison', 'Detonate'],
+    text: 'Detonate Poison: target immediately takes damage equal to its Poison stacks (stacks are consumed), and your team heals 1 HP per stack.',
+    up: { detonatePoison: true, tags: ['Poison', 'Detonate'], text: 'Detonate Poison for full stack damage, heal 1 per stack, and Draw 1.', draw: 1 },
+  },
+  y_predator: {
+    name: 'Apex Parasite', owner: 'yuna', type: 'skill', cost: 3, attr: 'instinct', rare: true,
+    poison: 10, triggerPoisonTick: 1, tags: ['Poison'],
+    text: 'Apply 10 Poison, then immediately trigger one Poison tick (damage now, Poison -1).',
+    up: { poison: 14, triggerPoisonTick: 1, tags: ['Poison'], text: 'Apply 14 Poison, then immediately trigger one Poison tick.' },
+  },
+  y_virulence: {
+    name: 'Virulence Engine', owner: 'yuna', type: 'upgrade', cost: 1, attr: 'instinct', rare: true,
+    poisonPotency: 3, onPoisonTickFury: 1, tags: ['Unique'],
+    text: 'Permanent: Poison ticks deal +3 damage, and every Poison tick grants Kaito/the team +1 Fury (lead combatant if no Kaito).',
+    up: { poisonPotency: 4, onPoisonTickFury: 1, onPoisonTickRes: 1, tags: ['Unique'], text: 'Permanent: Poison ticks +4 damage, +1 Fury and +1 Resonance per tick.' },
+  },
+
   // === Generated Tokens ===
   tok_cut: {
     name: 'Micro-Cut', owner: 'kaito', type: 'attack', cost: 0, attr: 'passion', token: true,
@@ -287,12 +417,19 @@ export const CARDS = {
     text: 'Deal 4 damage and +1 Resonance. Haste. Exhaust.',
     up: { dmg: 6, resonance: 2, text: 'Deal 6 damage and +2 Resonance. Haste. Exhaust.' },
   },
+  tok_spore: {
+    name: 'Spore Mite', owner: 'yuna', type: 'attack', cost: 0, attr: 'instinct', token: true,
+    dmg: 3, poison: 2, tags: ['Poison', 'Exhaust', 'Haste'],
+    text: 'Deal 3 damage and apply 2 Poison. Haste. Exhaust.',
+    up: { dmg: 4, poison: 3, text: 'Deal 4 damage and apply 3 Poison. Haste. Exhaust.' },
+  },
 
   // === Status / Curse ===
   breakdown_kaito: { name: 'Breakdown: Kaito', owner: 'kaito', type: 'status', cost: 0, breakdown: true, text: 'Play to pull Kaito back.' },
   breakdown_momo:  { name: 'Breakdown: Momo', owner: 'momo', type: 'status', cost: 0, breakdown: true, text: 'Play to pull Momo back.' },
   breakdown_goro:  { name: 'Breakdown: Goro', owner: 'goro', type: 'status', cost: 0, breakdown: true, text: 'Play to pull Goro back.' },
   breakdown_bibi:  { name: 'Breakdown: Bibi', owner: 'bibi', type: 'status', cost: 0, breakdown: true, text: 'Play to pull Bibi back.' },
+  breakdown_yuna:  { name: 'Breakdown: Yuna', owner: 'yuna', type: 'status', cost: 0, breakdown: true, text: 'Play to pull Yuna back.' },
   curse_doubt:     { name: 'Doubt', owner: 'enemy', type: 'curse', cost: 0, text: 'Unplayable. Clogs your hand.', unplayable: true },
   curse_fever:     { name: 'Fever', owner: 'enemy', type: 'curse', cost: 0, text: 'Unplayable. Adds 6 Stress when drawn.', unplayable: true, onDrawStress: 6 },
 };
@@ -310,28 +447,35 @@ export const CHARACTERS = {
     art: 'images/cut-kaito-cut.png', skin: '#ff4d6d',
     hp: 88, blurb: 'First responder. Builds Fury from pressure and breaks bosses wide open.',
     leader: { name: 'Vanguard Point', desc: 'Leader: Kaito starts with +2 Strength & +2 Fury.' },
-    deck: ['k_jab', 'k_jab', 'k_brace', 'k_rush', 'k_first', 'k_last', 'k_up'],
+    deck: ['k_jab', 'k_brace', 'k_first', 'k_rally', 'k_feint', 'k_supply', 'k_up'],
   },
   momo: {
     id: 'momo', name: 'Momo', full: 'Momo — Platelet', cls: 'vanguard', attr: 'order',
     art: 'images/cut-momo-cut.png', skin: '#4da3ff',
     hp: 104, blurb: 'Barricade Shield, Counter spikes, and turns defense into Aegis Slams.',
     leader: { name: 'Iron Line', desc: 'Leader: All allies start with +5 Shield and +2 Counter.' },
-    deck: ['m_strike', 'm_strike', 'm_guard', 'm_patch', 'm_stand', 'm_triage', 'm_up'],
+    deck: ['m_strike', 'm_guard', 'm_patch', 'm_stand', 'm_triage', 'm_formation', 'm_up'],
   },
   goro: {
     id: 'goro', name: 'Goro', full: 'Goro — Macrophage', cls: 'controller', attr: 'justice',
     art: 'images/cut-goro-cut.png', skin: '#ffc94d',
     hp: 110, blurb: 'Stacks Toxin & Bleed, purifies Stress into Strength, retrieves finishers.',
     leader: { name: 'Steady Pulse', desc: 'Leader: All allies gain +6 Max HP and +2 Resonance on Turn 1.' },
-    deck: ['g_strike', 'g_strike', 'g_guard', 'g_cleave', 'g_devour', 'g_hymn', 'g_up'],
+    deck: ['g_strike', 'g_guard', 'g_devour', 'g_hymn', 'g_tonic', 'g_broth', 'g_up'],
   },
   bibi: {
     id: 'bibi', name: 'Bibi', full: 'Bibi — Mast Cell', cls: 'psionic', attr: 'void',
     art: 'images/cut-bibi-cut.png', skin: '#b06bff',
     hp: 84, blurb: 'Marks targets, spawns 0-AP Sparks, echoes Attacks, detonates Resonance.',
     leader: { name: 'Cytokine Surge', desc: 'Leader: Start every battle with +2 EP and +1 Resonance.' },
-    deck: ['b_ping', 'b_ping', 'b_fuzz', 'b_flare', 'b_hist', 'b_over', 'b_up'],
+    deck: ['b_ping', 'b_fuzz', 'b_hist', 'b_over', 'b_static', 'b_veil', 'b_up'],
+  },
+  yuna: {
+    id: 'yuna', name: 'Yuna', full: 'Yuna — Eosinophil', cls: 'alchemist', attr: 'instinct',
+    art: 'images/cut-yuna-cut.png', skin: '#57e389',
+    hp: 92, blurb: 'Poison apothecary. Stacks Poison that melts enemies at End Turn, then incubates or detonates it.',
+    leader: { name: 'Toxic Bloom', desc: 'Leader: Enemies start with 4 Poison. Poison ticks grant +1 Resonance (with Living Culture, from turn 1).' },
+    deck: ['y_sting', 'y_dose', 'y_mist', 'y_incubate', 'y_antidote', 'y_hatch', 'y_culture'],
   },
 };
 
@@ -383,6 +527,18 @@ export const EGOS = {
       id: 'ego_bibi_2', owner: 'bibi', name: 'Signal Override', cost: 4, attr: 'void',
       teamBuffAtk: 6, teamStr: 2, draw: 2, echoNext: 1, text: 'Allies +2 Str, +6 ATK this turn, Echo next Attack, Draw 2.',
       exaltText: 'OVER-EXALT (7 EP): +4 Str, +12 ATK, Echo next Attack, Draw 3, +2 AP!',
+    },
+  ],
+  yuna: [
+    {
+      id: 'ego_yuna_1', owner: 'yuna', name: 'Pandemic Requiem', cost: 4, attr: 'instinct',
+      poison: 12, aoe: true, text: 'Apply 12 Poison to ALL enemies. It melts them at every End Turn.',
+      exaltText: 'OVER-EXALT (7 EP): Apply 24 Poison to ALL enemies and trigger a tick immediately in the tick engine!',
+    },
+    {
+      id: 'ego_yuna_2', owner: 'yuna', name: 'Mercy Antidote', cost: 4, attr: 'instinct',
+      teamHeal: 14, teamStressHeal: 18, teamShield: 10, poison: 6, text: 'Allies +10 Shield, heal 14, clear 18 Stress. Target gains 6 Poison.',
+      exaltText: 'OVER-EXALT (7 EP): +20 Shield, heal 28, clear 36 Stress, target gains 12 Poison!',
     },
   ],
 };
@@ -487,6 +643,15 @@ export const CHARACTER_GUIDES = {
     tips: ['Haste cards (0-AP Sparks, Overdrive) do not advance enemy action counters. Free is really free.', 'Void Cascade scales with every card you have Exhausted all fight — it is a late-game bomb.', 'Echo copies the whole Attack, including Weakness, Mark, Burst and Crit multipliers.'],
     partners: 'Kaito is her favourite Echo target (EDGE synergy: +1 AP and Chain damage); Goro detonates what her Marks amplify.',
     simGoal: 'Reach 8 Resonance, Mark the Colossus, and land a 60+ hit.',
+  },
+  yuna: {
+    difficulty: 'Medium', fantasy: 'A poison apothecary who wins fights she has already stopped touching. The enemy melts at End Turn while she shields, draws and smiles.',
+    core: 'POISON is damage-over-time (DoT). Stacks collect on the enemy all turn. When you End Turn, each enemy takes damage equal to its Poison stacks (+ Potency from her Upgrades), then Poison decreases by 1. Poison ignores Shield-style timing, Strength and Crit — it scales with stacks and patience, not with one big hit.',
+    loop: ['Apply Poison with almost every card: Venom Sting (her one Basic Attack), Creeping Dose, Spore Mist, free Spore Mites.', 'Double the biggest stack with Incubate instead of adding a little more.', 'End Turn and collect: the tick happens automatically. Repeat while Antidote keeps Yuna healthy.'],
+    combo: ['Living Culture turn 1 — every tick now pays +2 damage and +1 Resonance.', 'Spore Mist into a crowd, Hatchery for free Mites, then Incubate the boss stack.', 'Apex Parasite when you want it NOW: +10 Poison and an immediate tick.', 'Necrotic Feast to cash a huge stack instantly and heal the team per stack — or simply let it melt.'],
+    tips: ['Poison ticks at End Turn, so a lethal tick kills before the enemy ever acts again — check the green stack under its HP bar.', 'Long-press / right-click an enemy to inspect every buff and debuff on it, including exactly how much Poison will tick.', 'Poison does not reduce Tenacity by itself. Pair her with a Weakness hitter when you need a Break, or let the tick finish a Ravaged target.'],
+    partners: 'Goro (CASCADE adds +1 per status application and his Detonate also cashes Poison via status totals on some cards); Bibi Marks targets so her Sting and your finishers hit harder while Poison cooks.',
+    simGoal: 'Stack 15+ Poison on the Colossus, watch a 15+ End-Turn tick, then detonate or double it.',
   },
 };
 
