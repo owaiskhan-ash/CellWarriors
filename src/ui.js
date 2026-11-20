@@ -20,7 +20,7 @@ import {
   levelOf, xpIntoLevel, charStats, addXp, canAwaken, awaken, AWAKEN_COST,
   canSkillUp, skillUp, SKILL_COST,
 } from './progress.js';
-import { sfx, bark, isMuted, toggleMute, setSfxVolume } from './audio.js';
+import { sfx, bark, isMuted, toggleMute, setSfxVolume, sfxDamage, sfxMajor, sfxBadgeHover, badgeHeartbeatStop, duckMix } from './audio.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, html) => {
@@ -1423,12 +1423,32 @@ function flushFx() {
     setTimeout(() => line.remove(), 1800);
   });
 
+  // ——— Dynamic damage audio: tiered by the actual numbers dealt ———
+  const dmgEvs = events.filter((e) => e.kind === 'dmg');
+  const poisonEvs = events.filter((e) => e.kind === 'poison');
+  if (dmgEvs.length) {
+    sfxDamage({
+      amt: dmgEvs.reduce((n, e) => n + (e.amt || 0), 0),
+      weak: dmgEvs.some((e) => e.weak),
+      crit: dmgEvs.some((e) => e.crit),
+      killed: dmgEvs.some((e) => e.killed),
+      hits: dmgEvs.length,
+      owner: (dmgEvs[dmgEvs.length - 1] || {}).actor || null,
+      stamp: dmgEvs.some((e) => e.pct),
+    });
+  } else if (events.some((e) => e.kind === 'blocked')) {
+    sfxDamage({ blocked: true }); // shield held: dull donk, no sparkle
+  }
+  if (poisonEvs.length) sfx('poison-tick', { amt: poisonEvs.reduce((n, e) => n + (e.amt || 0), 0) });
+  if (events.some((e) => e.kind === 'counter')) sfx('counter');
+  if (brokeDown) duckMix(0.18, 0.55); // everything else goes quiet for the breakdown beat
+
   if (megaAmt >= 100 && settings.shake && settings.motion) {
     const st = $('battle-stage');
     if (st) { st.classList.remove('shake'); void st.offsetWidth; st.classList.add('shake'); setTimeout(() => st.classList.remove('shake'), 340); }
   }
   if (megaAmt >= 100) {
-    sfx('mega');
+    // Sound already handled by sfxDamage's mega tier (inhale -> boom).
     pulseStage('zoom', 420);
     triggerFlash();
     triggerBanner(megaAmt >= 250 ? `OVERKILL · ${megaAmt} DMG!` : `MEGA STRIKE · ${megaAmt} DMG!`);
@@ -1452,10 +1472,10 @@ function flushFx() {
     pulseStage('zoom', 360);
     triggerFlash();
   } else if (critHit) {
-    sfx('crit');
+    if (!dmgEvs.length) sfx('crit'); // else sfxDamage already layered the crit crack
     pulseStage('shake', 280);
   } else if (strongHit) {
-    sfx('weak');
+    if (!dmgEvs.length) sfx('weak');
     pulseStage('shake', 260);
   } else if (playerHurt) {
     sfx('hurt');
@@ -1842,8 +1862,11 @@ function cardHTML(card, battleState = battle) {
   };
 }
 
+const badgeAmtCache = new Map(); // card uid -> last previewed total (for badge chirps)
+
 function renderHand() {
   const hand = $('hand');
+  badgeHeartbeatStop(); // hand is being rebuilt; never leave a heartbeat running
   hand.innerHTML = '';
   const n = Math.max(1, battle.hand.length);
   const avail = hand.clientWidth || window.innerWidth * 0.72;
@@ -1932,12 +1955,22 @@ function renderHand() {
     node.addEventListener('pointercancel', () => { clearTimeout(pressTimer); hideTargetLine(); });
     node.addEventListener('mouseenter', () => {
       if (node.classList.contains('hoverable')) node.classList.add('hovering');
+      // Side-badge audio: charge whine pitched by the previewed number,
+      // LETHAL heartbeat, BURST sparkle, and up/down chirps when buffs
+      // change this card's number between hovers.
+      if (pp.total > 0 || pp.shield > 0 || pp.heal > 0) {
+        const key = card.uid || card.id;
+        const prev = badgeAmtCache.get(key);
+        if (prev != null && pp.total !== prev) sfx(pp.total > prev ? 'chirp-up' : 'chirp-down');
+        badgeAmtCache.set(key, pp.total);
+        sfxBadgeHover({ amt: pp.total, lethal: !!pp.lethal, burst: !!pp.burst });
+      }
       if (card.dmg > 0 && !card.aoe) {
         const target = document.querySelector(`.enemy[data-uid="${battle.targetUid}"]`);
         if (target) showTargetLine(node, target);
       }
     });
-    node.addEventListener('mouseleave', () => { node.classList.remove('hovering'); hideTargetLine(); });
+    node.addEventListener('mouseleave', () => { node.classList.remove('hovering'); hideTargetLine(); badgeHeartbeatStop(); });
     node.addEventListener('contextmenu', (ev) => { ev.preventDefault(); openDetail(i); });
     node.addEventListener('click', (ev) => {
       ev.stopPropagation();
@@ -2042,6 +2075,10 @@ function playFromUI(index, ev) {
   if (!card || !canPlay(battle, card)) return;
   const cardNode = ev && ev.target ? ev.target.closest('.card') : null;
   const rect = cardNode ? cardNode.getBoundingClientRect() : null;
+  // Major-card stingers: rares riser-boom, finishers get signatures, glint sings.
+  if (card.glint) sfxMajor('epiphany', { owner: card.owner, cardId: card.defId || card.id });
+  else if (card.rare) sfxMajor('rare', { owner: card.owner, cardId: card.defId || card.id });
+  else if (card.cost >= 3 || card.finale || (card.tags || []).includes('Finale')) sfxMajor('finisher', { owner: card.owner, cardId: card.defId || card.id });
   const res = playCard(battle, index, card.dmg > 0 && !card.aoe ? battle.targetUid : undefined);
   if (!res.ok) return;
   if (card.owner) showBark(card.owner, 'attack');
@@ -2336,6 +2373,7 @@ function renderResources() {
       const res = playEgo(battle, i, { exalt: useExalt });
       if (!res.ok) return;
       exaltArmed = false;
+      sfxMajor(res.exalt ? 'exalt' : 'ego', { owner: ego.owner, cardId: ego.id });
       showBark(ego.owner, 'ego');
       renderBattle();
       if (!battle.result) showEgoCutIn(ego, owner, res.exalt);
