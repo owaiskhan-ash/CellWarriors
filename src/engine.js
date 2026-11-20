@@ -499,6 +499,8 @@ function damageEnemy(state, enemy, raw, { attr = null, cost = 1, tenacityScale =
   pushFx(state, {
     kind: 'dmg', uid: enemy.uid, name: enemy.name, amt: dmg,
     weak: matched, ravaged: enemy.ravaged, crit: isCrit,
+    killed: enemy.hp === 0, pct: !!(actor && actor.id === 'sable'),
+    actor: actor ? actor.id : null,
   });
 
   // Bleed triggers on attack hits!
@@ -610,6 +612,7 @@ function damageCharacter(state, ch, raw, attacker = null) {
   }
 
   if (remaining <= 0) {
+    pushFx(state, { kind: 'blocked', id: ch.id, name: ch.name, amt: raw });
     log(state, `${ch.name}'s Shield holds — no damage, no Stress.`, 'block');
     return { hpLost: 0, absorbed: raw };
   }
