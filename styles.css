@@ -191,7 +191,7 @@ button .ico { margin-right: 4px; }
 
 /* ---------------------------------------------------------------- story */
 #view-story { justify-content: flex-end; background: #04050b; }
-.story-art { position: absolute; inset: 0; background-size: cover; background-position: center 20%; filter: saturate(0.9) brightness(0.8); }
+.story-art { position: absolute; inset: 0; background-size: cover; background-position: center 20%; filter: saturate(0.9) brightness(0.8); transition: opacity 170ms ease; }
 .story-scrim { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 30%, rgba(4,5,11,0.96) 78%); }
 .story-bar { position: relative; padding: 26px 32px 30px; display: grid; max-width: 900px; grid-template-columns: 1fr auto; grid-template-areas: "who btn" "text btn"; gap: 10px 24px; color: var(--text); }
 .story-who { grid-area: who; font-size: 11px; letter-spacing: 0.26em; color: var(--teal); font-family: var(--font-display); font-weight: 600; }
