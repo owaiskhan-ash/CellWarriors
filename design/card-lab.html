@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="../styles.css" />
     <style>
       body { display: block; padding: 24px; }
-      .lab { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 32px; }
+      .lab { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 32px; }
       .lab h2 {
         font-family: var(--font-display); font-size: 12px; letter-spacing: .18em;
         color: var(--muted); text-transform: uppercase; margin: 0 0 12px;
@@ -15,14 +15,14 @@
       }
       .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
       .col { display: flex; flex-direction: column; gap: 8px; }
-      .swatch { width: 96px; height: 56px; border-radius: 8px; border: 1px solid var(--line); position: relative; }
+      .spec { font-size: 10px; color: var(--muted); max-width: 190px; line-height: 1.45; }
+      .swatch { width: 92px; height: 52px; border-radius: 8px; border: 1px solid var(--line); position: relative; }
       .swatch span { position: absolute; bottom: 4px; left: 6px; font-size: 9px; color: #fff; mix-blend-mode: difference; }
-      .spec { font-size: 10px; color: var(--muted); max-width: 200px; line-height: 1.4; }
       .type-row { display: flex; align-items: baseline; gap: 16px; }
       .g { color: var(--muted); font-size: 9px; width: 54px; letter-spacing: .1em; }
-      .icon-note { border: 1px dashed var(--line); border-radius: 8px; padding: 12px; font-size: 10px; color: var(--muted); max-width: 320px; }
-      .fake-glyph { font-size: 16px; color: var(--amber); }
-      .framegrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 12px; }
+      .hand-demo { display: flex; gap: 8px; width: 100%; max-width: 460px; overflow-x: auto; padding-bottom: 6px; }
+      .board-demo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; max-width: 460px; }
+      .board-demo .slot { min-height: 128px; }
     </style>
   </head>
   <body>
@@ -32,8 +32,8 @@
           CELL WARRIORS <span style="color: var(--blood)">/</span> DESIGN LAB
         </div>
         <p class="spec" style="max-width: 620px">
-          Living spec for docs/design-system.md. Every component here uses the same styles.css the
-          game loads — if it looks wrong here, it is wrong in the game.
+          Living spec for docs/design-system.md, using the same styles.css the game loads.
+          Every card carries a locked character portrait — see docs/character-bible.md.
         </p>
       </header>
 
@@ -49,103 +49,115 @@
           <div class="col"><div class="swatch" style="background:#7ff3ea"><span>--cyan-pale</span></div></div>
           <div class="col"><div class="swatch" style="background:#f0a63c"><span>--amber</span></div></div>
           <div class="col"><div class="swatch" style="background:#b79bd8"><span>--violet</span></div></div>
-          <div class="col"><div class="swatch" style="background:#f4e6e9"><span style="color:#000">--text</span></div></div>
           <div class="col"><div class="swatch" style="background:#9a7b84"><span>--muted</span></div></div>
         </div>
       </section>
 
       <section>
-        <h2>02 · Type scale</h2>
-        <div class="row" style="flex-direction: column; gap: 10px;">
-          <div class="type-row"><span class="g">hero 34</span><span style="font-size:34px;font-weight:700;letter-spacing:.14em;font-family:var(--font-display)">BODY HELD</span></div>
-          <div class="type-row"><span class="g">title 26</span><span style="font-size:26px;font-weight:700;letter-spacing:.14em;font-family:var(--font-display)">IMMUNE RESPONSE</span></div>
-          <div class="type-row"><span class="g">hud 14</span><span style="font-size:14px;font-weight:700">TURN 6 · ATP 4 / 6</span></div>
-          <div class="type-row"><span class="g">body 12</span><span style="font-size:12px">Brute. +1 Inflammation every time it attacks.</span></div>
-          <div class="type-row"><span class="g">micro 10</span><span style="font-size:10px;color:var(--muted)">Strep appears. Field clear. Tissue cleans itself.</span></div>
-          <div class="type-row"><span class="g">label 9.5</span><span style="font-size:9.5px;letter-spacing:.14em;color:var(--muted)">PATHOGENS · INFLAMMATION</span></div>
-        </div>
-      </section>
-
-      <section>
-        <h2>03 · Card anatomy — rarity by border + glow only</h2>
-        <div class="row">
-          <div class="col">
-            <div class="card" data-rarity="common">
-              <div class="card-top"><span class="card-cost">2</span><span class="card-type">CELL</span></div>
+        <h2>02 · The hand, at real size (118px cards)</h2>
+        <div class="hand-demo">
+          <div class="card type-cell" data-rarity="common">
+            <div class="card-art" style="--art:url('../images/char-neutrophil-celshade.png')"></div>
+            <span class="card-cost">2</span><span class="card-type">CELL</span>
+            <div class="card-body">
               <div class="card-name">Neutrophil</div>
               <div class="card-stats"><span class="atk">⚔ 3</span><span class="hp">♥ 3</span></div>
               <div class="card-text">Brute. +1 Inflammation every time it attacks.</div>
             </div>
-            <span class="spec">COMMON · 1px #9A7B84 · starting cards</span>
           </div>
 
-          <div class="col">
-            <div class="card" data-rarity="rare">
-              <div class="card-top"><span class="card-cost">3</span><span class="card-type">CELL</span></div>
+          <div class="card type-cell" data-rarity="rare">
+            <div class="card-art" style="--art:url('../images/char-macrophage.png')"></div>
+            <span class="card-cost">3</span><span class="card-type">CELL</span>
+            <div class="card-body">
               <div class="card-name">Macrophage</div>
               <div class="card-stats"><span class="atk">⚔ 2</span><span class="hp">♥ 7</span></div>
               <div class="card-text">Devours remains. Heals 1 HP each turn.</div>
             </div>
-            <span class="spec">RARE · teal ring · one per deck</span>
           </div>
 
-          <div class="col">
-            <div class="card" data-rarity="epic">
-              <div class="card-top"><span class="card-cost">4</span><span class="card-type">CELL</span></div>
+          <div class="card type-cell" data-rarity="epic">
+            <div class="card-art" style="--art:url('../images/char-killert.png')"></div>
+            <span class="card-cost">4</span><span class="card-type">CELL</span>
+            <div class="card-body">
               <div class="card-name">Killer T</div>
               <div class="card-stats"><span class="atk">⚔ 5</span><span class="hp">♥ 4</span></div>
               <div class="card-text">Pierces armour. +1 Inflammation on attack.</div>
             </div>
-            <span class="spec">EPIC · violet glow · 2px border</span>
           </div>
 
-          <div class="col">
-            <div class="card" data-rarity="legendary">
-              <div class="card-top"><span class="card-cost">5</span><span class="card-type">CELL</span></div>
+          <div class="card type-cell" data-rarity="legendary">
+            <div class="card-art" style="--art:url('../images/char-memoryb.png')"></div>
+            <span class="card-cost">5</span><span class="card-type">CELL</span>
+            <div class="card-body">
               <div class="card-name">Memory B</div>
               <div class="card-stats"><span class="atk">⚔ 4</span><span class="hp">♥ 8</span></div>
-              <div class="card-text">Remembers this infection. Next fight, starts on the field.</div>
+              <div class="card-text">On play: Infection -8%.</div>
             </div>
-            <span class="spec">LEGENDARY · amber sheen (3s) · 1 per account</span>
           </div>
 
-          <div class="col">
-            <div class="card type-cytokine" data-rarity="common">
-              <div class="card-top"><span class="card-cost">1</span><span class="card-type">CYTOKINE</span></div>
+          <div class="card type-cytokine" data-rarity="common">
+            <div class="card-art sigil">❄</div>
+            <span class="card-cost">1</span><span class="card-type">CYTOKINE</span>
+            <div class="card-body">
               <div class="card-name">Antipyretic</div>
               <div class="card-text">-3 Inflammation. Buys you a turn.</div>
             </div>
-            <span class="spec">CYTOKINE · no stats, ever</span>
           </div>
 
-          <div class="col">
-            <div class="card unaffordable" data-rarity="rare">
-              <div class="card-top"><span class="card-cost">4</span><span class="card-type">CELL</span></div>
-              <div class="card-name">Killer T</div>
-              <div class="card-stats"><span class="atk">⚔ 5</span><span class="hp">♥ 4</span></div>
-              <div class="card-text">Unaffordable state: opacity .38, no hover.</div>
+          <div class="card type-cell unaffordable" data-rarity="rare">
+            <div class="card-art" style="--art:url('../images/char-platelet.png')"></div>
+            <span class="card-cost">1</span><span class="card-type">CELL</span>
+            <div class="card-body">
+              <div class="card-name">Platelet</div>
+              <div class="card-stats"><span class="atk">⚔ 1</span><span class="hp">♥ 3</span></div>
+              <div class="card-text">Guard. Pathogens hit it first.</div>
             </div>
-            <span class="spec">UNAFFORDABLE · ATP too low</span>
           </div>
         </div>
+        <p class="spec" style="max-width: 460px; margin-top: 8px">
+          Cost gem top-left over the art, type tag top-right, portrait always in the same crop
+          (50% 8%). Cytokines get a sigil instead of a face, because spells are not people.
+        </p>
       </section>
 
       <section>
-        <h2>04 · Board frames</h2>
-        <div class="framegrid">
-          <div class="slot unit"><div><div class="unit-name">Neutrophil</div><div class="unit-stats"><span class="atk">⚔ 4</span><span class="hp">♥ 3</span></div></div><div class="hpbar"><i style="width:60%"></i></div></div>
-          <div class="slot unit enemy"><div><div class="unit-name">Strep</div><div class="unit-stats"><span class="atk">⚔ 2</span><span class="hp">♥ 5</span></div></div><div class="spread">SPREAD +4%</div><div class="hpbar"><i style="width:80%"></i></div></div>
+        <h2>03 · Board units — characters, not boxes</h2>
+        <div class="board-demo">
+          <div class="slot unit">
+            <div class="unit-art" style="--art:url('../images/char-neutrophil-celshade.png')"></div>
+            <div class="unit-shade"></div>
+            <div class="unit-body">
+              <div class="unit-name">Neutrophil</div>
+              <div class="unit-stats"><span class="atk">⚔ 4</span><span class="hp">♥ 3</span></div>
+            </div>
+            <div class="hpbar"><i style="width:70%"></i></div>
+          </div>
+
+          <div class="slot unit enemy">
+            <div class="unit-art" style="--art:url('../images/pathogen-strep.png')"></div>
+            <div class="unit-shade"></div>
+            <div class="unit-body">
+              <div class="unit-name">Strep</div>
+              <div class="unit-stats"><span class="atk">⚔ 2</span><span class="hp">♥ 5</span></div>
+              <div class="spread">SPREAD +4%</div>
+            </div>
+            <div class="hpbar"><i style="width:80%"></i></div>
+          </div>
+
           <div class="slot empty"><span class="muted">empty tissue</span></div>
-          <div class="slot unit"><div><div class="unit-name">Platelet</div><div class="unit-stats"><span class="atk">⚔ 1</span><span class="hp">♥ 3</span></div></div><div class="hpbar"><i style="width:33%"></i></div></div>
         </div>
       </section>
 
       <section>
-        <h2>05 · HUD</h2>
+        <h2>04 · HUD</h2>
         <div style="max-width: 420px; display:flex; flex-direction:column; gap:10px">
           <div class="hud-top">
             <div class="turn">TURN <b>6</b></div>
-            <div class="atp"><span class="pip on"></span><span class="pip on"></span><span class="pip on"></span><span class="pip"></span><span class="pip"></span></div>
+            <div class="atp">
+              <span class="pip on"></span><span class="pip on"></span><span class="pip on"></span>
+              <span class="pip on"></span><span class="pip"></span><span class="pip"></span>
+            </div>
           </div>
           <div class="meter infection">
             <div class="meter-label"><span>INFECTION</span><b>62%</b></div>
@@ -159,32 +171,27 @@
       </section>
 
       <section>
-        <h2>06 · Buttons</h2>
-        <div class="row" style="align-items:center">
-          <button class="primary">END TURN</button>
-          <button class="ghost">↻</button>
-          <span class="spec">One primary per screen. Ghost is 30×30 visual, 44×44 tap.</span>
-        </div>
-      </section>
-
-      <section>
-        <h2>07 · Icons — placeholders to replace before launch</h2>
-        <div class="row">
-          <div class="icon-note">
-            <span class="fake-glyph">⚔</span> ⚔ and ♥ are font glyphs, not icons. Draw replacements:
-            a single-edged blade (amber) and a cell with a nucleus (teal). 24px grid, 2px stroke.
-            Until then, never ship a screenshot that shows them at large size.
+        <h2>05 · Type scale & buttons</h2>
+        <div class="row" style="flex-direction: column; gap: 10px;">
+          <div class="type-row"><span class="g">title 26</span><span style="font-size:26px;font-weight:700;letter-spacing:.14em;font-family:var(--font-display)">THE BODY</span></div>
+          <div class="type-row"><span class="g">hud 14</span><span style="font-size:14px;font-weight:700">TURN 6 · ATP 4 / 6</span></div>
+          <div class="type-row"><span class="g">body 12</span><span style="font-size:12px">Brute. +1 Inflammation every time it attacks.</span></div>
+          <div class="type-row"><span class="g">micro 10</span><span style="font-size:10px;color:var(--muted)">Strep appears. Field clear. Tissue cleans itself.</span></div>
+          <div class="row" style="align-items:center">
+            <button class="primary">END TURN</button>
+            <button class="ghost">↻</button>
           </div>
         </div>
       </section>
 
       <section>
-        <h2>08 · Do not</h2>
+        <h2>06 · Rules</h2>
         <ul class="spec" style="max-width:none">
-          <li>No colours outside the token list. No gold foil, no gradients on text.</li>
-          <li>No light mode, no white backgrounds, no drop shadows softer than 14px blur.</li>
-          <li>No third font, no italics, no emoji anywhere in the product UI.</li>
-          <li>No stats on cytokines. No number smaller than 9px. No bounce or confetti.</li>
+          <li>Every cell card shows its character. A card with no portrait is a bug.</li>
+          <li>Portrait crop is locked at <code>background-position: 50% 8%</code> on cards, <code>50% 6%</code> on the board.</li>
+          <li>Rarity = border + glow + border width. Never foil, never stars.</li>
+          <li>No stats on cytokines. No number smaller than 9px. No bounce, no confetti.</li>
+          <li>⚔ and ♥ are placeholders — draw real icons before the store build.</li>
         </ul>
       </section>
     </div>

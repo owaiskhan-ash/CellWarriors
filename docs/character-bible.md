@@ -351,6 +351,30 @@ toward the viewer, unhurried, coat settling.
 
 ---
 
+## PART 1b — EXPANSION SET (unlockable in the Stem Cell Lab)
+
+Same rules as above: locked hair, locked costume, locked palette. Only pose and expression vary.
+
+### NK CELL — "VEY"
+Cold, still, unimpressed. Black bodysuit, thin cyan seams, cropped black hair with cyan tips,
+no weapon — both hands glow pale cyan. 174 cm. **Never** smiles, never carries a blade, never
+looks hurried. *"Move. Or be moved."* She bypasses the field and hits the infection site; fragile.
+
+### EOSINOPHIL — "DAX"
+Wiry, 178 cm, amber hair, red-rimmed goggles on the forehead, permanently blocked nose, white
+coat with amber seams and cyan cuffs. Twin hooked crescent blades held low. Irritable, spiteful,
+correct. *"Point me at the shell, not the crowd."* +2 damage to armoured pathogens.
+
+### MEMORY B — "SABLE"
+Composed, 176 cm, dark hair with silver streaks, deep brown skin, long white coat with **amber**
+seams and gold trim, a chained leather ledger at her belt, no weapon. Legendary stillness.
+*"This one I've written down."* On play: Infection −8%.
+
+**Rule for new characters:** only three characters may carry amber seams — Mast (pink instead),
+Eosinophil, and Memory B. Amber = legendary weight. Never give amber to a common card.
+
+---
+
 ## PART 2 — PATHOGENS (villains)
 
 Pathogens are **not** anime humans. They are wet, wrong, and biological — the contrast with

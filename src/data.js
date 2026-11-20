@@ -198,3 +198,38 @@ export const REGIONS = [
     wave: ['biofilm', 'toxin', 'strep'], reward: 150,
   },
 ];
+
+// ---------------------------------------------------------------------------
+// ART — every card portrait maps to a locked character file (docs/character-bible.md).
+// Cytokines get a sigil instead of a portrait: spells are not people.
+// ---------------------------------------------------------------------------
+
+export const ART = {
+  neutrophil: './images/char-neutrophil-celshade.png',
+  killerT: './images/char-killert.png',
+  platelet: './images/char-platelet.png',
+  macrophage: './images/char-macrophage.png',
+  mast: './images/char-mast.png',
+  bcell: './images/char-bcell.png',
+  dendritic: './images/char-dendritic.png',
+  nkCell: './images/char-nkcell.png',
+  eosinophil: './images/char-eosinophil.png',
+  memoryB: './images/char-memoryb.png',
+};
+
+export const ENEMY_ART = {
+  strep: './images/pathogen-strep.png',
+  toxin: './images/pathogen-toxin.png',
+  biofilm: './images/pathogen-biofilm.png',
+};
+
+export const SIGIL = {
+  histamine: '✹',
+  antipyretic: '❄',
+  interferon: '✦',
+  il6: '✸',
+  opsonin: '✜',
+  complement: '✷',
+  il2: '✧',
+  adrenaline: '⚡',
+};

@@ -1,4 +1,4 @@
-import { CARDS, START, REGIONS, UNLOCKABLE } from './data.js';
+import { CARDS, START, REGIONS, UNLOCKABLE, ART, ENEMY_ART, SIGIL } from './data.js';
 import { createGame, endTurn, playCard, atkOf, previewEndTurn } from './engine.js';
 import {
   loadProgress, saveProgress, resetProgress, regionUnlocked, buildDeck, totalCleared,
@@ -153,15 +153,15 @@ function renderEnemy() {
       continue;
     }
     const node = el('div', 'slot unit enemy');
+    const atk = Math.max(0, unit.atk - (game.enemy.weaken > 0 ? 2 : 0));
     node.innerHTML = `
-      <div>
+      <div class="unit-art" style="--art:url('${ENEMY_ART[unit.id] || ''}')"></div>
+      <div class="unit-shade"></div>
+      <div class="unit-body">
         <div class="unit-name">${unit.name}</div>
-        <div class="unit-stats">
-          <span class="atk">⚔ ${Math.max(0, unit.atk - (game.enemy.weaken > 0 ? 2 : 0))}</span>
-          <span class="hp">♥ ${Math.max(0, unit.hp)}</span>
-        </div>
+        <div class="unit-stats"><span class="atk">⚔ ${atk}</span><span class="hp">♥ ${Math.max(0, unit.hp)}</span></div>
+        <div class="spread">SPREAD +${unit.spread}%</div>
       </div>
-      <div class="spread">SPREAD +${unit.spread}%</div>
       <div class="hpbar"><i style="width:${Math.max(0, unit.hp) / unit.maxHp * 100}%"></i></div>`;
     wrap.appendChild(node);
   }
@@ -178,12 +178,11 @@ function renderPlayer() {
     }
     const node = el('div', 'slot unit');
     node.innerHTML = `
-      <div>
+      <div class="unit-art" style="--art:url('${ART[cell.id] || ''}')"></div>
+      <div class="unit-shade"></div>
+      <div class="unit-body">
         <div class="unit-name">${cell.name}</div>
-        <div class="unit-stats">
-          <span class="atk">⚔ ${atkOf(game, cell)}</span>
-          <span class="hp">♥ ${Math.max(0, cell.hp)}</span>
-        </div>
+        <div class="unit-stats"><span class="atk">⚔ ${atkOf(game, cell)}</span><span class="hp">♥ ${Math.max(0, cell.hp)}</span></div>
       </div>
       <div class="hpbar"><i style="width:${Math.max(0, cell.hp) / cell.maxHp * 100}%"></i></div>`;
     wrap.appendChild(node);
@@ -198,16 +197,23 @@ function renderHand() {
     const affordable = card.cost <= game.atp && !game.result;
     const node = el('div', `card type-${card.type}${affordable ? '' : ' unaffordable'}`);
     node.dataset.rarity = card.rarity || 'common';
+
+    const art = ART[id];
+    const artHtml = art
+      ? `<div class="card-art" style="--art:url('${art}')"></div>`
+      : `<div class="card-art sigil">${SIGIL[id] || '✷'}</div>`;
+
     node.innerHTML = `
-      <div class="card-top">
-        <span class="card-cost">${card.cost}</span>
-        <span class="card-type">${card.type === 'cell' ? 'CELL' : 'CYTOKINE'}</span>
-      </div>
-      <div class="card-name">${card.name}</div>
-      ${card.type === 'cell'
-        ? `<div class="card-stats"><span class="atk">⚔ ${card.atk}</span><span class="hp">♥ ${card.hp}</span></div>`
-        : ''}
-      <div class="card-text">${card.text}</div>`;
+      ${artHtml}
+      <span class="card-cost">${card.cost}</span>
+      <span class="card-type">${card.type === 'cell' ? 'CELL' : 'CYTOKINE'}</span>
+      <div class="card-body">
+        <div class="card-name">${card.name}</div>
+        ${card.type === 'cell'
+          ? `<div class="card-stats"><span class="atk">⚔ ${card.atk}</span><span class="hp">♥ ${card.hp}</span></div>`
+          : ''}
+        <div class="card-text">${card.text}</div>
+      </div>`;
     node.addEventListener('click', () => {
       const res = playCard(game, index);
       if (!res.ok) return flash(res.error);
