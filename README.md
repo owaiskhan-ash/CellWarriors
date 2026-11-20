@@ -3,13 +3,27 @@
 A tactical card RPG fought inside a seventeen-year-old's immune system. Anime squad battler:
 pick 3 of 6 combatants, then fight with the cards those characters own.
 
-**Status:** playable — CZN-style battle system, roster, 5 missions, 30 cards (6 lean kits),
-Ego skills, Epiphany, Stress breakdowns, Sands of Time.
+**Status:** playable on desktop and **on Android** — CZN-style battle system, roster, 5 missions,
+30 cards (6 lean kits), Ego skills, Epiphany, Stress breakdowns, Sands of Time.
+
+### 📱 Play on your phone
+
+**[⬇ Download the Android APK](https://github.com/owaiskhan-ash/CellWarriors/releases/latest)** —
+landscape, offline, no permissions, ~14 MB. Sideload it (allow "install unknown apps" for your
+browser/file manager once) and it runs standalone: no network, no ads, no analytics.
+
+On a phone it is designed **for landscape** and played with thumbs: tap a card to play it, tap an
+enemy to target it, drag a card onto an enemy, hold a card or enemy to inspect it, END TURN is the
+big disc at the bottom right. Full detail in **[docs/mobile.md](docs/mobile.md)**.
 
 ```bash
-npm run dev           # http://localhost:5173
-npm run test:e2e      # jsdom end-to-end run of the whole flow
-npm run sim:missions  # bot win rate per mission
+npm run dev             # http://localhost:5173 (browser, any size)
+npm run test:e2e        # 162 jsdom checks of the whole flow
+npm run test:phone      # 134 phone/touch/offline checks
+npm run test:apk        # simulates the shipped APK in a WebView
+npm run test:run        # plays a full 11-floor run through the UI
+npm run sim:missions    # bot win rate per mission
+npm run apk             # build + sign + verify dist/CellWarriors-<ver>.apk
 ```
 
 Rules: **[docs/mechanics.md](docs/mechanics.md)** — what was copied from Chaos Zero Nightmare and
