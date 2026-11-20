@@ -1,245 +1,150 @@
-// Cell Warriors — card data. Numbers are deliberately small (max dmg 10) so a
-// player can calculate a line in their head. RNG lives in the deck, never in damage.
+// Cell Warriors — cast, card sets, enemies, chapters.
+// Four roles: DPS · SHIELD · HEALER · SUPPORT DPS.
+// Every character owns their own card set — if they fall, their cards are dead weight.
 
-export const START = {
-  infection: 60, // 0 = body cleared (win) · 100 = host lost (lose)
-  atp: 3,
-  fever: 8, // inflammation threshold that triggers fever
-  slots: 3, // tissue slots per side
-  handSize: 5,
-  maxAtp: 6,
-  coreHp: 45, // the infection site: destroy it to win
+export const ROLES = {
+  dps: { label: 'DPS', colour: 'crimson' },
+  shield: { label: 'SHIELD', colour: 'teal' },
+  healer: { label: 'HEALER', colour: 'amber' },
+  support: { label: 'SUPPORT DPS', colour: 'violet' },
+};
+
+export const CHARACTERS = {
+  kaito: {
+    name: 'Kaito', cell: 'Neutrophil', role: 'dps', hp: 30, atk: 3,
+    art: './images/char-neutrophil-celshade.png',
+    cards: ['k_blade', 'k_lastshift', 'k_firstin'],
+  },
+  rin: {
+    name: 'Rin', cell: 'Killer T', role: 'dps', hp: 26, atk: 4,
+    art: './images/char-killert.png',
+    cards: ['r_twin', 'r_exec', 'r_show'],
+  },
+  momo: {
+    name: 'Momo', cell: 'Platelet', role: 'shield', hp: 34, atk: 1,
+    art: './images/char-platelet.png',
+    cards: ['p_patch', 'p_stand', 'p_firstaid'],
+  },
+  goro: {
+    name: 'Goro', cell: 'Macrophage', role: 'healer', hp: 40, atk: 2,
+    art: './images/char-macrophage.png',
+    cards: ['g_cleave', 'g_devour', 'g_wall'],
+  },
+  bibi: {
+    name: 'Bibi', cell: 'Mast Cell', role: 'support', hp: 24, atk: 1,
+    art: './images/char-mast.png',
+    cards: ['b_hist', 'b_flare', 'b_over'],
+  },
+  ivo: {
+    name: 'Ivo', cell: 'B Cell', role: 'support', hp: 26, atk: 2,
+    art: './images/char-bcell.png',
+    cards: ['i_anti', 'i_bolt', 'i_stock'],
+  },
+  noor: {
+    name: 'Noor', cell: 'Dendritic', role: 'support', hp: 24, atk: 0,
+    art: './images/char-dendritic.png',
+    cards: ['n_recon', 'n_expose', 'n_lantern'],
+  },
 };
 
 export const CARDS = {
-  neutrophil: {
-    id: 'neutrophil', type: 'cell', name: 'Neutrophil', cost: 2, rarity: 'common', atk: 3, hp: 3,
-    inflamOnAttack: 1,
-    text: 'Brute. +1 Inflammation every time it attacks.',
-  },
-  macrophage: {
-    id: 'macrophage', type: 'cell', name: 'Macrophage', cost: 3, rarity: 'rare', atk: 2, hp: 7, regen: 1,
-    text: 'Devours remains. Heals 1 HP each turn.',
-  },
-  mast: {
-    id: 'mast', type: 'cell', name: 'Mast Cell', cost: 2, rarity: 'rare', atk: 0, hp: 4, aura: 1,
-    inflamOnPlay: 2,
-    text: 'Aura: your other cells get +1 dmg. +2 Inflammation on play.',
-  },
-  killerT: {
-    id: 'killerT', type: 'cell', name: 'Killer T', cost: 4, rarity: 'epic', atk: 5, hp: 4, pierce: true,
-    inflamOnAttack: 1,
-    text: 'Pierces armour. +1 Inflammation on attack.',
-  },
-  bcell: {
-    id: 'bcell', type: 'cell', name: 'B Cell', cost: 3, rarity: 'rare', atk: 1, hp: 5, antibody: 1,
-    text: 'Makes 1 Antibody per turn (max 3). Each adds +1 dmg to all your attacks.',
-  },
-  platelet: {
-    id: 'platelet', type: 'cell', name: 'Platelet', cost: 1, rarity: 'common', atk: 1, hp: 3, guard: true,
-    text: 'Guard. Pathogens hit it first.',
-  },
-  dendritic: {
-    id: 'dendritic', type: 'cell', name: 'Dendritic', cost: 3, rarity: 'epic', atk: 1, hp: 4,
-    onPlay: 'dendritic',
-    text: 'On play: -4% Infection and draw a card.',
-  },
+  // ── Kaito · Neutrophil · DPS ──────────────────────────────────────────
+  k_blade: { id: 'k_blade', owner: 'kaito', name: 'Blade Rush', cost: 2, target: 'enemy', dmg: 7, text: '7 dmg to one pathogen.' },
+  k_lastshift: { id: 'k_lastshift', owner: 'kaito', name: 'Last Shift', cost: 3, target: 'enemy', dmg: 12, selfDamage: 3, text: '12 dmg. Kaito loses 3 HP.' },
+  k_firstin: { id: 'k_firstin', owner: 'kaito', name: 'First In', cost: 1, target: 'enemy', dmg: 4, selfShield: 3, text: '4 dmg. Gain 3 shield.' },
 
-  histamine: {
-    id: 'histamine', type: 'cytokine', name: 'Histamine', cost: 1, rarity: 'common', inflam: 2,
-    text: '+2 dmg to all your cells this turn. +2 Inflammation.',
-  },
-  antipyretic: {
-    id: 'antipyretic', type: 'cytokine', name: 'Antipyretic', cost: 1, rarity: 'common', inflam: -3,
-    text: '-3 Inflammation. Buys you a turn.',
-  },
-  interferon: {
-    id: 'interferon', type: 'cytokine', name: 'Interferon', cost: 2, rarity: 'rare',
-    text: 'All pathogens -2 ATK for 2 turns.',
-  },
-  il6: {
-    id: 'il6', type: 'cytokine', name: 'IL-6', cost: 1, rarity: 'epic', inflam: 1,
-    text: 'Draw 2 cards. +1 Inflammation.',
-  },
-  opsonin: {
-    id: 'opsonin', type: 'cytokine', name: 'Opsonin', cost: 2, rarity: 'rare',
-    text: 'Your next cell attack deals double damage.',
-  },
+  // ── Rin · Killer T · DPS ──────────────────────────────────────────────
+  r_twin: { id: 'r_twin', owner: 'rin', name: 'Twin Blades', cost: 2, target: 'enemy', dmg: 4, hits: 2, text: 'Two hits of 4.' },
+  r_exec: { id: 'r_exec', owner: 'rin', name: 'Execution', cost: 4, target: 'enemy', dmg: 16, text: '16 dmg. Rin shows off.' },
+  r_show: { id: 'r_show', owner: 'rin', name: 'Show Off', cost: 1, target: 'enemy', dmg: 2, tempAtk: 3, text: '2 dmg. +3 ATK this turn.' },
+
+  // ── Momo · Platelet · SHIELD ──────────────────────────────────────────
+  p_patch: { id: 'p_patch', owner: 'momo', name: 'Patch Up', cost: 1, target: 'allAllies', shield: 6, text: '6 shield to the whole squad.' },
+  p_stand: { id: 'p_stand', owner: 'momo', name: 'Stand Firm', cost: 2, target: 'self', shield: 10, taunt: 2, text: '10 shield. Taunts for 2 turns.' },
+  p_firstaid: { id: 'p_firstaid', owner: 'momo', name: 'First Aid', cost: 2, target: 'lowestAlly', heal: 8, text: 'Heal 8 on the weakest ally.' },
+
+  // ── Goro · Macrophage · HEALER ────────────────────────────────────────
+  g_cleave: { id: 'g_cleave', owner: 'goro', name: 'Cleave', cost: 2, target: 'enemy', dmg: 8, text: '8 dmg. No ceremony.' },
+  g_devour: { id: 'g_devour', owner: 'goro', name: 'Devour', cost: 3, target: 'allAllies', heal: 7, text: 'Heal 7 to the whole squad.' },
+  g_wall: { id: 'g_wall', owner: 'goro', name: 'The Wall', cost: 2, target: 'self', shield: 12, taunt: 2, text: '12 shield. Taunts for 2 turns.' },
+
+  // ── Bibi · Mast Cell · SUPPORT DPS ────────────────────────────────────
+  b_hist: { id: 'b_hist', owner: 'bibi', name: 'Histamine', cost: 1, target: 'allAllies', tempAtk: 2, text: '+2 ATK to the squad this turn.' },
+  b_flare: { id: 'b_flare', owner: 'bibi', name: 'Flare', cost: 2, target: 'allEnemies', dmg: 4, text: '4 dmg to every pathogen.' },
+  b_over: { id: 'b_over', owner: 'bibi', name: 'Overdrive', cost: 3, target: 'none', energy: 3, text: '+3 ATP right now.' },
+
+  // ── Ivo · B Cell · SUPPORT DPS ────────────────────────────────────────
+  i_anti: { id: 'i_anti', owner: 'ivo', name: 'Antibody', cost: 1, target: 'allAllies', atkBuff: 1, text: '+1 ATK to the squad. Permanent.' },
+  i_bolt: { id: 'i_bolt', owner: 'ivo', name: 'Crossbow', cost: 2, target: 'enemy', dmg: 5, text: '5 dmg at range.' },
+  i_stock: { id: 'i_stock', owner: 'ivo', name: 'Stockpile', cost: 2, target: 'none', draw: 2, text: 'Draw 2 cards.' },
+
+  // ── Noor · Dendritic · SUPPORT DPS ────────────────────────────────────
+  n_recon: { id: 'n_recon', owner: 'noor', name: 'Recon', cost: 1, target: 'none', draw: 2, energy: 1, text: 'Draw 2. +1 ATP.' },
+  n_expose: { id: 'n_expose', owner: 'noor', name: 'Expose', cost: 2, target: 'enemy', weaken: 4, text: 'Target pathogen loses 4 ATK permanently.' },
+  n_lantern: { id: 'n_lantern', owner: 'noor', name: 'Lantern', cost: 2, target: 'allAllies', heal: 4, shield: 2, text: 'Heal 4 and 2 shield to the squad.' },
 };
 
 export const ENEMIES = {
-  strep: {
-    id: 'strep', name: 'Strep', atk: 2, hp: 5, spread: 4, clear: 6,
-    text: 'Spreads fast.',
-  },
-  toxin: {
-    id: 'toxin', name: 'Toxin Blob', atk: 0, hp: 4, spread: 7, clear: 5,
-    text: 'No attack, brutal spread.',
-  },
-  biofilm: {
-    id: 'biofilm', name: 'Biofilm', atk: 1, hp: 11, spread: 3, clear: 12, armor: 2,
-    text: 'Armoured. Armour 2.',
-  },
+  strep: { id: 'strep', name: 'Strep', hp: 24, atk: 5, art: './images/pathogen-strep.png' },
+  toxin: { id: 'toxin', name: 'Toxin Blob', hp: 20, atk: 4, art: './images/pathogen-toxin.png' },
+  biofilm: { id: 'biofilm', name: 'Biofilm', hp: 34, atk: 7, art: './images/pathogen-biofilm.png' },
+  strain: { id: 'strain', name: 'Mutant Strain', hp: 28, atk: 6, art: './images/pathogen-strep.png' },
 };
 
-// Starting deck (19 cards).
-export const DECK_LIST = [
-  'neutrophil', 'neutrophil', 'neutrophil',
-  'macrophage', 'macrophage',
-  'mast',
-  'killerT', 'killerT',
-  'bcell',
-  'platelet', 'platelet',
-  'dendritic',
-  'histamine', 'histamine',
-  'antipyretic', 'antipyretic',
-  'interferon',
-  'il6',
-  'opsonin',
-];
-
-// Scripted pathogen waves. After turn 12, a Strep arrives every 3rd turn.
-export const SPAWNS = {
-  2: 'strep',
-  3: 'toxin',
-  4: 'strep',
-  6: 'biofilm',
-  8: 'strep',
-  9: 'toxin',
-  11: 'biofilm',
-  12: 'strep',
-};
-
-// ---------------------------------------------------------------------------
-// EXPANSION SET — locked at start, bought with stem cells in the Stem Cell Lab.
-// These add the mechanics the starting deck doesn't teach: core-bypass, AoE,
-// permanent buffs, armour hate.
-// ---------------------------------------------------------------------------
-
-Object.assign(CARDS, {
-  nkCell: {
-    id: 'nkCell', type: 'cell', name: 'NK Cell', cost: 3, rarity: 'epic',
-    atk: 2, hp: 3, bypassCore: true,
-    text: 'Strikes the infection site directly, ignoring pathogens on the field.',
-  },
-  eosinophil: {
-    id: 'eosinophil', type: 'cell', name: 'Eosinophil', cost: 3, rarity: 'rare',
-    atk: 2, hp: 4, armourBonus: 2,
-    text: '+2 dmg against armoured pathogens.',
-  },
-  memoryB: {
-    id: 'memoryB', type: 'cell', name: 'Memory B', cost: 5, rarity: 'legendary',
-    atk: 4, hp: 8, onPlay: 'memoryB',
-    text: 'On play: Infection -8%. Remembers this body.',
-  },
-  complement: {
-    id: 'complement', type: 'cytokine', name: 'Complement', cost: 2, rarity: 'rare', inflam: 1,
-    text: 'Deal 2 dmg to every pathogen on the field. +1 Inflammation.',
-  },
-  il2: {
-    id: 'il2', type: 'cytokine', name: 'IL-2', cost: 2, rarity: 'rare',
-    text: 'All your cells permanently gain +1 ATK and heal 1 HP.',
-  },
-  adrenaline: {
-    id: 'adrenaline', type: 'cytokine', name: 'Adrenaline', cost: 1, rarity: 'common',
-    text: '+2 ATP this turn. The host is panicking.',
-  },
-});
-
-export const UNLOCKABLE = {
-  eosinophil: { cost: 60, faction: 'Myeloid' },
-  complement: { cost: 80, faction: 'Humoral' },
-  adrenaline: { cost: 60, faction: 'Endocrine' },
-  il2: { cost: 90, faction: 'Lymphoid' },
-  nkCell: { cost: 120, faction: 'Lymphoid' },
-  memoryB: { cost: 200, faction: 'Humoral' },
-};
-
-// ---------------------------------------------------------------------------
-// ADVENTURE — six regions, unlocked in order. Each one is one fight with its
-// own clock, spawn rate and wave. Rewards are stem cells.
-// ---------------------------------------------------------------------------
-
-export const REGIONS = [
+// ── Chapters: story → battle. The squad is fixed by the story. ──────────
+export const CHAPTERS = [
   {
-    id: 'throat', name: 'Throat', organ: 'Tonsils', threat: 1,
-    desc: 'It always starts here. A scratch, a swallow that hurts.',
-    coreHp: 30, infection: 55, infectionGain: 2, spawnEvery: 2,
-    wave: ['strep', 'toxin'], reward: 40,
+    id: 'throat', title: 'I · The Throat', place: 'Tonsils',
+    party: ['kaito'], enemies: ['strep'],
+    story: [
+      { who: '', text: 'Day one. It starts as a scratch.' },
+      { who: 'Kaito', art: 'kaito', text: 'Tonsils are swollen. Something got in.' },
+      { who: 'Kaito', art: 'kaito', text: 'No backup. No time. Someone has to go first.' },
+    ],
   },
   {
-    id: 'lungs', name: 'Lungs', organ: 'Alveoli', threat: 2,
-    desc: 'Every breath brings more of it in.',
-    coreHp: 38, infection: 58, infectionGain: 3, spawnEvery: 2,
-    wave: ['toxin', 'strep'], reward: 55,
+    id: 'lungs', title: 'II · The Lungs', place: 'Alveoli',
+    party: ['kaito', 'momo'], enemies: ['strep', 'strep', 'toxin'],
+    story: [
+      { who: 'Kaito', art: 'kaito', text: 'It reached the alveoli. Every breath feeds it.' },
+      { who: 'Momo', art: 'momo', text: 'I-I\'m here! Where do you need me?!' },
+      { who: 'Kaito', art: 'kaito', text: 'Behind me. Patch what I miss.' },
+    ],
   },
   {
-    id: 'gut', name: 'Gut', organ: 'Intestinal wall', threat: 3,
-    desc: 'Forty trillion residents, and something is building a wall.',
-    coreHp: 44, infection: 60, infectionGain: 3, spawnEvery: 2,
-    wave: ['biofilm', 'toxin'], reward: 70,
+    id: 'gut', title: 'III · The Gut', place: 'Intestinal wall',
+    party: ['kaito', 'momo', 'noor'], enemies: ['toxin', 'strain', 'strep'],
+    story: [
+      { who: 'Noor', art: 'noor', text: 'I have seen this strain before. Page forty.' },
+      { who: 'Kaito', art: 'kaito', text: 'Did the page say how to kill it?' },
+      { who: 'Noor', art: 'noor', text: 'No. But it said who died learning.' },
+    ],
   },
   {
-    id: 'wound', name: 'Skin Wound', organ: 'Cut site', threat: 4,
-    desc: 'An open door. They are already inside.',
-    coreHp: 40, infection: 64, infectionGain: 4, spawnEvery: 1,
-    wave: ['strep', 'strep', 'strep'], reward: 85,
+    id: 'wound', title: 'IV · The Wound', place: 'Cut site',
+    party: ['kaito', 'momo', 'goro'], enemies: ['strep', 'strain', 'toxin'],
+    story: [
+      { who: 'Goro', art: 'goro', text: '...Leave it to me.' },
+      { who: 'Momo', art: 'momo', text: 'He\'s not even breathing hard. That\'s terrifying.' },
+      { who: 'Kaito', art: 'kaito', text: 'That\'s the only reason we\'re alive.' },
+    ],
   },
   {
-    id: 'blood', name: 'Bloodstream', organ: 'Whole system', threat: 5,
-    desc: 'If it reaches the blood, it reaches everywhere.',
-    coreHp: 46, infection: 64, infectionGain: 3, spawnEvery: 1,
-    wave: ['strep', 'toxin', 'biofilm'], reward: 105,
+    id: 'blood', title: 'V · The Bloodstream', place: 'Whole system',
+    party: ['kaito', 'momo', 'goro', 'bibi'], enemies: ['biofilm', 'strain', 'toxin'],
+    story: [
+      { who: 'Bibi', art: 'bibi', text: 'Let\'s make it LOUD.' },
+      { who: 'Kaito', art: 'kaito', text: 'That\'s what I was afraid of.' },
+      { who: 'Goro', art: 'goro', text: 'Stay behind the shield.' },
+    ],
   },
   {
-    id: 'meninges', name: 'Meninges', organ: 'Blood-brain barrier', threat: 6,
-    desc: 'The last wall. Behind it, everything he is.',
-    coreHp: 56, infection: 66, infectionGain: 3, spawnEvery: 1,
-    wave: ['biofilm', 'toxin', 'strep'], reward: 150,
+    id: 'meninges', title: 'VI · The Meninges', place: 'Blood-brain barrier',
+    party: ['rin', 'goro', 'ivo'], enemies: ['biofilm', 'strain', 'toxin'],
+    story: [
+      { who: 'Rin', art: 'rin', text: 'Took you long enough to call me.' },
+      { who: 'Ivo', art: 'ivo', text: 'I already made one for this.' },
+      { who: 'Goro', art: 'goro', text: 'Then stop talking and hold the wall.' },
+    ],
   },
 ];
-
-// ---------------------------------------------------------------------------
-// ART — every card portrait maps to a locked character file (docs/character-bible.md).
-// Cytokines get a sigil instead of a portrait: spells are not people.
-// ---------------------------------------------------------------------------
-
-export const ART = {
-  neutrophil: './images/char-neutrophil-celshade.png',
-  killerT: './images/char-killert.png',
-  platelet: './images/char-platelet.png',
-  macrophage: './images/char-macrophage.png',
-  mast: './images/char-mast.png',
-  bcell: './images/char-bcell.png',
-  dendritic: './images/char-dendritic.png',
-  nkCell: './images/char-nkcell.png',
-  eosinophil: './images/char-eosinophil.png',
-  memoryB: './images/char-memoryb.png',
-};
-
-export const ENEMY_ART = {
-  strep: './images/pathogen-strep.png',
-  toxin: './images/pathogen-toxin.png',
-  biofilm: './images/pathogen-biofilm.png',
-};
-
-export const SIGIL = {
-  histamine: '✹',
-  antipyretic: '❄',
-  interferon: '✦',
-  il6: '✸',
-  opsonin: '✜',
-  complement: '✷',
-  il2: '✧',
-  adrenaline: '⚡',
-};
-
-// Region art — the tile is the region's threat, not a description.
-export const REGION_ART = {
-  throat: './images/pathogen-strep.png',
-  lungs: './images/pathogen-toxin.png',
-  gut: './images/pathogen-biofilm.png',
-  wound: './images/pathogen-strep.png',
-  blood: './images/pathogen-toxin.png',
-  meninges: './images/pathogen-biofilm.png',
-};

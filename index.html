@@ -8,116 +8,68 @@
   </head>
   <body>
     <main id="app">
-      <!-- ============ MENU ============ -->
-      <section id="view-menu" class="view">
-        <div class="menu-bg"></div>
-        <div class="menu-logo">
-          <img src="./images/logo-anime-title.png" alt="Cell Warriors" />
+      <!-- ================= TITLE ================= -->
+      <section id="view-title" class="view">
+        <div class="title-bg"></div>
+        <div class="title-inner">
+          <img class="title-logo" src="./images/logo-transparent.png" alt="Cell Warriors" />
+          <p class="title-line">Six infections. One body. No backup.</p>
+          <button class="primary big" id="btn-start">START</button>
+          <button class="ghost tiny" id="btn-reset">reset save</button>
         </div>
-        <p class="menu-sub">A tactical card RPG played inside a seventeen-year-old body.</p>
-
-        <div class="menu-stats">
-          <span class="chip">◈ <b id="menu-stem">0</b> stem cells</span>
-          <span class="chip"><b id="menu-cleared">0</b> / 6 regions</span>
-        </div>
-
-        <div class="menu-actions">
-          <button class="primary wide" id="btn-continue">ENTER THE BODY</button>
-          <button class="ghost wide" id="btn-lab-menu">STEM CELL LAB</button>
-          <button class="ghost wide subtle" id="btn-reset">reset save</button>
-        </div>
-
-        <p class="menu-version">prototype · no ads · nothing to buy</p>
       </section>
 
-      <!-- ============ MAP ============ -->
+      <!-- ================= STORY ================= -->
+      <section id="view-story" class="view hidden">
+        <div class="story-art" id="story-art"></div>
+        <div class="story-scrim"></div>
+        <div class="story-bar">
+          <div class="story-who" id="story-who"></div>
+          <div class="story-text" id="story-text"></div>
+          <button class="primary" id="btn-story-next">NEXT</button>
+        </div>
+      </section>
+
+      <!-- ================= MAP ================= -->
       <section id="view-map" class="view hidden">
-        <header class="view-head">
-          <button class="ghost" id="btn-map-back" aria-label="Back">←</button>
-          <h2 class="view-title">THE BODY</h2>
-          <span class="chip">◈ <b id="map-stem">0</b></span>
+        <header class="topbar">
+          <h1>THE BODY</h1>
+          <button class="ghost tiny" id="btn-title">←</button>
         </header>
-
-        <div class="region-list" id="region-list"></div>
-
-        <button class="primary wide" id="btn-lab">STEM CELL LAB</button>
+        <div class="chapter-grid" id="chapter-grid"></div>
       </section>
 
-      <!-- ============ LAB ============ -->
-      <section id="view-lab" class="view hidden">
-        <header class="view-head">
-          <button class="ghost" id="btn-lab-back" aria-label="Back">←</button>
-          <h2 class="view-title">STEM CELL LAB</h2>
-          <span class="chip">◈ <b id="lab-stem">0</b></span>
-        </header>
-
-        <p class="lab-note">Spend stem cells to differentiate new immune cells. You cannot buy stem cells — they only come from clearing regions.</p>
-
-        <div class="lab-list" id="lab-list"></div>
-      </section>
-
-      <!-- ============ BATTLE ============ -->
+      <!-- ================= BATTLE ================= -->
       <section id="view-battle" class="view hidden">
         <div class="battle-bg"></div>
-        <header class="hud">
-          <div class="hud-top">
-            <button class="ghost" id="btn-quit" aria-label="Quit">←</button>
-            <div class="turn">TURN <b id="turn">1</b></div>
-            <div class="atp" id="atp"></div>
-            <button id="restart" class="ghost" title="Restart">↻</button>
-          </div>
 
-          <div class="meter infection">
-            <div class="meter-label"><span>INFECTION</span><b id="infection-val">60%</b></div>
-            <div class="meter-track"><div class="meter-fill" id="infection-fill"></div></div>
-          </div>
-
-          <div class="meter fever-meter">
-            <div class="meter-label"><span>INFLAMMATION</span><b id="fever-val">0 / 8</b></div>
-            <div class="meter-track">
-              <div class="meter-fill" id="fever-fill"></div>
-              <div class="fever-tick"></div>
-            </div>
-          </div>
+        <header class="topbar battle-top">
+          <span class="chapter-chip" id="battle-title">I · THE THROAT</span>
+          <span class="turn-chip">TURN <b id="turn">1</b></span>
         </header>
 
-        <section class="board">
-          <div class="zone enemy-zone">
-            <div class="zone-label">PATHOGENS <span id="core-hp" class="core-hp">INFECTION SITE 45</span></div>
-            <div class="slots" id="enemy-slots"></div>
-          </div>
+        <div class="arena">
+          <div class="side party" id="party"></div>
+          <div class="arena-mid"><span>VS</span></div>
+          <div class="side foes" id="foes"></div>
+        </div>
 
-          <div class="zone player-zone">
-            <div class="zone-label">YOUR CELLS</div>
-            <div class="slots" id="player-slots"></div>
-          </div>
-        </section>
+        <div class="battle-log" id="battle-log"></div>
 
-        <section class="hand-wrap">
-          <div class="hand-head">
-            <span id="deck-count" class="muted">deck 0</span>
-            <span class="muted" id="antibodies"></span>
-          </div>
+        <footer class="hand-bar">
+          <div class="energy" id="energy"></div>
           <div class="hand" id="hand"></div>
-        </section>
-
-        <footer class="footer">
-          <div class="log" id="log"></div>
-          <div class="actions">
-            <div class="preview" id="preview"></div>
-            <button id="end-turn" class="primary">END TURN</button>
-          </div>
+          <button class="primary" id="end-turn">END<br />TURN</button>
         </footer>
       </section>
 
-      <!-- ============ RESULT ============ -->
+      <!-- ================= RESULT ================= -->
       <div class="overlay hidden" id="overlay">
         <div class="overlay-card">
           <h1 id="overlay-title">—</h1>
           <p id="overlay-sub">—</p>
-          <div class="reward hidden" id="overlay-reward"></div>
-          <button class="primary wide" id="overlay-btn">CONTINUE</button>
-          <button class="ghost wide" id="overlay-retry">RETRY</button>
+          <button class="primary big" id="overlay-btn">CONTINUE</button>
+          <button class="ghost" id="overlay-retry">RETRY</button>
         </div>
       </div>
     </main>
