@@ -102,7 +102,7 @@ let guideCat = 'all';
 let guideQuery = '';
 let rosterFilter = 'all';
 let simCharId = 'kaito';
-let simLoadout = 'arsenal';
+let simLoadout = 'starter';
 let simBehaviour = 'training';
 let simTracker = null;
 let simReported = false;
@@ -173,33 +173,33 @@ const ENEMY_ART = {
 };
 const ENEMY_HUE = {};
 const CARD_ART = {
-  // New per-card art (images/cards/<id>.jpg) — generated from docs/character-bible.md.
-  // Cards not yet listed keep the legacy shared art below until their batch lands.
-  k_jab: 'images/cards/k_jab.jpg', k_rush: 'images/cards/k_rush.jpg', k_last: 'images/cards/k_last.jpg',
-  k_first: 'images/cards/k_first.jpg', k_up: 'images/cards/k_up.jpg', k_flurry: 'images/cards/k_flurry.jpg',
-  k_berserk: 'images/cards/k_berserk.jpg', k_reap: 'images/cards/k_reap.jpg', k_execute: 'images/cards/k_execute.jpg',
-  k_brace: 'images/cards/k_brace.jpg', k_rally: 'images/cards/k_rally.jpg', k_feint: 'images/cards/k_feint.jpg',
-  k_supply: 'images/cards/k_supply.jpg', tok_cut: 'images/cards/tok_cut.jpg',
-  breakdown_kaito: 'images/cards/breakdown_kaito.jpg',
-  m_strike: 'images/cards/m_strike.jpg', m_guard: 'images/cards/m_guard.jpg', m_patch: 'images/cards/m_patch.jpg',
-  m_stand: 'images/cards/m_stand.jpg', m_triage: 'images/cards/m_triage.jpg', m_up: 'images/cards/m_up.jpg',
-  m_bash: 'images/cards/m_bash.jpg', m_bastion: 'images/cards/m_bastion.jpg', m_aegis: 'images/cards/m_aegis.jpg',
-  m_reflect: 'images/cards/m_reflect.jpg', m_formation: 'images/cards/m_formation.jpg',
-  m_splint: 'images/cards/m_splint.jpg', breakdown_momo: 'images/cards/breakdown_momo.jpg',
+  // Per-card art (images/cards/<id>.jpg) — generated from docs/character-bible.md.
+  // The lean 5-card kit for each combatant is fully covered; anything not
+  // listed (Breakdown pulls, curses) falls back to the owner's action art.
+  // --- Kaito ---
+  k_jab: 'images/cards/k_jab.jpg', k_brace: 'images/cards/k_brace.jpg',
+  k_rally: 'images/cards/k_rally.jpg', k_last: 'images/cards/k_last.jpg',
+  k_up: 'images/cards/k_up.jpg', breakdown_kaito: 'images/cards/breakdown_kaito.jpg',
+  // --- Momo ---
+  m_strike: 'images/cards/m_strike.jpg', m_guard: 'images/cards/m_guard.jpg',
+  m_splint: 'images/cards/m_splint.jpg', m_bash: 'images/cards/m_bash.jpg',
+  m_up: 'images/cards/m_up.jpg', breakdown_momo: 'images/cards/breakdown_momo.jpg',
+  // --- Goro ---
+  g_strike: 'images/cards/g_strike.jpg', g_guard: 'images/cards/g_guard.jpg',
+  g_broth: 'images/cards/g_broth.jpg', g_devour: 'images/cards/g_devour.jpg',
+  g_up: 'images/cards/g_up.jpg',
+  // --- Bibi ---
+  b_ping: 'images/cards/b_ping.jpg', b_fuzz: 'images/cards/b_fuzz.jpg',
+  b_flare: 'images/card-b2.jpg', b_burst: 'images/cards/b_burst.jpg',
   b_up: 'images/cards/b_up.jpg',
+  // --- Yuna ---
+  y_sting: 'images/card-y1.jpg', y_mist: 'images/cards/y_mist.jpg',
+  y_antidote: 'images/cards/y_antidote.jpg', y_epidemic: 'images/card-y2.jpg',
+  y_culture: 'images/cards/y_culture.jpg',
+  // --- Sable ---
   s_annotate: 'images/cards/s_annotate.jpg', s_margin: 'images/cards/s_margin.jpg',
-  s_index: 'images/cards/s_index.jpg', s_second: 'images/cards/s_second.jpg',
-  s_titer: 'images/cards/s_titer.jpg', s_up: 'images/cards/s_up.jpg',
-  s_apex: 'images/cards/s_apex.jpg', s_century: 'images/cards/s_century.jpg',
-  breakdown_sable: 'images/cards/breakdown_sable.jpg',
-  // s_recall: dedicated art queued (moderation re-prompt) — full-bleed fallback until then.
-  g_strike: 'images/cards/g_strike.jpg', g_cleave: 'images/cards/g_cleave.jpg', g_devour: 'images/cards/g_devour.jpg',
-  g_guard: 'images/cards/g_guard.jpg', g_hymn: 'images/cards/g_hymn.jpg', g_up: 'images/cards/g_up.jpg',
-  g_catalyst: 'images/cards/g_catalyst.jpg', g_purge: 'images/cards/g_purge.jpg',
-  g_symbiosis: 'images/cards/g_symbiosis.jpg', g_feast_up: 'images/cards/g_feast_up.jpg',
-  b_ping: 'images/card-b1.jpg', b_flare: 'images/card-b2.jpg', b_hist: 'images/card-b3.jpg',
-  y_sting: 'images/card-y1.jpg', y_mist: 'images/card-y2.jpg', y_epidemic: 'images/card-y2.jpg',
-  y_necrosis: 'images/card-y3.jpg', y_predator: 'images/card-y3.jpg', y_dose: 'images/card-y1.jpg',
+  s_second: 'images/cards/s_second.jpg', s_titer: 'images/cards/s_titer.jpg',
+  s_up: 'images/cards/s_up.jpg', breakdown_sable: 'images/cards/breakdown_sable.jpg',
 };
 const ACTION_ART = {
   kaito: 'images/action-kaito.jpg',
@@ -370,38 +370,38 @@ const GUIDE_CATS = [
 const GUIDE_ENTRIES = [
   { cat: 'core', icon: 'i-bolt', name: 'AP (Action Points)', short: 'Your spending money each turn', body: 'You start every turn with 3 AP (some Leaders, Upgrades and relics raise this). A card’s number in its top-left gem is its AP cost. When AP runs out, End Turn. Unspent AP does not carry over — spending your last AP is sometimes a bonus (see Finale).', example: 'Overclock (Kaito Upgrade) gives +1 AP every turn for the whole fight. That is why Upgrades are played early.', tags: ['ap', 'cost', 'turn', 'energy'] },
   { cat: 'core', icon: 'i-cell', name: 'Draw, Hand & Piles', short: '5 new cards a turn · 7 on turn 1', body: 'You draw 7 cards on turn 1, then 5 each turn, up to a 10-card hand. Played cards go to the Graveyard; when the Draw pile empties the Graveyard shuffles back in. Exhausted cards are gone for the rest of the fight. Tap DRAW or GRAVE in battle to inspect a pile.', example: 'Retain cards survive End Turn instead of being discarded — everyone else leaves.', tags: ['draw', 'hand', 'graveyard', 'discard', 'deck'] },
-  { cat: 'core', icon: 'i-target', name: 'Enemy Action Counter', short: 'The small number under each enemy', body: 'Every non-Haste card you play ticks every living enemy’s counter down by 1. At 0, that enemy acts immediately, then resets (usually 2–4). Haste and 0-AP token cards do NOT tick it. This is the real clock of the game: three cheap cards can be more dangerous than one big one.', example: 'Bibi’s Neuro-Sparks are Haste: free damage that never brings the enemy’s turn closer.', tags: ['counter', 'clock', 'haste', 'enemy turn', 'intent'] },
+  { cat: 'core', icon: 'i-target', name: 'Enemy Action Counter', short: 'The small number under each enemy', body: 'Every non-Haste card you play ticks every living enemy’s counter down by 1. At 0, that enemy acts immediately, then resets (usually 2–4). Haste and 0-AP token cards do NOT tick it. This is the real clock of the game: three cheap cards can be more dangerous than one big one.', example: 'Each character’s Buff Upgrade is Exhaust + Initiation: it lands in your opening hand and is spent once, not cycled.', tags: ['counter', 'clock', 'haste', 'enemy turn', 'intent'] },
   { cat: 'core', icon: 'i-eye', name: 'Intent (enemy badge)', short: 'What the enemy will do next', body: 'The diamond/badge above an enemy shows its next action: a number is incoming damage, a shield is defence, arrows are buffs/debuffs and a bolt with “T” is a charged mega-hit counting down. Enemy hits target your weakest living combatant unless someone is Taunting. Shield the right person before the counter hits 0.', example: 'A “42 · 2T” badge means: you have about 2 enemy-actions to kill, break or out-shield it.', tags: ['intent', 'attack', 'charge', 'telegraph'] },
-  { cat: 'scaling', icon: 'i-bolt', name: 'FURY — the headline mechanic', short: 'Stored damage. Spend it, don’t hoard it', body: 'Fury is mainly Kaito’s resource. Fury alone adds NO damage. It becomes damage only through cards: “consume Fury” converts every stack then resets Fury to 0; “+X per Fury / scale with Fury” converts stacks but keeps them. Gain Fury from Cytokine Jab (+1), Adrenal Brace, Fever Surge, Overclock (+1 per Attack), taking Stress (Kaito gains +1 Fury whenever he gains Stress), Counter hits with PHALANX synergy, and some Egos/relics.', example: '8 Fury + Last Shift = 18 + (8×12) = 114 base before Weakness/Mark/Crit multipliers. That is the whole character.', tags: ['fury', 'kaito', 'consume', 'scale', 'burst damage'] },
+  { cat: 'scaling', icon: 'i-bolt', name: 'FURY — the headline mechanic', short: 'Stored damage. Spend it, don’t hoard it', body: 'Fury is mainly Kaito’s resource. Fury alone adds NO damage. It becomes damage only through cards: “consume Fury” converts every stack then resets Fury to 0; “+X per Fury / scale with Fury” converts stacks but keeps them. Gain Fury from Cytokine Jab (+1), Adrenal Brace, Fever Surge, Overclock (+1 per Attack), taking Stress (Kaito gains +1 Fury whenever he gains Stress), Counter hits with PHALANX synergy, and some Egos/relics.', example: '6 Fury + Last Shift = 12 + (6×8) = 60, plus 6 more if it is your last AP — before Weakness and Crit multipliers.', tags: ['fury', 'kaito', 'consume', 'scale', 'burst damage'] },
   { cat: 'scaling', icon: 'i-buff', name: 'Strength (STR)', short: 'Permanent +damage on every hit', body: 'Each point of Strength adds +1 damage to every hit of every Attack that character makes, for the rest of the fight. Multi-hit cards gain it per hit, so 4 hits × +3 Strength is +12, not +3. Strength also increases Counter damage. It never expires — early Strength is an investment.', example: 'Neutrophil Flurry (4 hits) with +5 Strength deals +20 total before any multiplier.', tags: ['strength', 'str', 'buff', 'multi-hit', 'scaling'] },
   { cat: 'scaling', icon: 'i-buff', name: 'Buff ATK (this turn)', short: 'Temporary Strength', body: '“+X Attack this turn” works like Strength but is wiped at the start of your next turn. Use it on the turn you gain it, ideally before a multi-hit or Echo attack. Card previews already include it — trust the big number on the card.', example: 'Histamine gives the team +4 ATK this turn: play it first, then attack.', tags: ['buff atk', 'temporary', 'attack this turn'] },
-  { cat: 'scaling', icon: 'i-star', name: 'Crit (×1.75)', short: 'Guaranteed, never random', body: 'There is no crit chance in Cell Warriors. Crits are guaranteed by effects: “Crit on next Attack”, Fever Surge, Finale Last Shift, Recovery and Over-Exalt. A crit multiplies the whole per-hit damage by ×1.75 after most other multipliers. Save guaranteed crits for your biggest Fury/Resonance hit.', example: 'Fever Surge → Apex Cleaver is Kaito’s classic one-card exam question.', tags: ['crit', 'critical', '1.75', 'guaranteed'] },
+  { cat: 'scaling', icon: 'i-star', name: 'Crit (×1.75)', short: 'Guaranteed, never random', body: 'There is no crit chance in Cell Warriors. Crits are guaranteed by effects: “Crit on next Attack”, Fever Surge, Finale Last Shift, Recovery and Over-Exalt. A crit multiplies the whole per-hit damage by ×1.75 after most other multipliers. Save guaranteed crits for your biggest Fury/Resonance hit.', example: 'Overclock first, build Fury with Jabs, then Last Shift as your final AP: Finale + guaranteed Crit on the same card.', tags: ['crit', 'critical', '1.75', 'guaranteed'] },
   { cat: 'scaling', icon: 'i-cell', name: 'Resonance & Burst (×1.6)', short: 'Skills charge the team battery', body: 'Playing a Skill gives +1 Resonance (max 10); Sparks and several cards add more. At 5+ Resonance, an eligible Attack (costs 2+ AP, is a Finale, scales with Resonance, or says “always Bursts”) consumes 5 Resonance to deal ×1.6 damage and grant +1 EP. The card glows when Burst is live. Bibi’s Resonance Singularity always Bursts and also gains +10 damage per Resonance stack before the multiplier.', example: 'Do not waste Burst on a 6-damage jab. Charge it, Mark the enemy, then spend it on the finisher.', tags: ['resonance', 'burst', 'battery', 'bibi', 'skills'] },
   { cat: 'scaling', icon: 'i-star', name: 'EP, Ego & Over-Exalt', short: 'Your ultimate meter (max 7)', body: 'Gain +1 EP every 2 cards played, +1 when an enemy dies, and +1 on a Resonance Burst. At 4 EP an Ego skill (the portraits on the left rail) fires. At the full 7 EP, arm EXALT and the same Ego becomes an Over-Exalt: roughly double power, bonus effects, and damaging Egos auto-crit. Broken-down characters cannot use their Ego.', example: 'Bibi Leader starts with +2 EP, so her team ultimates arrive a full turn earlier.', tags: ['ep', 'ego', 'ultimate', 'over-exalt', 'exalt', '7 ep'] },
   { cat: 'defense', icon: 'i-shield', name: 'Shield', short: 'Blocks damage AND Stress', body: 'Shield absorbs damage before HP. Crucially, damage fully absorbed by Shield causes no Stress at all. Normally Shield vanishes at End Turn unless Barricade keeps it. The number on a portrait’s shield badge is that character’s personal Shield; Aegis Slam uses the whole team’s total.', example: 'Momo with 20 Shield can eat a 19-damage intent for 0 HP and 0 Stress — then Counter hits back anyway.', tags: ['shield', 'block', 'armour', 'defence'] },
-  { cat: 'defense', icon: 'i-shield', name: 'Barricade', short: 'Shield that survives End Turn', body: 'Barricade level 1 keeps 50% of Shield when your turn ends; level 2 keeps 100% (for its duration). This is how Momo banks a wall across turns and turns it into an Aegis Slam. Field Protocol gives the whole team Barricade 1 permanently.', example: 'End a turn on 40 Shield with Barricade 1: you start the next turn already holding 20.', tags: ['barricade', 'retain shield', 'momo', 'stand firm'] },
-  { cat: 'defense', icon: 'i-shield', name: 'Counter', short: 'Hit me. I dare you', body: 'When an enemy attacks a character with Counter, they retaliate for Counter + Strength damage — even if Shield blocked the hit completely. Counter can trigger Bleed and benefits from Weakness/Mark/Vulnerable. At End Turn Counter decays by 25%, so it is a “use it soon” defence. With PHALANX synergy (Kaito+Momo), Counter hits also give Kaito +1 Fury.', example: 'Guard Stance is not passive: 13 Shield + 5 Counter often kills the thing that attacked Momo.', tags: ['counter', 'retaliate', 'thorns', 'momo'] },
+  { cat: 'defense', icon: 'i-shield', name: 'Barricade', short: 'Shield that survives End Turn', body: 'Barricade level 1 keeps 50% of Shield when your turn ends; level 2 keeps 100% (for its duration). Field Protocol instead gives every ally 3 Shield at the start of each turn, so the wall is rebuilt for free.', example: 'End a turn on 40 Shield with Barricade 1: you start the next turn already holding 20.', tags: ['barricade', 'retain shield', 'momo', 'stand firm'] },
+  { cat: 'defense', icon: 'i-shield', name: 'Counter', short: 'Hit me. I dare you', body: 'When an enemy attacks a character with Counter, they retaliate for Counter + Strength damage — even if Shield blocked the hit completely. Counter can trigger Bleed and benefits from Weakness/Mark/Vulnerable. At End Turn Counter decays by 25%, so it is a “use it soon” defence. With PHALANX synergy (Kaito+Momo), Counter hits also give Kaito +1 Fury.', example: 'Guard Stance is not passive: 8 Shield + 3 Counter, then Aegis Slam adds 100% of whatever Shield survived.', tags: ['counter', 'retaliate', 'thorns', 'momo'] },
   { cat: 'defense', icon: 'i-shield', name: 'Fortitude & Taunt', short: 'Take less · take it for the team', body: 'Fortitude reduces damage that character takes by 20% per active duration. Taunt forces enemies to target that character instead of your weakest ally (charged attacks included). Together on Momo they read: “hit the tank, for less, into her Counter.”', example: 'Stand Firm = Shield + Taunt + Fortitude + Barricade in one card. It is four mechanics wearing a trench coat.', tags: ['fortitude', 'taunt', 'tank', 'damage reduction'] },
   { cat: 'status', icon: 'i-skull', name: 'STRESS & Mental Breakdown', short: 'The second health bar (0–100)', body: 'Unblocked damage adds Stress (roughly 1.5× the HP lost + 4, minimum 6). Debuffs, Fever curses and some of your own cards add more. At 100 Stress: Mental Breakdown — one third of Max HP becomes locked (unhealable), that character’s cards in hand/draw become Recovery status cards, and their Ego is sealed. Play their Recovery card enough times (5, then 6, 8, 10… after repeat breakdowns) to recover: full HP, Stress 0, +2 Strength, next Ego free, and the team heals. Shield prevents Stress; heals and skills remove it.', example: 'Kaito deliberately farms Stress for Fury and Apex bonuses. Everyone else should treat 70+ Stress as a fire alarm.', tags: ['stress', 'breakdown', 'mental', 'recovery', 'locked hp', '100'] },
-  { cat: 'status', icon: 'i-skull', name: 'Bleed', short: 'Damage that triggers on hits', body: 'Bleed stacks sit on an enemy. Whenever that enemy takes an Attack hit, Bleed ruptures for damage equal to its stacks (then loses 1 stack). Detonate effects trigger it on demand. Because multi-hit attacks trigger it repeatedly, Bleed loves Blade Rush and Flurry. CASCADE synergy adds +1 stack whenever you apply Bleed/Toxin.', example: 'Apply 6 Bleed, then a 4-hit Flurry: the hits keep rupturing the stack while your Strength applies per hit.', tags: ['bleed', 'dot', 'goro', 'kaito', 'rupture'] },
-  { cat: 'status', icon: 'i-skull', name: 'Toxin', short: 'Damage when the enemy acts', body: 'Toxin ticks for its full stack value whenever that enemy’s action counter reaches 0 and it acts, also chewing through Tenacity, then slowly decays. It punishes slow enemies and rewards Goro for simply staying alive. Detonating Toxin early trades future ticks for immediate damage + healing via Lysis Detonation.', example: 'A 12-Toxin enemy that acts 3 more times is already dead — it just hasn’t noticed.', tags: ['toxin', 'poison', 'dot', 'goro'] },
+  { cat: 'status', icon: 'i-skull', name: 'Bleed', short: 'Damage that triggers on hits', body: 'Bleed stacks sit on an enemy. Whenever that enemy takes an Attack hit, Bleed ruptures for damage equal to its stacks (then loses 1 stack). Detonate effects trigger it on demand. Because every attack hit triggers it, Bleed loves cheap multi-hit turns. No lean-kit card applies Bleed yet — it is reserved for later card passes.', example: 'A 6-stack of Bleed adds 6 damage to every Attack hit — six damage per Jab, not six per turn.', tags: ['bleed', 'dot', 'goro', 'kaito', 'rupture'] },
+  { cat: 'status', icon: 'i-skull', name: 'Toxin', short: 'Damage when the enemy acts', body: 'Toxin ticks for its full stack value whenever that enemy’s action counter reaches 0 and it acts, also chewing through Tenacity, then slowly decays. It punishes slow enemies and rewards Goro for simply staying alive. Goro applies it with Scalpel (2) and Devour (4), so a boss that acts often melts itself while he tanks.', example: 'A 12-Toxin enemy that acts 3 more times is already dead — it just hasn’t noticed.', tags: ['toxin', 'poison', 'dot', 'goro'] },
   { cat: 'status', icon: 'i-poison', name: 'POISON — Damage over Time (DoT)', short: 'Stacks x 3 at End Turn, and her attacks scale off it', body: 'Poison is Yuna’s DoT and it SCALES. Stacks collect on the enemy during your turn; when you press END TURN each enemy takes damage = Poison stacks x 3, then its Poison falls by 1 (10 Poison ticks 30, then 27, then 24…). Two multipliers make it snowball: Incubate DOUBLES the stacks, and her Potency upgrades (Living Culture / Virulence Engine) add +damage PER STACK (4-5+ per stack), so tick = stacks x per-stack damage. Her attacks scale off it too: Venom Sting deals +1 damage per Poison on the target (+2 upgraded) and Spore Mites +1 per Poison — build the stack, then hit into it. Poison caps at 20 stacks. Necrotic Feast detonates all stacks at once for stacks x 3+ and heals per stack; Apex Parasite triggers a tick immediately. It ignores Strength timing and Shield, does not reduce Tenacity by itself, and can kill before the enemy acts. CASCADE adds +1 stack per application.', example: 'Creeping Dose (4) + Spore Mist (2) + Sting (2) + leader (3) = 11 stacks → Incubate grows it to 17 → End Turn melts for 51, and Venom Sting into 20 Poison hits for 26+.', tags: ['poison', 'dot', 'damage over time', 'yuna', 'eosinophil', 'end turn', 'stacks', 'potency', 'scale'] },
   { cat: 'scaling', icon: 'i-buff', name: 'PERCENT SCALING (%HP) — Sable', short: 'Damage, Shield and heals as percentages of HP pools', body: 'Sable the Memory B works in percentages, not flat numbers. Her attacks add a % of the target’s HP pool: Annotate/Titer Lance add % of MAX HP (steady — the bigger the enemy, the bigger the bonus: 3% is +1 vs a 34-HP Spore and +14 vs a 460-HP boss), while Recall Strike adds % of MISSING HP, an execute that grows as the target is wounded. Living Index permanently adds +2% to every % effect. Her defence scales too: Margin Note shields for 14% of HER Max HP, and Second Reading/Century Recall heal a % of her MISSING HP — small at full health, enormous near death. % damage still takes Weakness ×1.5, Mark ×1.5, Vulnerable, Burst and Crit multipliers, and the live number on the card (tagged +%HP) already includes the % bonus against the current target.', example: 'Vs Prion Sovereign (460 HP): Living Index → Annotate = 6 + 5% (23) = 29; Titer Lance Marks it, then Apex Entry = 10 + 12% Max (55+) + 12% missing, all ×1.5 Marked.', tags: ['percent', '%', 'scaling', 'sable', 'memory b', 'max hp', 'execute', 'boss'] },
-  { cat: 'status', icon: 'i-target', name: 'Mark (×1.5) & Vulnerable (×1.35)', short: 'Paint the target, then everyone hits it', body: 'Marked enemies take ×1.5 damage and Vulnerable enemies take ×1.35 from all direct hits, for a number of enemy actions/turns shown on their chips. They stack multiplicatively with Weakness (×1.5), Ravaged (×1.3), Burst (×1.6) and Crit (×1.75). This multiplication is how 30-damage cards become 200-damage cards. Apply these BEFORE the big spend, not after.', example: 'Flare (Mark+Vuln) → Last Shift into Weakness with Crit can exceed ×6 total multiplication.', tags: ['mark', 'vulnerable', 'vuln', 'multiplier', 'bibi', 'setup'] },
-  { cat: 'cards', icon: 'i-sword', name: 'Basic Attack & Synergy/Effect cards', short: '1 basic per character — the rest is the engine', body: 'Every combatant has exactly ONE Basic Attack (flagged BASIC, one copy in their starter deck): Kaito’s Cytokine Jab, Momo’s Order Strike, Goro’s Scalpel, Bibi’s Signal Ping, Yuna’s Venom Sting. Every other starter card is a Synergy or Effect card — buffs, shields, draws, tokens, DoTs and permanent Upgrades that make the basic (and your Egos/finishers) matter. Signature direct-attack finishers (Last Shift, Aegis Slam, Apex Cleaver…) are build-around cards you draft in runs or test in Full Arsenal simulation. Judge a character by their effect loop, not their basic.', example: 'Yuna’s basic only deals 6 — her deck wins because Dose/Mist/Incubate turn End Turn into a weapon.', tags: ['basic attack', 'synergy', 'effect', 'starter deck', 'deckbuilding'] },
+  { cat: 'status', icon: 'i-target', name: 'Mark (×1.5) & Vulnerable (×1.35)', short: 'Paint the target, then everyone hits it', body: 'Marked enemies take ×1.5 damage and Vulnerable enemies take ×1.35 from all direct hits, for a number of enemy actions/turns shown on their chips. They stack multiplicatively with Weakness (×1.5), Ravaged (×1.3), Burst (×1.6) and Crit (×1.75). This multiplication is how 30-damage cards become 200-damage cards. Apply these BEFORE the big spend, not after.', example: 'Flare (Mark all enemies, +50% taken) → Titer Lance or Cytokine Storm into that Mark is the basic one-two.', tags: ['mark', 'vulnerable', 'vuln', 'multiplier', 'bibi', 'setup'] },
+  { cat: 'cards', icon: 'i-sword', name: 'The 5-card kit', short: '1 Basic · 2 Skills · 1 Heavy · 1 one-use Buff', body: 'Each combatant brings exactly FIVE cards, one copy of each, and that is the whole kit: (1) a 1-AP Basic Attack with one small rider, (2) two 1-AP Skills — a light support card and their signature tool, (3) one Heavy costing 2-3 AP: the big damage, shield, heal, HP or DoT payoff, and (4) one permanent Buff Upgrade that Exhausts, so it can only be used ONCE per battle. Upgrades are also Initiation, so they always appear in your opening hand. A full team of three therefore fields a 15-card deck: simple, readable, and easy to extend later.', example: 'Kaito = Cytokine Jab · Adrenal Brace · War Cry · Last Shift (Heavy) · Overclock (Buff, one use).', tags: ['kit', 'basic attack', 'heavy', 'buff', 'upgrade', 'deckbuilding', '5 cards'] },
   { cat: 'enemy', icon: 'i-eye', name: 'Enemy status icons & long-press inspect', short: 'Icons live under the HP bar', body: 'Directly under each enemy’s HP/Tenacity bars is its status row: green flask = Poison stacks (next End-Turn tick), drop = Bleed, flask = Toxin, target = Mark, down-arrow = Vulnerable/Weaken, plus buffs like ATK UP, CHARGING and innate mods. Click an enemy to target it. HOLD (long-press) or right-click an enemy to open a full inspect panel listing every buff and debuff with stacks, duration, exact numbers and what will happen next — including how much Poison will tick at End Turn.', example: 'See “POISON 14” under the bar? Long-press: it will take 14 (+ Potency) when you End Turn, then drop to 13.', tags: ['enemy', 'buff', 'debuff', 'status icons', 'long press', 'inspect', 'hp bar'] },
   { cat: 'status', icon: 'i-debuff', name: 'Weaken, Curses & Statuses', short: 'Enemy debuffs and hand-cloggers', body: 'Weakened enemies deal 35% less damage while it lasts. Curses (Fever/Doubt) are unplayable cards that clog your hand; Fever also adds 6 Stress when drawn. Status cards are usually Breakdown Recovery cards — those you DO want to play. Shops can purge curses from a run deck.', example: 'Drawing Fever at 94 Stress can cause a Breakdown before you play a single card. Respect the curse.', tags: ['weaken', 'curse', 'fever', 'doubt', 'status', 'unplayable'] },
   { cat: 'enemy', icon: 'i-target', name: 'Weakness (×1.5)', short: 'Match the attribute, break faster', body: 'Every enemy is weak to one attribute (Passion/Order/Justice/Void/Instinct), shown as its coloured glyph badge. Weakness hits deal ×1.5 damage (×1.75 with Antigen Lens, +0.15 more if Attuned) and deal 2.5× Tenacity damage. Your selected enemy’s weakness is also in the banner above the arena. Bosses change weakness at 66% and 33% HP — watch for PHASE SHIFT.', example: 'The damage preview on a card already includes Weakness. Yellow “WEAK” means you matched it.', tags: ['weakness', 'attribute', 'passion', 'order', 'justice', 'void', 'instinct'] },
   { cat: 'enemy', icon: 'i-bolt', name: 'Tenacity & RAVAGED (Break)', short: 'The amber bar under enemy HP', body: 'Damaging cards reduce Tenacity by roughly 3 + (2× card cost), multiplied ×2.5 on a Weakness hit. 0-cost cards do not reduce it. At 0 Tenacity the enemy is RAVAGED: your team gains +1 AP immediately, everyone loses 10 Stress, the enemy’s counter is delayed, and it takes +30% damage. Some enemies resist or are immune. Breaking at the right moment is worth more than raw HP damage.', example: 'Three cheap Weakness hits can break faster than one huge off-weakness hit — and fund the huge hit with the bonus AP.', tags: ['tenacity', 'break', 'ravaged', 'amber bar', 'stagger'] },
   { cat: 'enemy', icon: 'i-crown', name: 'Elites, Bosses & Phases', short: 'Badges above the enemy name', body: 'ELITE/BOSS chips and mod chips (REGEN, IRON SHELL, QUICK) change the rules: Regen restores Tenacity, Iron Shell resists Tenacity damage and cannot be Ravaged, Quick resets its action counter 1 faster. Bosses shift phase (and weakness/name) at HP thresholds. The live intent badge and counter still tell the truth — plan around them.', example: 'Against IRON SHELL, stop trying to break it. Race HP and use the fight’s other mechanics.', tags: ['elite', 'boss', 'regen', 'iron shell', 'quick', 'phase'] },
   { cat: 'cards', icon: 'i-sword', name: 'Reading a card (live numbers)', short: 'The big number is the real number', body: 'Top-left gem = AP cost. The pill = Attack/Skill/Upgrade. The big FX number is a live preview against your selected enemy including Strength, Fury, Shield totals, Weakness, Mark, Vulnerable, Resonance Burst, Crit and multi-hits. Hold/right-click a card for the full maths breakdown, upgrade text and tags. If the preview says LETHAL, it is lethal — previews and resolution use the same code.', example: 'Switch targets by clicking an enemy and watch every card in hand re-price itself instantly.', tags: ['card', 'preview', 'damage number', 'cost', 'type', 'hold'] },
-  { cat: 'cards', icon: 'i-bolt', name: 'Combo · Chain · Finale', short: 'Order-of-play bonuses', body: 'Combo: if your previous card this turn was the same type, gain the listed bonus (Blade Rush wants an Attack before it). Chain: if your previous card belonged to a different character, gain the listed effect (+1 Resonance from the engine; EDGE teams also get +20% damage). Finale: if this card spends your last AP, gain the bonus — Last Shift also guarantees a Crit. Sequence is a resource: cheap first, spender last.', example: 'Attack (Combo armed) → Blade Rush → Last Shift as final AP is a complete Kaito sentence.', tags: ['combo', 'chain', 'finale', 'sequence', 'last ap'] },
-  { cat: 'cards', icon: 'i-star', name: 'Retain · Haste · Exhaust · Tokens', short: 'The four tag words that change timing', body: 'Retain: the card stays in hand at End Turn and may grow cheaper/stronger (Apex Cleaver). Haste: playing it does not tick enemy counters. Exhaust: after use it leaves the fight (gone until next battle) — often attached to powerful 0-AP effects. Tokens are free cards created mid-fight (Neuro-Sparks, Micro-Cuts): usually Haste + Exhaust, built to feed Resonance, Bleed and Chain without spending AP.', example: 'A hand of Sparks looks weak until you realise they are free Resonance that never wakes the enemy.', tags: ['retain', 'haste', 'exhaust', 'token', 'spark', 'timing'] },
+  { cat: 'cards', icon: 'i-bolt', name: 'Combo · Chain · Finale', short: 'Order-of-play bonuses', body: 'Combo: if your previous card this turn was the same type, gain the listed bonus. Chain: if your previous card belonged to a different character, gain the listed effect (+1 Resonance from the engine; EDGE teams also get +20% damage). Finale: if this card spends your last AP, gain the bonus — Last Shift also guarantees a Crit. Sequence is a resource: cheap first, spender last.', example: 'Jab (Fury) → Adrenal Brace (Shield) → Last Shift as your last AP is a complete Kaito sentence.', tags: ['combo', 'chain', 'finale', 'sequence', 'last ap'] },
+  { cat: 'cards', icon: 'i-star', name: 'Retain · Haste · Exhaust · Tokens', short: 'The four tag words that change timing', body: 'Retain: the card stays in hand at End Turn. Haste: playing it does not tick enemy counters. Exhaust: after use it leaves the fight — that is how every character’s Buff Upgrade is limited to ONE use per battle. Tokens are free cards created mid-fight by special effects.', example: 'Overclock is Initiation + Exhaust: it opens in hand, grants +1 AP per turn, then is gone for the fight.', tags: ['retain', 'haste', 'exhaust', 'token', 'spark', 'timing'] },
   { cat: 'cards', icon: 'i-star', name: 'Epiphany & Glint cards', short: 'Free evolved cards mid-fight', body: 'Most turns have a chance to spark an Epiphany for a character; the next card played opens a 3-way choice (BRUTAL power, FLOW speed, SURGE sustain) and adds an evolved 0-AP version of one of their cards straight to hand. Separately, drawn cards can Glint (gold border): they cost 0 AP and deal ×1.4. Never waste a Glint on a card you were about to discard.', example: 'If Epiphany is armed for Bibi, play a cheap card first to open the choice before your real turn plan.', tags: ['epiphany', 'glint', 'evolution', 'free card', 'mutation'] },
   { cat: 'cards', icon: 'i-sands', name: 'Sands of Time', short: 'Paid undo buttons (run mode)', body: 'The hourglass (right rail, limited charges per run) buys time tricks: 1 charge undoes your last card, 2 redraws your Ego queue, 3 rewinds to the start of the turn. Snapshots are taken automatically. It cannot save a finished fight — spend it when a misclick or a bad draw is about to cost a run, not after.', example: 'Misclicked your finisher into the wrong enemy? 1-charge Undo is cheaper than a lost run.', tags: ['sands', 'undo', 'rewind', 'hourglass', 'run'] },
   { cat: 'team', icon: 'i-cell', name: 'Attributes, Classes & Synergies', short: 'Why Slot 1 and team mix matter', body: 'Each combatant has an Attribute (their damage colour/weakness coverage) and a Class (Striker/Vanguard/Controller/Psionic — what their cards do). Slot 1 is Leader and grants their Leader bonus. Class pairs create Synergies: BASTION (Vanguard+Controller), EDGE (Striker+Psionic), PHALANX (Striker+Vanguard), CASCADE (Controller+Psionic); two of one Attribute creates ATTUNED (+weakness damage). The roster screen previews all of this live as you pick.', example: 'Kaito+Momo is not two good cards decks — PHALANX turns Momo’s defence into Kaito’s Fury.', tags: ['synergy', 'leader', 'attribute', 'class', 'team', 'slot 1'] },
   { cat: 'team', icon: 'i-flask', name: 'Levels, Awakening & the Lab', short: 'Permanent power between runs', body: 'Combatants earn XP and levels (+HP, periodic +ATK). In the Cell Lab you spend Cells on Awakening slots (+10 Max HP, +2 Attack, −1 Ego cost) and Skill Potency (+damage/healing numbers on that character’s cards and Egos). None of this is required to learn a character — the Simulation Chamber ignores your save pressure and just lets you practise.', example: 'Open any combatant’s DETAILS to see their full pool, then LAB to grow them, then SIMULATION to test the result solo.', tags: ['lab', 'level', 'awakening', 'skill potency', 'xp', 'cells', 'meta'] },
-  { cat: 'team', icon: 'i-target', name: 'Simulation Chamber', short: 'The 999,999 HP practice boss', body: 'Pick ONE combatant and fight a Training Colossus that effectively cannot die. Choose Starter, Full Arsenal (adds their 4 rare build-around cards) or Upgraded loadouts; set the dummy to passive/training/live-fire; track damage, damage-per-turn, best hit and character Trials live. Lab Controls can grant Fury/Resonance/EP/AP to test a threshold instantly. Ending the test gives a report — your save and run are never touched.', example: 'New card confusing you? Full Arsenal + Target Dummy + read the card, play it, watch the log.', tags: ['simulation', 'practice', 'dummy', '999999', 'trials', 'dps'] },
+  { cat: 'team', icon: 'i-target', name: 'Simulation Chamber', short: 'The 999,999 HP practice boss', body: 'Pick ONE combatant and fight a Training Colossus that effectively cannot die. Choose the Starter kit or the Upgraded kit (both are that combatant’s 5 cards — upgraded shows the ceiling); set the dummy to passive/training/live-fire; track damage, damage-per-turn, best hit and character Trials live. Lab Controls can grant Fury/Resonance/EP/AP to test a threshold instantly. Ending the test gives a report — your save and run are never touched.', example: 'New card confusing you? Upgraded kit + Target Dummy + read the card, play it, watch the log.', tags: ['simulation', 'practice', 'dummy', '999999', 'trials', 'dps'] },
 ];
 
 function openGuide(cat = 'all') {
@@ -468,7 +468,10 @@ function renderCharacter() {
     const inStarter = ch.deck.includes(c.id);
     const obj = makeStaticCard(c.id, false);
     const { className, html } = cardHTML(obj, null);
-    return `<div class="char-card-slot"><div class="${className}" style="--rot:0deg;--lift:0px" data-char-card="${c.id}">${html}</div><span class="char-card-where">${c.basic ? '★ BASIC ATTACK · 1 PER CHARACTER' : inStarter ? 'STARTER · SYNERGY / EFFECT' : 'BUILD-AROUND · DRAFT / SIM'}</span></div>`;
+    const slot = c.basic ? '★ BASIC ATTACK · 1 AP'
+      : c.type === 'upgrade' ? 'BUFF UPGRADE · 1 USE PER BATTLE'
+        : (c.cost || 0) >= 2 ? 'HEAVY · BIG PAYOFF' : 'SKILL · SIMPLE SUPPORT';
+    return `<div class="char-card-slot"><div class="${className}" style="--rot:0deg;--lift:0px" data-char-card="${c.id}">${html}</div><span class="char-card-where">${slot}</span></div>`;
   }).join('');
 
   $('char-main').innerHTML = `
@@ -511,7 +514,7 @@ function renderCharacter() {
       <div class="char-mini"><span>PRO TIPS & SYNERGY</span><ul>${(guide.tips || []).map((x) => `<li>${x}</li>`).join('')}<li><b>Partners:</b> ${guide.partners || ''}</li><li><b>Simulation goal:</b> ${guide.simGoal || ''}</li></ul></div>
     </div>
 
-    <h3 class="char-section-title" id="char-sec-cards">${ico('i-eye')} CARDS (${cards.length}) <small>Tap any card for its full damage maths, upgrade text and keyword breakdown. Starter cards appear in a normal deck; build-around cards are drafted in runs or used in Full Arsenal simulation.</small></h3>
+    <h3 class="char-section-title" id="char-sec-cards">${ico('i-eye')} CARDS (${cards.length}) <small>The whole kit — every card below is in ${ch.name}'s deck. Tap one for its maths, upgrade text and keywords. Lean-kit rule: 1 Basic Attack, 2 Skills, 1 Heavy (2-3 AP), 1 Buff Upgrade you can use once per battle.</small></h3>
     <div class="char-cards">${cardSlots}</div>
 
     <h3 class="char-section-title" id="char-sec-ego">${ico('i-star')} EGO SKILLS <small>4 EP normally · arm EXALT at 7 EP for the Over-Exalt version. Broken-down combatants cannot use Ego.</small></h3>
@@ -568,41 +571,44 @@ function simTrialsFor(id) {
     kaito: [
       { label: 'Reach 8 Fury at once', check: (b, t) => t.maxFury >= 8 },
       { label: 'Land a single hit of 60+ damage', check: (b) => b.stats.maxHit >= 60 },
-      { label: 'Gain Stress on purpose, then spend Fury (Fever Surge / Last Shift)', check: (b, t) => t.sawStressSpend },
+      { label: 'Spend a full Fury stack on Last Shift (last AP = Finale Crit)', check: (b, t) => t.sawStressSpend },
     ],
     momo: [
-      { label: 'Hold 30+ Shield at once', check: (b, t) => t.maxShield >= 30 },
+      { label: 'Hold 20+ Shield at once', check: (b, t) => t.maxShield >= 20 },
       { label: 'Deal Counter damage (let it hit your Shield)', check: (b, t) => t.sawCounter },
-      { label: 'Land a single hit of 50+ (Aegis Slam ceiling)', check: (b) => b.stats.maxHit >= 50 },
+      { label: 'Land a single hit of 40+ (Aegis Slam ceiling)', check: (b) => b.stats.maxHit >= 40 },
     ],
     goro: [
-      { label: 'Stack 12+ Bleed + Toxin on the Colossus', check: (b, t) => t.maxStatus >= 12 },
-      { label: 'Detonate statuses (Catalyst / Lysis Detonation)', check: (b, t) => t.sawDetonate },
-      { label: 'Heal while at full HP to trigger Purify Strength', check: (b, t) => t.maxStr >= 2 },
+      { label: 'Stack 12+ Toxin on the Colossus', check: (b, t) => t.maxStatus >= 12 },
+      { label: 'Heal the squad with Marrow Broth while holding the line', check: (b) => b.stats.healed >= 20 },
+      { label: 'Land a single hit of 40+ (Devour)', check: (b) => b.stats.maxHit >= 40 },
     ],
     yuna: [
       { label: 'Stack 15+ Poison on the Colossus', check: (b, t) => t.maxPoison >= 15 },
       { label: 'Watch a 45+ Poison tick at End Turn (stacks x 3+)', check: (b, t) => t.maxPoisonTick >= 45 },
-      { label: 'Double or Detonate Poison (Incubate / Necrotic Feast)', check: (b, t) => t.sawPoisonPlay },
+      { label: 'Stack Poison on the whole board (Spore Mist / Epidemic Bloom)', check: (b, t) => t.sawPoisonPlay },
     ],
     bibi: [
       { label: 'Reach 8 Resonance', check: (b, t) => t.maxResonance >= 8 },
       { label: 'Mark the Colossus, then hit it', check: (b, t) => t.sawMark },
-      { label: 'Land a single hit of 60+ (Prism / Singularity)', check: (b) => b.stats.maxHit >= 60 },
+      { label: 'Land a single hit of 50+ (Cytokine Storm with Resonance)', check: (b) => b.stats.maxHit >= 50 },
     ],
     sable: [
-      { label: 'Play Living Index, then land a 40+ % hit', check: (b) => b.stats.maxHit >= 40 },
+      { label: 'Play Living Index, then land a 40+ %HP hit', check: (b) => b.stats.maxHit >= 40 },
       { label: 'Mark the Colossus with Titer Lance, then hit it', check: (b, t) => t.sawMark },
-      { label: 'Execute: finish with Recall Strike (% missing HP)', check: (b) => b.stats.maxHit >= 25 },
+      { label: 'Heal 30% of your missing HP with Second Reading', check: (b) => b.stats.healed >= 20 },
     ],
   };
   return [...(byChar[id] || []), ...common];
 }
 function simDeckFor(id, loadout) {
-  const starter = CHARACTERS[id].deck.slice();
-  if (loadout === 'starter') return starter.map((cid) => ({ id: cid, upgraded: false }));
-  const extra = charCards(id).map((c) => c.id).filter((cid) => !starter.includes(cid));
-  const ids = [...starter, ...extra];
+  // The kit is exactly 5 cards: Starter = base versions, Upgraded = the
+  // upgraded versions (see the ceiling). The four non-Upgrade cards are
+  // duplicated so a solo combatant still draws real hands — the one-use Buff
+  // Upgrade is never duplicated, or its permanent passive would stack twice.
+  const kit = CHARACTERS[id].deck.slice();
+  const repeatable = kit.filter((cid) => CARDS[cid].type !== 'upgrade');
+  const ids = [...kit, ...repeatable];
   return ids.map((cid) => ({ id: cid, upgraded: loadout === 'upgraded' }));
 }
 function openSim(charId = simCharId) {
@@ -675,11 +681,11 @@ function updateSimTracker() {
   simTracker.maxStatus = Math.max(simTracker.maxStatus, (e.bleed || 0) + (e.toxin || 0) + (e.poison || 0));
   simTracker.maxPoison = Math.max(simTracker.maxPoison, e.poison || 0);
   battle.log.forEach((l) => { const m = /POISON — .* takes (\d+)/.exec(l.text); if (m) simTracker.maxPoisonTick = Math.max(simTracker.maxPoisonTick, Number(m[1])); });
-  if (/INCUBATE|NECROTIC FEAST|DOUBLED/.test(battle.log.map((l) => l.text).join('\n'))) simTracker.sawPoisonPlay = true;
+  if (/POISON/.test(battle.log.map((l) => l.text).join('\n'))) simTracker.sawPoisonPlay = true;
   simTracker.maxStr = Math.max(simTracker.maxStr, c.str || 0);
   const logText = battle.log.map((l) => l.text).join('\n');
   if (/COUNTER/.test(logText)) simTracker.sawCounter = true;
-  if (/DETONATE|Catalyst/i.test(logText)) simTracker.sawDetonate = true;
+  if (/Devour/i.test(logText)) simTracker.sawDetonate = true;
   if (e.mark > 0 || /Mark/i.test(logText)) simTracker.sawMark = true;
   if (/Consumed .* Fury/.test(logText)) simTracker.sawStressSpend = true;
 }
@@ -2905,7 +2911,7 @@ window.__cw = {
   setMode, startNewRun, enterRunNode, renderMap,
   beginBattle, beginRunBattle, renderBattle, startBattle, playCard, endTurn, playEgo, useSands, previewCard, POISON_PER_STACK, poisonPerStack, setSimHudHidden, setAutoplay, autoStepOnce, get autoplayOn() { return autoplay; },
   chooseEpiphany, setExalt(on) { exaltArmed = !!on; renderResources(); },
-  showView, playFromUI, openDetail, closeDetail, openLab, openDeckModal, closeDeckModal,
+  showView, playFromUI, openDetail, closeDetail, openLab, openDeckModal, closeDeckModal, advanceStory,
   openGuide, renderGuide, openCharacter, renderCharacter, openSim, renderSimSetup, beginSimBattle, endSimTest,
   openEnemyDetail, closeEnemyDetail, enemyStatuses,
   setTeam(ids) {

@@ -10,8 +10,8 @@ system is implemented in `src/engine.js`. Use this to check fidelity.
 | CZN | Ours |
 | --- | --- |
 | Team of 3 combatants | Team of 3, chosen from a 4-character roster |
-| Each character owns a personal card pool | Same — each card has an `owner` |
-| All three pools shuffle into one draw pile | Same, one combined pile |
+| Each character owns a personal card pool | Same — each card has an `owner`, but each kit is a fixed 5 cards (1 Basic · 2 Skills · 1 Heavy · 1 one-use Buff Upgrade) |
+| All three pools shuffle into one draw pile | Same, one combined pile — a full team is 15 cards |
 
 ## 2. Turn economy
 
@@ -30,7 +30,7 @@ system is implemented in `src/engine.js`. Use this to check fidelity.
 | --- | --- |
 | **Attack** | Damage. Crimson frame. |
 | **Skill** | Shield / heal / buff. Teal frame. |
-| **Upgrade** | Removed from the deck for the rest of the fight, applies a permanent effect. |
+| **Upgrade** | Applies a permanent effect and is Exhausted — our kits tag them `Exhaust`, so each one is usable ONCE per battle. |
 | **Curse** | Unplayable, clogs the hand. |
 | **Status** | Created mid-fight (e.g. Breakdown), playable to clear. |
 
@@ -40,7 +40,7 @@ system is implemented in `src/engine.js`. Use this to check fidelity.
 | --- | --- |
 | **Retain** | Stays in hand at end of turn |
 | **Exhaust** | Removed from the fight after use |
-| **Initiation** | Guaranteed in the opening hand |
+| **Initiation** | Guaranteed in the opening hand (every Buff Upgrade is Initiation) |
 | **Celestial** | Triggers automatically after you play a card costing 2+ AP |
 | **Lead** | 50% chance to cost 1 less when drawn |
 | **Haste** | Playing it does not lower enemy action counters |
