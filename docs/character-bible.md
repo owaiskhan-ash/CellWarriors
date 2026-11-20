@@ -397,7 +397,77 @@ the cast is the whole point. No faces, no costumes, no dialogue.
   — never two symmetric ones.
 - Impossibly slow, impossibly hard. Reads as a wall.
 
+### MUTANT STRAIN
+- A **twisted glossy violet segmented serpent** — the strep chain, mutated wrong.
+- Uneven spikes of different sizes along its back, **four mismatched pale eyes** clustered
+  on the head, a small fanged beak, split tendril tail.
+- Warped and asymmetric in a way the Strep never is. It reads as a corrupted copy.
+
+### PRION KNOT
+- A **dense knot of folded protein ribbons**, deep magenta and bone white.
+- Sharp angular folds like origami blades, spiralling into a rosette with **one dark core**
+  at its centre. Crystalline, never blobby, never soft.
+
 Shared pathogen rules: no text, no weapons, no clothing, no human anatomy, no symmetry.
+
+---
+
+## PART 2B — ELITES & BOSSES (locked v1.2 — do not redesign)
+
+The six big opponents below are **locked designs**. Their saved sprites are the ground
+truth: if a regeneration disagrees with the sprite on disk, the regeneration is wrong.
+All enemy sprites follow one production rule, learned the hard way:
+
+> **Enemy sprite rule:** generate ONE creature only, full body, filling 85–92% of the
+> frame on a **pure solid black (#000000) background with nothing else in the image** —
+> no scenery, no ground, no floor, no backdrop props. Then run
+> `python3 scripts/cutout.py` to strip the black to true transparency, and ship the
+> cropped `<name>-cut.png`. An enemy must never appear as a framed picture or a scene
+> rectangle on the battle stage; it floats over the stage. Bosses render larger than
+> elites, elites larger than regulars (`.is-boss` / `.is-elite` in `styles.css`).
+
+### STREPTO HIVE (elite)
+- A **queen sphere** of glossy violet `#8E3FA8` strapped in dark chitin band armour.
+- **Dozens of small black bead eyes** scattered across the main sphere, never symmetric.
+- Chains of smaller budding spheres hang from its sides, ending in **chitin claw pincers**.
+- Elite scale: visibly a strep colony grown into a single gravid organism.
+- Saved sprite: `images/enemy-hive-cut.png` (source `images/enemy-hive.jpg`).
+
+### BIOFILM CATHEDRAL (elite)
+- A **towering fortress-crustacean**: layered grey-green `#4A5A3A` cracked stone-chitin
+  plates stacked like cathedral arches and spires.
+- Frozen slime icicle drips, heavy jointed legs and **crab claws** beneath the shell,
+  tiny eyes glinting in the shadow under the shell brow.
+- The Biofilm grown vertical — impossibly slow, impossibly hard, a living wall.
+- Saved sprite: `images/enemy-cathedral-cut.png` (source `images/enemy-cathedral.jpg`).
+
+### STRAIN PRIME (elite)
+- The apex Mutant Strain: a **spined violet crystal serpent** of jagged angular plates.
+- **Cyan energy veins** crackling between the plates, one glowing violet core eye.
+- Faster and sharper than the Strain — every edge is a blade.
+- Saved sprite: `images/pathogen-prime-cut.png`.
+
+### CHAOS BLOOM (boss)
+- A **gigantic corrupted flower of flesh and chitin** — crimson and magenta petals
+  layered around a **glowing violet spore core**.
+- Spore pods bud asymmetrically on tendrils; **dozens of mismatched eyes** of different
+  sizes hide among the petals; tendril roots writhe below.
+- Majestic and wrong in equal measure. The garden the fever dreams about.
+- Saved sprite: `images/enemy-bloom-cut.png` (source `images/enemy-bloom.jpg`).
+
+### PRION SOVEREIGN (boss)
+- An **enormous crowned knot of folded protein ribbons** — deep magenta, antique gold,
+  bone white. Crown-like angular blade folds radiate upward like a sun-crown.
+- A **ring of small dark eyes around one black central core**; massive spiralling sheet
+  tendrils below. The Prion Knot grown royal: apex crystalline menace.
+- Saved sprite: `images/enemy-sovereign-cut.png` (source `images/enemy-sovereign.jpg`).
+
+### TRAINING COLOSSUS (boss · simulation only)
+- A **hulking golem of dark grey stone plates and crimson crystal spikes** — massive
+  clawed arms and feet, every claw tipped in red crystal.
+- One **glowing amber hexagonal core** in the chest; a small stone head, two amber eyes.
+- A training dummy built like a siege wall. It does not hate you. It barely notices you.
+- Saved sprite: `images/enemy-colossus-cut.png` (source `images/enemy-colossus.jpg`).
 
 ---
 
@@ -433,3 +503,23 @@ changes again — names are how the audience remembers the cast.
 
 All card art is 660 px wide JPEG (q82); action panels are 700 px wide JPEG (q84).
 `card-b2` was blocked by moderation once and currently reuses `card-b3` for Flare.
+
+## Enemy & boss sprites added (v1.2)
+
+Character-only transparent cutouts (pure-black source → `scripts/cutout.py`), wired in
+`ENEMY_ART` in `src/ui.js`. Cutouts are ≤900 px wide PNG. Source JPEGs are kept beside
+them so any sprite can be re-cut without regenerating.
+
+| File | What |
+| --- | --- |
+| `images/enemy-toxin-cut.png` | Toxin Blob (regenerated) |
+| `images/enemy-biofilm-cut.png` | Biofilm (regenerated) |
+| `images/enemy-strain-cut.png` | Mutant Strain (first dedicated art) |
+| `images/enemy-prion-cut.png` | Prion Knot (first dedicated art) |
+| `images/enemy-hive-cut.png` | Strepto Hive — elite |
+| `images/enemy-cathedral-cut.png` | Biofilm Cathedral — elite |
+| `images/enemy-bloom-cut.png` | Chaos Bloom — boss |
+| `images/enemy-sovereign-cut.png` | Prion Sovereign — boss |
+| `images/enemy-colossus-cut.png` | Training Colossus — boss (simulation) |
+| `images/pathogen-strep-cut.png` | Strep (pre-existing, still locked) |
+| `images/pathogen-prime-cut.png` | Strain Prime — elite (pre-existing, still locked) |

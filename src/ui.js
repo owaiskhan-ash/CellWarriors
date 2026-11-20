@@ -133,22 +133,22 @@ const showView = (name) => {
 };
 
 const ENEMY_ART = {
+  // Character-only transparent cutouts (images/enemy-*-cut.png) — no scenery,
+  // no background rectangle: the creature floats over the battle stage.
   strep: 'images/pathogen-strep-cut.png',
-  toxin: 'images/pathogen-toxin-cut.png',
-  biofilm: 'images/pathogen-biofilm-cut.png',
-  strain: 'images/pathogen-biofilm-cut.png',
-  prion: 'images/pathogen-toxin-cut.png',
+  toxin: 'images/enemy-toxin-cut.png',
+  biofilm: 'images/enemy-biofilm-cut.png',
+  strain: 'images/enemy-strain-cut.png',
+  prion: 'images/enemy-prion-cut.png',
   spore: 'images/pathogen-strep-cut.png',
-  elite_hive: 'images/pathogen-hive-cut.png',
-  elite_wall: 'images/pathogen-cathedral-cut.png',
+  elite_hive: 'images/enemy-hive-cut.png',
+  elite_wall: 'images/enemy-cathedral-cut.png',
   elite_prime: 'images/pathogen-prime-cut.png',
-  boss_bloom: 'images/boss-bloom-cut.png',
-  boss_prion: 'images/boss-prion-cut.png',
-  sim_colossus: 'images/pathogen-training.png',
+  boss_bloom: 'images/enemy-bloom-cut.png',
+  boss_prion: 'images/enemy-sovereign-cut.png',
+  sim_colossus: 'images/enemy-colossus-cut.png',
 };
 const ENEMY_HUE = {
-  strain: 'hue-rotate(250deg) saturate(1.4)',
-  prion: 'hue-rotate(300deg)',
   spore: 'hue-rotate(60deg)',
 };
 const CARD_ART = {
@@ -1611,7 +1611,7 @@ function renderEnemies() {
     const a = attr(e.weakness);
     const intent = intentOf(e);
     const isSel = battle.targetUid === e.uid && e.hp > 0;
-    const node = el('div', `enemy enemy-${e.id}${e.hp <= 0 ? ' dead' : ''}${isSel ? ' selected' : ''}${e.ravaged ? ' ravaged' : ''}`);
+    const node = el('div', `enemy enemy-${e.id}${e.hp <= 0 ? ' dead' : ''}${isSel ? ' selected' : ''}${e.ravaged ? ' ravaged' : ''}${e.boss ? ' is-boss' : e.elite ? ' is-elite' : ''}`);
     e._dom = node;
     node.classList.toggle('idle', e.hp > 0 && e.counter > 0);
     if (!e._entered) { e._entered = true; node.classList.add('entered'); }
