@@ -786,7 +786,17 @@ export const MISSIONS = [
       { art: 'images/story/m02-08-engage.jpg', who: 'Mission 02 — Drain Line', text: 'Kit down. Barrier up. Hold the corridor — nothing gets through Momo.' },
     ] },
   { code: 'm03', name: 'The Thicket', place: 'Deep Tissue — Biofilm Bloom', threat: 'Medium', rec: 'justice', reward: 65, enemies: ['biofilm', 'strep'],
-    story: ['A biofilm has grown over the wound bed like a city nobody planned.', 'Antibodies bounce off it. Goro has to eat through.', 'This is the first time the team fights something that fights back with a plan.'] },
+    // Scripted story beats: { art, who, text } — art lives in images/story/.
+    story: [
+      { art: 'images/story/m03-01-city.jpg', who: 'Deep Tissue — Biofilm Bloom', text: 'A biofilm has grown over the wound bed like a city nobody planned — towers of shell, streets of slime.' },
+      { art: 'images/story/m03-02-bounce.jpg', who: 'Deep Tissue', text: 'Antibodies bounce off it. Every scout the body sends comes back with the same report: nothing gets in.' },
+      { art: 'images/story/m03-03-eyes.jpg', who: 'The Thicket', text: 'And the city watches back. A hundred tiny eyes — and not one of them in a hurry.' },
+      { art: 'images/story/m03-04-goro.jpg', who: 'Goro — Macrophage', text: '…You built all this to keep us out. Cute.' },
+      { art: 'images/story/m03-05-devour.jpg', who: 'Deep Tissue', text: 'Goro does not knock either. He eats through — one plate, one street, one wall at a time.' },
+      { art: 'images/story/m03-06-ambush.jpg', who: 'The Thicket', text: 'The city has teeth: strep chains in the walls, sprung like traps. This is the first thing they have fought that uses a plan.' },
+      { art: 'images/story/m03-07-wall.jpg', who: 'Goro — Macrophage', text: 'Plans are fine. I have one too: stand where the hitting happens. Do not move.' },
+      { art: 'images/story/m03-08-engage.jpg', who: 'Mission 03 — The Thicket', text: 'Cleaver up. City ahead. Eat through it.' },
+    ] },
   { code: 'm04', name: 'Signal Rot', place: 'Spinal Relay — Night', threat: 'High', rec: 'void', reward: 80, enemies: ['strain', 'toxin'],
     story: ['The signal rot reaches the relay at 03:12.', 'The relay starts telling the body the wrong things — heat, fear, pain, all at once.', 'Bibi can out-shout it. That is not the same as curing it.'] },
   { code: 'm05', name: 'Prion Gate', place: 'The Blood-Brain Barrier', threat: 'Severe', rec: 'instinct', reward: 100, enemies: ['prion', 'strain', 'biofilm'],
