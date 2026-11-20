@@ -521,5 +521,6 @@ them so any sprite can be re-cut without regenerating.
 | `images/enemy-bloom-cut.png` | Chaos Bloom — boss |
 | `images/enemy-sovereign-cut.png` | Prion Sovereign — boss |
 | `images/enemy-colossus-cut.png` | Training Colossus — boss (simulation) |
-| `images/pathogen-strep-cut.png` | Strep (pre-existing, still locked) |
+| `images/enemy-strep-cut.png` | Strep (regenerated — frame-filling, character-only) |
+| `images/enemy-spore-cut.png` | Spore Node (first dedicated art) |
 | `images/pathogen-prime-cut.png` | Strain Prime — elite (pre-existing, still locked) |

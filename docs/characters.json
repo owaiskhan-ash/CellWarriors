@@ -204,8 +204,16 @@
       "kind": "pathogen",
       "identity": "A chain of five spheres joined by a thin translucent ligament forming a whip shape. Colour #8E3FA8 violet with #D9A6F0 highlights, wet and glossy. Three small dark eyes clustered at the leading sphere, no mouth.",
       "pose": "Coiled mid-lash, asymmetric, in motion.",
-      "never": "human anatomy, face, clothing, weapon, symmetry",
-      "art": "images/pathogen-strep-cut.png"
+      "never": "human anatomy, face, clothing, weapon, symmetry, scenery, background elements",
+      "art": "images/enemy-strep-cut.png"
+    },
+    "spore": {
+      "kind": "pathogen",
+      "name": "Spore Node",
+      "identity": "One round moss-green spore pod covered in small bumps and short root hairs, a cluster of tiny amber dots near the top like unopened eyes, a few thin rootlets dangling below. Dormant and swollen, ready to burst.",
+      "pose": "Rooted and dormant, rootlets swaying faintly.",
+      "never": "human anatomy, face, clothing, weapon, scenery, background",
+      "art": "images/enemy-spore-cut.png"
     },
     "toxin": {
       "kind": "pathogen",

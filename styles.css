@@ -295,18 +295,25 @@ button .ico { margin-right: 4px; }
 .weak-banner { align-self: center; font-size: 10px; letter-spacing: 0.2em; color: var(--dim); padding: 4px 14px; border: 1px solid var(--line-soft); border-radius: 20px; background: rgba(0,0,0,0.45); margin: 4px 0 0; font-family: var(--font-display); font-weight: 600; backdrop-filter: blur(4px); }
 .weak-banner b { letter-spacing: 0.14em; }
 .enemy-row { flex: 1; display: flex; align-items: flex-end; justify-content: center; gap: clamp(12px, 3vw, 56px); padding-bottom: 8px; min-height: 0; }
-.enemy { position: relative; width: clamp(200px, 27vw, 400px); display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 120ms ease-out; }
-.enemy.is-elite { width: clamp(240px, 32vw, 470px); }
-.enemy.is-boss { width: clamp(280px, 38vw, 560px); }
+.enemy { position: relative; width: clamp(250px, 33vw, 520px); flex: 0 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 120ms ease-out; }
+.enemy.is-elite { width: clamp(300px, 39vw, 610px); }
+.enemy.is-boss { width: clamp(350px, 45vw, 700px); }
+/* A lone opponent owns the stage: scale it up to fill the space. */
+.enemy.solo { width: clamp(320px, 42vw, 660px); }
+.enemy.is-elite.solo { width: clamp(370px, 48vw, 740px); }
+.enemy.is-boss.solo { width: clamp(410px, 52vw, 800px); }
 .enemy:hover { transform: translateY(-3px); }
 .enemy.dead { opacity: 0.15; filter: grayscale(1); pointer-events: none; }
 /* Selected target: no ring, no frame — the character sprite itself glows
    (drop-shadow follows the silhouette), name plate tints red. */
 .enemy.selected .enemy-art img { filter: drop-shadow(0 22px 38px rgba(0,0,0,0.8)) drop-shadow(0 0 26px rgba(255,51,85,0.55)) brightness(1.07); }
 .enemy.selected .enemy-name { color: #ff8fa5; }
-.enemy-art { position: relative; height: clamp(210px, 42vh, 390px); width: 100%; display: flex; align-items: flex-end; justify-content: center; }
-.enemy.is-elite .enemy-art { height: clamp(250px, 48vh, 440px); }
-.enemy.is-boss .enemy-art { height: clamp(290px, 54vh, 500px); }
+.enemy-art { position: relative; height: clamp(290px, 54vh, 520px); width: 100%; display: flex; align-items: flex-end; justify-content: center; }
+.enemy.is-elite .enemy-art { height: clamp(340px, 60vh, 580px); }
+.enemy.is-boss .enemy-art { height: clamp(390px, 66vh, 640px); }
+.enemy.solo .enemy-art { height: clamp(360px, 62vh, 600px); }
+.enemy.is-elite.solo .enemy-art { height: clamp(400px, 66vh, 640px); }
+.enemy.is-boss.solo .enemy-art { height: clamp(430px, 70vh, 680px); }
 .enemy-art img { max-height: 100%; max-width: 100%; object-fit: contain; filter: drop-shadow(0 22px 38px rgba(0,0,0,0.8)); }
 .enemy.ravaged .enemy-art img { animation: ravage 0.5s ease-in-out infinite alternate; }
 @keyframes ravage { from { transform: translateX(-3px) rotate(-1.4deg); } to { transform: translateX(3px) rotate(1.4deg); } }
@@ -857,11 +864,12 @@ button .ico { margin-right: 4px; }
   .team-block { width: 54vw; }
   .cutin-name { font-size: 22px; } .cutin-card { right: 6%; width: 144px; height: 196px; }
   .battle-log { left: 84px; } .dmg-rail { right: 84px; } .bark-toast { left: 84px; }
-  .enemy { width: clamp(140px, 20vw, 220px); }
+  .enemy { width: clamp(180px, 27vw, 320px); }
+  .enemy.solo { width: clamp(230px, 36vw, 400px); }
 }
 @media (max-height: 620px) {
   .hand-zone { min-height: 196px; } .hand { height: 172px; } .card { height: 172px; }
-  .battle-log { display: none; } .enemy-art { height: clamp(110px, 26vh, 180px); }
+  .battle-log { display: none; } .enemy-art { height: clamp(150px, 34vh, 250px); }
 }
 @media (max-width: 760px) {
   .detail-panel { flex-direction: column; gap: 14px; padding: 18px; max-height: 92vh; overflow: auto; }
@@ -897,8 +905,10 @@ button .ico { margin-right: 4px; }
 }
 /* Training Colossus is a boss-tier opponent: same big character-only
    treatment, no rectangular framed art. */
-.enemy-sim_colossus { width: clamp(300px, 40vw, 580px); }
-.enemy-sim_colossus .enemy-art { height: clamp(300px, 55vh, 510px); }
+.enemy-sim_colossus { width: clamp(380px, 48vw, 740px); }
+.enemy-sim_colossus .enemy-art { height: clamp(400px, 66vh, 640px); }
+.enemy-sim_colossus.solo { width: clamp(430px, 54vw, 820px); }
+.enemy-sim_colossus.solo .enemy-art { height: clamp(440px, 70vh, 690px); }
 
 /* ---- enemy buff/debuff icons under HP bar + long-press inspect ---- */
 .enemy-status { display:flex; gap:4px; justify-content:center; flex-wrap:wrap; min-height:22px; margin-top:3px; }
