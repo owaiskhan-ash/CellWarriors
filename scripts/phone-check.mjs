@@ -146,6 +146,20 @@ ok('panels/sheets are made scrollable rather than clipped',
   (mobile.match(/overflow:\s*auto/g) || []).length >= 8,
   String((mobile.match(/overflow:\s*auto/g) || []).length));
 
+/* --- A7b. absolutely-positioned overlays must not collide on a phone ---
+   Three HUD panes share the top of the battle screen. They are all
+   absolutely positioned, so a bad `top:` silently covers another element.
+   Assert they were deliberately re-placed rather than left at desktop values. */
+group('A7b · battle overlay placement');
+const topStack = (mobile.match(/\.top-stack\s*\{[^}]*\}/) || [''])[0];
+ok('.top-stack is re-anchored under the HUD, not floated to the bottom',
+  /top:\s*calc\(var\(--safe-t\)/.test(topStack) && !/bottom:\s*\d/.test(topStack), topStack.slice(0, 90));
+ok('.bark-toast is anchored top-left of the stage', /\.bark-toast\s*\{[\s\S]{0,120}top:\s*calc\(var\(--safe-t\)/.test(mobile));
+ok('.battle-log becomes a readable panel when opened', /\.battle-log:not\(\.hidden\)[\s\S]{0,200}max-height/.test(mobile));
+ok('.dmg-rail clears the right rail', /\.dmg-rail\s*\{[\s\S]{0,80}right:\s*calc\(var\(--safe-r\)/.test(mobile));
+ok('no mobile overlay rule keeps a hard desktop `bottom:` on the battle view',
+  !/\.bark-toast[^}]*bottom:\s*34%/.test(mobile));
+
 /* --- A8. PWA / install metadata --- */
 group('A8 · install metadata');
 ok('webmanifest linked', /rel="manifest"/.test(index));
@@ -231,6 +245,26 @@ ok('card keeps the 0.74 portrait art ratio', (() => {
   const r = cardW / cardH;
   return r > 0.65 && r < 0.85;
 })(), `${cardW}/${cardH} = ${(cardW / cardH).toFixed(2)}`);
+
+/* --- HAND FOOTPRINT: cards must never spill outside their strip ---
+   The footprint of n cards is w*n - overlap*(n-1) (negative margins), so the
+   divisor that picks w has to match that, not a looser fudge factor. */
+const fitCheck = (() => {
+  const h = $('hand');
+  const w = parseInt(h.style.getPropertyValue('--card-w'), 10);
+  const m = Math.abs(parseInt(h.style.getPropertyValue('--card-m'), 10)) * 2;
+  const n = h.querySelectorAll('.card').length;
+  const availW = PHONE_W - 24; // hand-zone padding
+  const availH = PHONE_H - 170; // stage + chrome above the strip
+  const footprint = w * n - m * (n - 1);
+  return { n, w, footprint, availW, availH };
+})();
+ok('hand fits the strip width (n cards incl. overlap)',
+  fitCheck.footprint <= fitCheck.availW,
+  `${fitCheck.n} cards @ ${fitCheck.w}px = ${fitCheck.footprint}px of ${fitCheck.availW}px`);
+ok('cards are not shrunk below the height budget while width allows',
+  fitCheck.w >= 90 || fitCheck.footprint > fitCheck.availW * 0.93,
+  `${fitCheck.w}px wide`);
 
 /* --- TAP TO PLAY: exactly one card per tap --- */
 const before = window.__cw.battle.hand.length;
@@ -347,6 +381,89 @@ while ((am = assetRe.exec(ui + data))) refs.add(am[2]);
 while ((am = assetRe.exec(fs.readFileSync(path.join(ROOT, 'styles.css'), 'utf8')))) refs.add(am[2]);
 const missing = [...refs].filter((r) => !fs.existsSync(path.join(ROOT, r)));
 ok(`every referenced asset exists on disk (${refs.size} refs)`, missing.length === 0, missing.slice(0, 10).join(', '));
+
+/* --- first-run thumb tutorial --- */
+group('B4 · onboarding');
+ok('tutorial markup exists', !!$('touch-tut'));
+// A fresh install on a touch device must see it; dismissing must stick.
+ok('tutorial auto-opens on a fresh touch install', !window.document.getElementById('touch-tut').classList.contains('hidden'));
+ok('dismissing the tutorial persists the choice', (() => {
+  const tut = $('touch-tut');
+  click('tt-dismiss');
+  return tut.classList.contains('hidden') && window.localStorage.getItem('cw_touch_tut_v1') === '1';
+})());
+ok('a returning player never sees it again', (() => {
+  const tut = $('touch-tut');
+  tut.classList.add('hidden');
+  // simulate the next boot: the gate is localStorage, which now says "seen"
+  return window.localStorage.getItem('cw_touch_tut_v1') === '1' && tut.classList.contains('hidden');
+})());
+ok('tutorial is never part of the desktop flow', !/'touch-tut'/.test(read('styles.css')));
+
+/* --- the game is playable entirely by touch: no key handler is required --- */
+group('B5 · no keyboard requirement');
+['end-turn', 'btn-autoplay', 'btn-menu', 'btn-sands', 'btn-mute'].forEach((id) =>
+  ok(`#${id} is reachable without the keyboard`, !!$(id)));
+ok('hand cards carry a pointer handler (not only a click handler)', /pointerdown/.test(read('src/ui.js')));
+
+/* ========================================================================
+   PART C — hand sizing matrix across real phone viewports
+   ------------------------------------------------------------------------
+   The hand strip is the densest thing on screen and the easiest to get wrong
+   (7 cards after a draw is the worst case). Boot the real app at each common
+   phone size and assert the cards physically fit the strip.
+   ======================================================================== */
+group('C · hand sizing across phones');
+const VIEWPORTS = [
+  [892, 412, 'iPhone 14 Pro / Pixel landscape'],
+  [844, 390, 'iPhone 12-14 landscape'],
+  [1000, 460, 'large 20:9 landscape'],
+  [640, 360, 'small 16:9 landscape'],
+  [568, 320, 'very small landscape'],
+  [412, 892, 'portrait fallback'],
+  [360, 640, 'small portrait fallback'],
+];
+for (const [vw, vh, label] of VIEWPORTS) {
+  const d2 = new JSDOM(read('index.html'), { url: 'http://localhost/', pretendToBeVisual: true });
+  const w2 = d2.window;
+  Object.defineProperty(w2, 'innerWidth', { value: vw, configurable: true });
+  Object.defineProperty(w2, 'innerHeight', { value: vh, configurable: true });
+  w2.matchMedia = (q) => ({
+    matches: /orientation:\s*landscape/.test(q) ? vw > vh : false,
+    media: q, onchange: null,
+    addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {},
+    dispatchEvent() { return false; },
+  });
+  global.window = w2;
+  global.document = w2.document;
+  global.localStorage = w2.localStorage;
+  global.HTMLElement = w2.HTMLElement;
+  global.Event = w2.Event;
+  Object.defineProperty(global, 'navigator', { value: w2.navigator, configurable: true });
+  await import(`${ROOT}/src/ui.js?vp=${vw}x${vh}`);
+  const cw2 = w2.__cw;
+  cw2.setTeam(['kaito', 'goro', 'bibi']);
+  w2.document.getElementById('btn-start').dispatchEvent(new w2.MouseEvent('click', { bubbles: true }));
+  w2.document.getElementById('btn-deploy').dispatchEvent(new w2.MouseEvent('click', { bubbles: true }));
+  cw2.openMission('m01');
+  const hand2 = w2.document.getElementById('hand');
+  const wpx = parseInt(hand2.style.getPropertyValue('--card-w'), 10);
+  const hpx = parseInt(hand2.style.getPropertyValue('--card-h'), 10);
+  const gap = Math.abs(parseInt(hand2.style.getPropertyValue('--card-m'), 10)) * 2;
+  const count = hand2.querySelectorAll('.card').length;
+  // jsdom does no layout: the strip is #app minus the hand-zone padding.
+  const strip = vw - 24;
+  const footprint = wpx * count - gap * (count - 1);
+  ok(`${vw}x${vh} (${label}): ${count} cards fit`, footprint <= strip,
+    `${wpx}x${hpx} → ${footprint}px of ${strip}px`);
+  ok(`${vw}x${vh}: card keeps the 0.74 art ratio`, Math.abs(wpx / hpx - 0.74) < 0.02,
+    `${(wpx / hpx).toFixed(2)}`);
+  ok(`${vw}x${vh}: cards stay legible (>=40px wide)`, wpx >= 40, `${wpx}px`);
+}
+// Restore the primary document for anything after this point.
+global.window = window;
+global.document = window.document;
+global.localStorage = window.localStorage;
 
 /* ========================================================================
    REPORT

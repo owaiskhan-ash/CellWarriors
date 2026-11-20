@@ -152,11 +152,16 @@ const raf = (fn) => (typeof requestAnimationFrame !== 'undefined' ? requestAnima
    the single source of truth for "we are in the phone layout". */
 const PHONE_QUERY = '(orientation: landscape) and (min-width: 560px) and (max-width: 1000px) and (max-height: 560px)';
 const isPhoneLayout = () => {
-  try {
-    if (window.matchMedia) return window.matchMedia(PHONE_QUERY).matches;
-  } catch { /* jsdom without matchMedia */ }
   const w = window.innerWidth || 0, h = window.innerHeight || 0;
-  return h > 0 && h <= 560 && w >= 560 && w <= 1000 && w > h;
+  // A narrow portrait window is also "compact": the game is landscape-only,
+  // but the web build can still be opened in portrait and must not overflow.
+  const portrait = h > w && w > 0 && w <= 620;
+  try {
+    if (window.matchMedia && !portrait) return window.matchMedia(PHONE_QUERY).matches;
+  } catch { /* jsdom without matchMedia */ }
+  if (!h) return false;
+  const landscapePhone = h <= 560 && w >= 560 && w <= 1000 && w > h;
+  return landscapePhone || portrait;
 };
 let currentView = 'title';
 const showView = (name) => {
@@ -1994,12 +1999,33 @@ function renderHand() {
   // stage leaves over, and the width follows the 0.74 art ratio. Whatever the
   // height allows, the cards must still fit side by side.
   const hCap = compact ? Math.max(88, Math.min(156, Math.round(window.innerHeight * 0.34))) : 200;
+  // The real footprint of n cards is w*n - overlap*(n-1) — negative margins pull
+  // neighbours together. A phone hand must fit BOTH budgets: the strip width and
+  // the height left under the stage. Whichever is tighter wins, and the result
+  // is never allowed to overflow (a 320px-wide window still fits seven cards).
+  const overlapRatio = compact ? 0.26 : 0.42;
+  // Derive the width from an *integer* gap so rounding can never push the row
+  // 1-2px past the strip on an edge-of-range viewport.
+  const wFromWidth = (() => {
+    // Model the CSS exactly: margin = -floor(overlap/2) per side, so the gap
+    // between neighbours is 2*floor(overlap/2) — never more than the
+    // theoretical overlap. Decrement until the real footprint fits.
+    let cand = Math.max(24, Math.floor(avail / (n - overlapRatio * (n - 1))));
+    for (let i = 0; i < 80 && cand > 24; i++) {
+      const gap = 2 * Math.floor((cand * overlapRatio) / 2);
+      if (cand * n - gap * (n - 1) <= avail) return cand;
+      cand -= 1;
+    }
+    return Math.max(24, cand);
+  })();
+  const wFromHeight = compact ? Math.round(hCap * 0.74) : 158;
+  // The floor only guards against a degenerate 0-width hand during boot; it is
+  // deliberately low so a 320px-wide window still fits a full hand.
   let w = compact
-    ? Math.min(Math.round(hCap * 0.74), Math.floor(avail / (n + 0.3 * (n - 1))))
-    : Math.max(104, Math.min(158, Math.floor(avail / (n + 0.42 * (n - 1)))));
-  w = Math.max(compact ? 70 : 104, w);
+    ? Math.max(40, Math.min(wFromHeight, wFromWidth))
+    : Math.max(104, Math.min(158, wFromWidth));
   const h = compact ? Math.round(w / 0.74) : 200;
-  const overlap = Math.round(w * (compact ? 0.26 : 0.42));
+  const overlap = Math.round(w * overlapRatio);
   hand.style.setProperty('--card-w', `${w}px`);
   hand.style.setProperty('--card-m', `${-Math.floor(overlap / 2)}px`);
   hand.style.setProperty('--card-h', `${h}px`);
@@ -3038,6 +3064,27 @@ function bind() {
   installDoubleTapGuard();
   raf(syncRootVars);
   updateAdaptiveUI();
+
+  /* ---------------- first-run thumb tutorial (touch devices only) ----------
+     The desktop ships with a keybind legend and hover tooltips; a phone has
+     neither, so the gesture language is taught once, right after install. */
+  const TUT_KEY = 'cw_touch_tut_v1';
+  const tut = $('touch-tut');
+  const touchDevice = (() => { try { return (navigator.maxTouchPoints || 0) > 0 || 'ontouchstart' in window; } catch { return false; } })();
+  let tutSeen = true;
+  try { tutSeen = window.localStorage.getItem(TUT_KEY) === '1'; } catch { /* private mode */ }
+  if (tut && touchDevice && !tutSeen) {
+    tut.classList.remove('hidden');
+    const dismiss = () => {
+      tut.classList.add('hidden');
+      try { window.localStorage.setItem(TUT_KEY, '1'); } catch { /* ignore */ }
+      sfx('click');
+    };
+    $('tt-dismiss').addEventListener('click', dismiss);
+    tut.addEventListener('click', (ev) => { if (ev.target === tut) dismiss(); });
+  } else if (tut) {
+    tut.classList.add('hidden');
+  }
 }
 
 bind();

@@ -80,14 +80,18 @@ html, body { overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
   .hud-title { padding-top: 0; gap: 0; }
   .hud-title b { font-size: 10px; letter-spacing: 0.16em; }
   .hud-title span { font-size: 9px; }
-  .hud-pills { display: none; }
+  .hud-pills { display: flex; gap: 3px; margin-top: 1px; max-width: 30vw; overflow: hidden; }
+  .hud-pills .hpill { font-size: 7px; padding: 1px 4px; max-width: 84px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .hud-tools { gap: 4px; }
   .hud-tools .icon-btn { width: var(--tap-min); height: var(--tap-min); border-radius: 10px; }
   .hud-tools .icon-btn .ico { width: 20px; height: 20px; }
 
   .boss-bar-head { font-size: 9px; }
   .boss-bar-track { height: 9px; }
-  .top-stack { top: auto; bottom: 2px; width: min(440px, 46vw); }
+  /* the boss bar hangs just under the HUD, centred — NOT at the bottom of the
+     viewport, which would cover the hand strip */
+  .top-stack { top: calc(var(--safe-t) + 54px); bottom: auto; width: min(420px, 46vw); }
+  .objective-bar { font-size: 8px; margin-top: 3px; }
 
   .battle-stage {
     grid-template-columns: 74px minmax(0, 1fr) 96px;
@@ -96,7 +100,8 @@ html, body { overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
     min-height: 0;
   }
   /* left rail: turn + res + draw + ep, compressed into a single column */
-  .rail { gap: 5px; padding-top: 2px; }
+  .rail { gap: 4px; padding-top: 0; }
+  .res-track { background: rgba(255,255,255,0.12); }
   .rail-right { padding-bottom: 4px; gap: 6px; }
   .turn-plate { width: 58px; height: 40px; border-radius: 7px; }
   .turn-plate span { font-size: 7px; }
@@ -135,7 +140,8 @@ html, body { overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
   }
   .end-turn .ico { width: 24px; height: 24px; }
   #end-turn { letter-spacing: 0.02em; }
-  .auto-btn { font-size: 8px; padding: 4px 6px; min-height: 26px; }
+  .auto-btn { font-size: 8px; padding: 4px 6px; min-height: 34px; min-width: 46px; }
+  .auto-plan:not(.hidden) { font-size: 8.5px; max-width: 40vw; max-height: 40%; overflow: auto; }
   .pile-box.grave { width: 58px; padding: 4px 3px; }
   .pile-box.grave b { font-size: 15px; }
 
@@ -155,7 +161,10 @@ html, body { overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
   .status-icon i { font-size: 8px; }
   .enemy-hint { display: none; }
   .weak-banner { font-size: 8px; padding: 2px 10px; margin: 1px 0 0; }
-  .enemy-row { gap: 6px; }
+  .enemy-row { gap: 4px; }
+  .enemy-row { flex-wrap: nowrap; justify-content: center; }
+  .enemy-badges { transform: scale(0.82); transform-origin: 50% 0; }
+  .enemy-mods { display: none; }
   .action-timeline { width: 86px; top: 2px; right: 0; gap: 3px; }
   .action-timeline .tl-chip { padding: 3px 5px; }
   .action-timeline .tl-chip b { font-size: 7px; }
@@ -198,14 +207,25 @@ html, body { overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
   .battle-tips span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   /* panes that float over the battle */
-  .battle-log {
+  .battle-log:not(.hidden) {
     left: calc(var(--safe-l) + 74px); right: auto;
-    top: calc(var(--safe-t) + 44px); bottom: 20%;
-    width: min(320px, 40vw);
-    font-size: 9px;
+    top: calc(var(--safe-t) + 40px); bottom: auto;
+    max-height: 46%;
+    width: min(320px, 44vw);
+    font-size: 9.5px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: rgba(5,2,3,0.86);
+    border: 1px solid var(--line-soft);
+    mask-image: none;
+    pointer-events: auto;
+    overflow: hidden;
   }
   .dmg-rail { right: calc(var(--safe-r) + 90px); top: calc(var(--safe-t) + 60px); }
-  .bark-toast { left: calc(var(--safe-l) + 78px); bottom: 34%; max-width: 46vw; }
+  .bark-toast {
+    left: calc(var(--safe-l) + 78px); top: calc(var(--safe-t) + 58px); bottom: auto;
+    max-width: min(260px, 34vw); font-size: 10px; padding: 6px 10px; line-height: 1.35;
+  }
   .sands-menu { right: 54px; width: 178px; }
   .sands-menu button { padding: 11px 10px; font-size: 11px; min-height: 44px; }
 
@@ -275,11 +295,26 @@ html, body { overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
   .mission-list { padding: 8px 12px calc(var(--safe-b) + 10px); gap: 8px; }
   .mission-list > * { padding: 8px 10px; }
 
-  /* --- map --- */
-  .map-wrap { flex: 1; min-height: 0; }
-  .map-floors { transform-origin: 50% 0; }
+  /* --- map: reading order first (latest floor at the top of the scroll) --- */
+  .map-wrap { flex: 1; min-height: 0; padding: 8px 10px calc(var(--safe-b) + 16px); }
+  .map-floors { gap: 10px; max-width: 100%; }
+  .map-floor-row { gap: 8px; }
+  .map-node {
+    width: min(104px, 22vw);
+    padding: 6px 5px;
+    border-radius: 9px;
+    gap: 1px;
+    min-height: var(--tap-min);
+  }
+  .map-node .n-ico .ico { width: 16px; height: 16px; }
+  .map-node b { font-size: 9px; letter-spacing: 0.04em; line-height: 1.15; }
+  .map-node > span { font-size: 7.5px; line-height: 1.2; }
   .map-team { display: none; }
-  .map-meta .meta-chip { font-size: 10px; padding: 5px 8px; }
+  .map-meta { gap: 5px; }
+  .map-meta .meta-chip { font-size: 10px; padding: 5px 8px; min-height: 32px; }
+  .map-meta .btn-ghost.tiny { min-height: 34px; font-size: 9.5px; }
+  .relic-bar { padding: 4px 12px; min-height: 22px; overflow-x: auto; flex-wrap: nowrap; }
+  .relic-bar .hpill { flex: 0 0 auto; font-size: 8px; }
 
   /* --- shop / rest / reward: cards sized by the viewport height --- */
   .shop-body { grid-template-columns: minmax(0, 1fr) 200px; gap: 12px; padding: 8px 12px calc(var(--safe-b) + 10px); }
@@ -495,3 +530,44 @@ html, body { overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
 }
 /* Android WebView: no text selection or callout menus anywhere in the game. */
 html, body, .card, .enemy, button, .view { -webkit-user-select: none; -webkit-touch-callout: none; }
+
+/* ============================== 7. FIRST-RUN THUMB TUTORIAL ============= */
+/* Shown once on a touch device (src/ui.js gates it on localStorage). Same
+   frame language as the pause card so it reads as part of the game. */
+.touch-tut {
+  position: absolute; inset: 0; z-index: 95;
+  display: grid; place-items: center;
+  background: rgba(3,1,2,0.82);
+  backdrop-filter: blur(5px);
+  padding: calc(var(--safe-t) + 8px) calc(var(--safe-r) + 12px)
+           calc(var(--safe-b) + 8px) calc(var(--safe-l) + 12px);
+}
+.tt-card {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  width: min(640px, 94vw); max-height: 100%; overflow: auto;
+  padding: 16px 22px 14px;
+  border-radius: 14px; color: var(--text); text-align: center;
+  background: linear-gradient(180deg, rgba(23,10,14,0.98), rgba(11,5,7,0.98));
+  border: 1px solid var(--line);
+  box-shadow: 0 26px 70px rgba(0,0,0,0.75);
+  animation: sheetIn 180ms ease-out both;
+}
+.tt-card h2 { margin: 2px 0 0; font-size: 17px; letter-spacing: 0.26em; font-family: var(--font-display); }
+.tt-card .czn-id { color: var(--muted); margin-bottom: 2px; }
+.tt-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; text-align: left; width: 100%; }
+.tt-list li {
+  display: grid; grid-template-columns: 132px 1fr; gap: 10px; align-items: baseline;
+  padding: 5px 8px; border-radius: 7px;
+  background: rgba(255,255,255,0.035);
+  border-left: 2px solid var(--teal);
+}
+.tt-list b { font-family: var(--font-display); font-size: 9.5px; letter-spacing: 0.12em; color: var(--cyan-pale); }
+.tt-list span { font-size: 10.5px; line-height: 1.45; color: #d9dfef; }
+.tt-card .btn-primary { min-height: var(--tap-min); margin-top: 2px; padding: 10px 40px; }
+@media (max-height: 400px) {
+  .tt-list li { grid-template-columns: 112px 1fr; padding: 3px 7px; }
+  .tt-list span { font-size: 9.5px; }
+  .tt-card h2 { font-size: 14px; }
+  .tt-card { gap: 5px; padding: 10px 16px; }
+}
