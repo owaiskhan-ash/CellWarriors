@@ -86,12 +86,15 @@ const CARD_ART = {
   m_strike: 'images/card-m1.jpg', m_guard: 'images/card-m2.jpg', m_patch: 'images/card-m3.jpg',
   g_strike: 'images/card-g1.jpg', g_cleave: 'images/card-g2.jpg', g_devour: 'images/card-g3.jpg',
   b_ping: 'images/card-b1.jpg', b_flare: 'images/card-b2.jpg', b_hist: 'images/card-b3.jpg',
+  y_sting: 'images/card-y1.jpg', y_mist: 'images/card-y2.jpg', y_epidemic: 'images/card-y2.jpg',
+  y_necrosis: 'images/card-y3.jpg', y_predator: 'images/card-y3.jpg', y_dose: 'images/card-y1.jpg',
 };
 const ACTION_ART = {
   kaito: 'images/action-kaito.jpg',
   momo: 'images/action-momo.jpg',
   goro: 'images/action-goro.jpg',
   bibi: 'images/action-bibi.jpg',
+  yuna: 'images/action-yuna.jpg',
 };
 const ico = (id, cls = '') => `<svg class="ico ${cls}"><use href="#${id}"/></svg>`;
 const KIND_ICON = { attack: 'i-sword', skill: 'i-shield', upgrade: 'i-buff', status: 'i-skull', curse: 'i-skull' };
@@ -259,7 +262,10 @@ const GUIDE_ENTRIES = [
   { cat: 'status', icon: 'i-skull', name: 'STRESS & Mental Breakdown', short: 'The second health bar (0–100)', body: 'Unblocked damage adds Stress (roughly 1.5× the HP lost + 4, minimum 6). Debuffs, Fever curses and some of your own cards add more. At 100 Stress: Mental Breakdown — one third of Max HP becomes locked (unhealable), that character’s cards in hand/draw become Recovery status cards, and their Ego is sealed. Play their Recovery card enough times (5, then 6, 8, 10… after repeat breakdowns) to recover: full HP, Stress 0, +2 Strength, next Ego free, and the team heals. Shield prevents Stress; heals and skills remove it.', example: 'Kaito deliberately farms Stress for Fury and Apex bonuses. Everyone else should treat 70+ Stress as a fire alarm.', tags: ['stress', 'breakdown', 'mental', 'recovery', 'locked hp', '100'] },
   { cat: 'status', icon: 'i-skull', name: 'Bleed', short: 'Damage that triggers on hits', body: 'Bleed stacks sit on an enemy. Whenever that enemy takes an Attack hit, Bleed ruptures for damage equal to its stacks (then loses 1 stack). Detonate effects trigger it on demand. Because multi-hit attacks trigger it repeatedly, Bleed loves Blade Rush and Flurry. CASCADE synergy adds +1 stack whenever you apply Bleed/Toxin.', example: 'Apply 6 Bleed, then a 4-hit Flurry: the hits keep rupturing the stack while your Strength applies per hit.', tags: ['bleed', 'dot', 'goro', 'kaito', 'rupture'] },
   { cat: 'status', icon: 'i-skull', name: 'Toxin', short: 'Damage when the enemy acts', body: 'Toxin ticks for its full stack value whenever that enemy’s action counter reaches 0 and it acts, also chewing through Tenacity, then slowly decays. It punishes slow enemies and rewards Goro for simply staying alive. Detonating Toxin early trades future ticks for immediate damage + healing via Lysis Detonation.', example: 'A 12-Toxin enemy that acts 3 more times is already dead — it just hasn’t noticed.', tags: ['toxin', 'poison', 'dot', 'goro'] },
+  { cat: 'status', icon: 'i-poison', name: 'POISON — Damage over Time (DoT)', short: 'Stacks now, damage at End Turn', body: 'Poison is Yuna’s DoT and works differently from Bleed and Toxin: stacks collect on the enemy during your turn, then when you press END TURN each enemy takes damage equal to its Poison stacks (+ Poison Potency from Living Culture / Virulence Engine), and its Poison falls by 1. So 10 Poison deals 10, then 9, then 8… if left alone. It ignores Strength, Crit and Shield timing, does not reduce Tenacity by itself, and can kill an enemy before it ever acts again. Incubate doubles a stack, Apex Parasite triggers a tick immediately, and Necrotic Feast detonates (consumes) all stacks at once and heals your team per stack. CASCADE synergy adds +1 stack per application. The green POISON icon under the enemy HP bar shows stacks and next tick; long-press the enemy for the full breakdown.', example: 'Turn: Spore Mist (3) + Creeping Dose (5) + Incubate (×2 = 16) → End Turn melts it for 16, leaving 15 for next turn.', tags: ['poison', 'dot', 'damage over time', 'yuna', 'eosinophil', 'end turn', 'stacks'] },
   { cat: 'status', icon: 'i-target', name: 'Mark (×1.5) & Vulnerable (×1.35)', short: 'Paint the target, then everyone hits it', body: 'Marked enemies take ×1.5 damage and Vulnerable enemies take ×1.35 from all direct hits, for a number of enemy actions/turns shown on their chips. They stack multiplicatively with Weakness (×1.5), Ravaged (×1.3), Burst (×1.6) and Crit (×1.75). This multiplication is how 30-damage cards become 200-damage cards. Apply these BEFORE the big spend, not after.', example: 'Flare (Mark+Vuln) → Last Shift into Weakness with Crit can exceed ×6 total multiplication.', tags: ['mark', 'vulnerable', 'vuln', 'multiplier', 'bibi', 'setup'] },
+  { cat: 'cards', icon: 'i-sword', name: 'Basic Attack & Synergy/Effect cards', short: '1 basic per character — the rest is the engine', body: 'Every combatant has exactly ONE Basic Attack (flagged BASIC, one copy in their starter deck): Kaito’s Cytokine Jab, Momo’s Order Strike, Goro’s Scalpel, Bibi’s Signal Ping, Yuna’s Venom Sting. Every other starter card is a Synergy or Effect card — buffs, shields, draws, tokens, DoTs and permanent Upgrades that make the basic (and your Egos/finishers) matter. Signature direct-attack finishers (Last Shift, Aegis Slam, Apex Cleaver…) are build-around cards you draft in runs or test in Full Arsenal simulation. Judge a character by their effect loop, not their basic.', example: 'Yuna’s basic only deals 6 — her deck wins because Dose/Mist/Incubate turn End Turn into a weapon.', tags: ['basic attack', 'synergy', 'effect', 'starter deck', 'deckbuilding'] },
+  { cat: 'enemy', icon: 'i-eye', name: 'Enemy status icons & long-press inspect', short: 'Icons live under the HP bar', body: 'Directly under each enemy’s HP/Tenacity bars is its status row: green flask = Poison stacks (next End-Turn tick), drop = Bleed, flask = Toxin, target = Mark, down-arrow = Vulnerable/Weaken, plus buffs like ATK UP, CHARGING and innate mods. Click an enemy to target it. HOLD (long-press) or right-click an enemy to open a full inspect panel listing every buff and debuff with stacks, duration, exact numbers and what will happen next — including how much Poison will tick at End Turn.', example: 'See “POISON 14” under the bar? Long-press: it will take 14 (+ Potency) when you End Turn, then drop to 13.', tags: ['enemy', 'buff', 'debuff', 'status icons', 'long press', 'inspect', 'hp bar'] },
   { cat: 'status', icon: 'i-debuff', name: 'Weaken, Curses & Statuses', short: 'Enemy debuffs and hand-cloggers', body: 'Weakened enemies deal 35% less damage while it lasts. Curses (Fever/Doubt) are unplayable cards that clog your hand; Fever also adds 6 Stress when drawn. Status cards are usually Breakdown Recovery cards — those you DO want to play. Shops can purge curses from a run deck.', example: 'Drawing Fever at 94 Stress can cause a Breakdown before you play a single card. Respect the curse.', tags: ['weaken', 'curse', 'fever', 'doubt', 'status', 'unplayable'] },
   { cat: 'enemy', icon: 'i-target', name: 'Weakness (×1.5)', short: 'Match the attribute, break faster', body: 'Every enemy is weak to one attribute (Passion/Order/Justice/Void/Instinct), shown as its coloured glyph badge. Weakness hits deal ×1.5 damage (×1.75 with Antigen Lens, +0.15 more if Attuned) and deal 2.5× Tenacity damage. Your selected enemy’s weakness is also in the banner above the arena. Bosses change weakness at 66% and 33% HP — watch for PHASE SHIFT.', example: 'The damage preview on a card already includes Weakness. Yellow “WEAK” means you matched it.', tags: ['weakness', 'attribute', 'passion', 'order', 'justice', 'void', 'instinct'] },
   { cat: 'enemy', icon: 'i-bolt', name: 'Tenacity & RAVAGED (Break)', short: 'The amber bar under enemy HP', body: 'Damaging cards reduce Tenacity by roughly 3 + (2× card cost), multiplied ×2.5 on a Weakness hit. 0-cost cards do not reduce it. At 0 Tenacity the enemy is RAVAGED: your team gains +1 AP immediately, everyone loses 10 Stress, the enemy’s counter is delayed, and it takes +30% damage. Some enemies resist or are immune. Breaking at the right moment is worth more than raw HP damage.', example: 'Three cheap Weakness hits can break faster than one huge off-weakness hit — and fund the huge hit with the bonus AP.', tags: ['tenacity', 'break', 'ravaged', 'amber bar', 'stagger'] },
@@ -338,7 +344,7 @@ function renderCharacter() {
     const inStarter = ch.deck.includes(c.id);
     const obj = makeStaticCard(c.id, false);
     const { className, html } = cardHTML(obj, null);
-    return `<div class="char-card-slot"><div class="${className}" style="--rot:0deg;--lift:0px" data-char-card="${c.id}">${html}</div><span class="char-card-where">${inStarter ? 'STARTER DECK' : 'BUILD-AROUND · DRAFT / SIM'}</span></div>`;
+    return `<div class="char-card-slot"><div class="${className}" style="--rot:0deg;--lift:0px" data-char-card="${c.id}">${html}</div><span class="char-card-where">${c.basic ? '★ BASIC ATTACK · 1 PER CHARACTER' : inStarter ? 'STARTER · SYNERGY / EFFECT' : 'BUILD-AROUND · DRAFT / SIM'}</span></div>`;
   }).join('');
 
   $('char-main').innerHTML = `
@@ -418,6 +424,11 @@ function simTrialsFor(id) {
       { label: 'Detonate statuses (Catalyst / Lysis Detonation)', check: (b, t) => t.sawDetonate },
       { label: 'Heal while at full HP to trigger Purify Strength', check: (b, t) => t.maxStr >= 2 },
     ],
+    yuna: [
+      { label: 'Stack 15+ Poison on the Colossus', check: (b, t) => t.maxPoison >= 15 },
+      { label: 'Watch a 15+ Poison tick at End Turn', check: (b, t) => t.maxPoisonTick >= 15 },
+      { label: 'Double or Detonate Poison (Incubate / Necrotic Feast)', check: (b, t) => t.sawPoisonPlay },
+    ],
     bibi: [
       { label: 'Reach 8 Resonance', check: (b, t) => t.maxResonance >= 8 },
       { label: 'Mark the Colossus, then hit it', check: (b, t) => t.sawMark },
@@ -468,7 +479,7 @@ function beginSimBattle(charId = simCharId) {
   const vitalitySel = $('sim-vitality') ? $('sim-vitality').value : 'training';
   battleCtx = { kind: 'sim', charId: simCharId, loadout: simLoadout, behaviour: simBehaviour, weaknessSel, tenacitySel, vitalitySel };
   simReported = false;
-  simTracker = { maxFury: 0, maxShield: 0, maxResonance: 0, maxStatus: 0, maxStr: 0, sawCounter: false, sawDetonate: false, sawMark: false, sawStressSpend: false };
+  simTracker = { maxFury: 0, maxShield: 0, maxResonance: 0, maxStatus: 0, maxStr: 0, maxPoison: 0, maxPoisonTick: 0, sawPoisonPlay: false, sawCounter: false, sawDetonate: false, sawMark: false, sawStressSpend: false };
   battle = startBattle({
     name: `SIMULATION // ${ch.name.toUpperCase()} SOLO`,
     place: 'Training Colossus · 999,999 HP · no save impact',
@@ -500,7 +511,10 @@ function updateSimTracker() {
   simTracker.maxFury = Math.max(simTracker.maxFury, c.fury || 0);
   simTracker.maxShield = Math.max(simTracker.maxShield, c.shield || 0);
   simTracker.maxResonance = Math.max(simTracker.maxResonance, battle.resonance || 0);
-  simTracker.maxStatus = Math.max(simTracker.maxStatus, (e.bleed || 0) + (e.toxin || 0));
+  simTracker.maxStatus = Math.max(simTracker.maxStatus, (e.bleed || 0) + (e.toxin || 0) + (e.poison || 0));
+  simTracker.maxPoison = Math.max(simTracker.maxPoison, e.poison || 0);
+  battle.log.forEach((l) => { const m = /POISON — .* takes (\d+)/.exec(l.text); if (m) simTracker.maxPoisonTick = Math.max(simTracker.maxPoisonTick, Number(m[1])); });
+  if (/INCUBATE|NECROTIC FEAST|DOUBLED/.test(battle.log.map((l) => l.text).join('\n'))) simTracker.sawPoisonPlay = true;
   simTracker.maxStr = Math.max(simTracker.maxStr, c.str || 0);
   const logText = battle.log.map((l) => l.text).join('\n');
   if (/COUNTER/.test(logText)) simTracker.sawCounter = true;
@@ -1190,6 +1204,8 @@ function flushFx() {
       main = `-${ev.amt}`; label = `${ev.name} BLEED`; cls = `dmg ${sizeClass(ev.amt)}`;
     } else if (ev.kind === 'toxin') {
       main = `-${ev.amt}`; label = `${ev.name} TOXIN`; cls = `heal ${sizeClass(ev.amt)}`;
+    } else if (ev.kind === 'poison') {
+      main = `-${ev.amt}`; label = `${ev.name} POISON · END TURN`; cls = `poison ${sizeClass(ev.amt)}`;
     } else if (ev.kind === 'counter') {
       main = `»${ev.amt}`; label = `${ev.name} COUNTER`; cls = `weak ${sizeClass(ev.amt)}`;
     } else if (ev.kind === 'chain') {
@@ -1337,6 +1353,51 @@ function renderTeam() {
   });
 }
 
+/* --- enemy buffs / debuffs (icons under HP bar + long-press inspect) --- */
+function enemyStatuses(e, battleState = battle) {
+  const potency = battleState ? (battleState.passives.poisonPotency || 0) : 0;
+  const buffs = [], debuffs = [];
+  if (e.atkBuff > 0) buffs.push({ key: 'atkbuff', icon: 'i-buff', cls: 'buff', label: 'ATK UP', value: `+${e.atkBuff}`, title: 'Attack Up', desc: `This enemy's attacks deal +${e.atkBuff} more damage. Gained from its Buff intent. It does not expire on its own.` });
+  if (e.charging) buffs.push({ key: 'charging', icon: 'i-bolt', cls: 'buff charge', label: 'CHARGING', value: `${e.charging.turns}T`, title: `Charging — ${e.charging.value} damage`, desc: `In ${e.charging.turns} enemy action(s) it unleashes ${e.charging.value} damage on your weakest combatant. Kill it, Break its Tenacity, or Shield the target first.` });
+  (e.mods || []).forEach((mKey) => { const m = MOD_INFO[mKey]; if (m) buffs.push({ key: `mod-${mKey}`, icon: 'i-star', cls: 'buff', label: m.label, value: '', title: m.label, desc: m.desc + ' (innate passive — cannot be removed).' }); });
+  if (e.tenacity >= e.maxTenacity && e.maxTenacity > 0) buffs.push({ key: 'tenacityfull', icon: 'i-shield', cls: 'buff', label: 'TENACITY', value: `${e.tenacity}`, title: 'Tenacity (guard bar)', desc: `Amber guard bar at ${e.tenacity}/${e.maxTenacity}. Damaging cards reduce it (Weakness hits ×2.5); at 0 the enemy is Ravaged: +30% damage taken, +1 AP for you. 0-AP cards do not reduce Tenacity.` });
+  if ((e.poison || 0) > 0) debuffs.push({ key: 'poison', icon: 'i-poison', cls: 'poison', label: 'POISON', value: `${e.poison}`, title: `Poison ${e.poison} — DoT`, desc: `Damage over Time. At the end of YOUR turn it takes ${e.poison + potency} damage (${e.poison} stacks${potency ? ` + ${potency} Potency` : ''}), then Poison falls by 1. Ignores Strength/Crit; stack it, Incubate (double) it, or Detonate it with Necrotic Feast.` });
+  if (e.bleed > 0) debuffs.push({ key: 'bleed', icon: 'i-drop', cls: 'bleed', label: 'BLEED', value: `${e.bleed}`, title: `Bleed ${e.bleed}`, desc: `Whenever this enemy takes an Attack hit, it ruptures for ${e.bleed} damage, then loses 1 Bleed. Multi-hit attacks trigger it repeatedly.` });
+  if (e.toxin > 0) debuffs.push({ key: 'toxin', icon: 'i-flask', cls: 'toxin', label: 'TOXIN', value: `${e.toxin}`, title: `Toxin ${e.toxin}`, desc: `Whenever this enemy ACTS (its counter hits 0), it takes ${e.toxin} damage and chews Tenacity, then Toxin decays by 25%. Different from Poison, which ticks at End Turn.` });
+  if (e.mark > 0) debuffs.push({ key: 'mark', icon: 'i-target', cls: 'mark', label: 'MARK', value: `${e.mark}T`, title: `Mark — ${e.mark} action(s) left`, desc: 'Takes ×1.5 damage from all direct hits while Marked. Duration ticks down each time this enemy acts. Apply before your big finisher.' });
+  if (e.vuln > 0) debuffs.push({ key: 'vuln', icon: 'i-debuff', cls: 'vuln', label: 'VULNERABLE', value: `${e.vuln}T`, title: `Vulnerable — ${e.vuln} action(s) left`, desc: 'Takes ×1.35 damage from all direct hits. Stacks multiplicatively with Mark (×1.5), Weakness (×1.5) and Ravaged (×1.3).' });
+  if (e.weaken > 0) debuffs.push({ key: 'weaken', icon: 'i-debuff', cls: 'weaken', label: 'WEAKEN', value: `${e.weaken}T`, title: `Weaken — ${e.weaken} action(s) left`, desc: 'This enemy deals 35% less damage while Weakened.' });
+  if (e.ravaged) debuffs.push({ key: 'ravaged', icon: 'i-bolt', cls: 'ravaged', label: 'RAVAGED', value: '×1.3', title: 'RAVAGED (Tenacity broken)', desc: 'Tenacity is broken: takes +30% damage from all direct hits until it recovers Tenacity. Breaking it granted your team +1 AP and -10 Stress.' });
+  return { buffs, debuffs, potency };
+}
+function statusIconsHTML(e) {
+  const { buffs, debuffs } = enemyStatuses(e);
+  const all = [...buffs, ...debuffs];
+  if (!all.length) return '<div class="enemy-status empty"><span>NO STATUS</span></div>';
+  return `<div class="enemy-status">${all.map((s) => `<span class="status-icon ${s.cls}" data-status="${s.key}" title="${s.title}: ${s.desc}">${ico(s.icon)}<b>${s.label}</b>${s.value ? `<i>${s.value}</i>` : ''}</span>`).join('')}</div>`;
+}
+function openEnemyDetail(uid) {
+  if (!battle) return;
+  const e = battle.enemies.find((x) => x.uid === uid);
+  if (!e) return;
+  const a = attr(e.weakness);
+  const intent = intentOf(e);
+  const { buffs, debuffs } = enemyStatuses(e);
+  $('enemy-detail-art').src = ENEMY_ART[e.id] || 'images/pathogen-strep-cut.png';
+  $('enemy-detail-head').textContent = e.name.toUpperCase();
+  $('enemy-detail-sub').innerHTML = `${e.boss ? 'BOSS' : e.elite ? 'ELITE' : 'HOSTILE'} · WEAKNESS <b style="color:${a.color}">${a.glyph} ${a.name}</b> · acts in ${e.counter} card(s)`;
+  $('enemy-detail-bars').innerHTML = `
+    <div class="ed-row"><span>HP</span><div class="ed-bar hp"><i style="width:${(e.hp / e.maxHp) * 100}%"></i></div><b>${e.hp} / ${e.maxHp}</b></div>
+    <div class="ed-row"><span>TENACITY</span><div class="ed-bar ten"><i style="width:${(e.tenacity / e.maxTenacity) * 100}%"></i></div><b>${e.tenacity} / ${e.maxTenacity}${e.ravaged ? ' · RAVAGED ×1.3' : ''}</b></div>
+    <div class="ed-row"><span>NEXT</span><b>${intent.type.toUpperCase()}${intent.value ? ` ${intent.value}` : ''}${e.charging ? ` (charges in ${e.charging.turns})` : ''}</b><span>NEXT AFTER: ${e.intents[(e.intentIndex + 1) % e.intents.length].type.toUpperCase()}</span></div>`;
+  const row = (s) => `<div class="status-row ${s.cls}">${ico(s.icon)}<div><b>${s.title}</b><p>${s.desc}</p></div></div>`;
+  $('enemy-buffs').innerHTML = buffs.length ? buffs.map(row).join('') : '<p class="none">No buffs. What you see is what it is.</p>';
+  $('enemy-debuffs').innerHTML = debuffs.length ? debuffs.map(row).join('') : '<p class="none">No debuffs yet. Apply Poison, Bleed, Toxin, Mark or Vulnerable.</p>';
+  $('enemy-passives').innerHTML = `<p class="none">Action counter: acts after ${e.counter} more non-Haste card(s), then resets to ${e.maxCounter}. Weakness hits deal ×1.5 damage and ×2.5 Tenacity damage. Long-press any enemy any time to re-check this panel.</p>`;
+  $('enemy-detail').classList.remove('hidden');
+}
+function closeEnemyDetail() { const n = $('enemy-detail'); if (n) n.classList.add('hidden'); }
+
 /* --- enemies --- */
 function renderEnemies() {
   const row = $('enemies');
@@ -1366,10 +1427,6 @@ function renderEnemies() {
       const m = MOD_INFO[mKey];
       if (m) modChips.push(`<span class="mod-chip" title="${m.desc}">${m.label}</span>`);
     });
-    if (e.mark > 0) modChips.push(`<span class="mod-chip mark">MARK ×1.5 (${e.mark})</span>`);
-    if (e.vuln > 0) modChips.push(`<span class="mod-chip vuln">VULN ×1.35 (${e.vuln})</span>`);
-    if (e.bleed > 0) modChips.push(`<span class="mod-chip bleed">BLEED ${e.bleed}</span>`);
-    if (e.toxin > 0) modChips.push(`<span class="mod-chip toxin">TOXIN ${e.toxin}</span>`);
 
     // damage prediction: white segment = selected card's preview damage on this enemy
     let predW = 0;
@@ -1396,10 +1453,20 @@ function renderEnemies() {
       <div class="enemy-plate">
         <div class="enemy-hp"><i style="width:${(e.hp / e.maxHp) * 100}%"></i>${predW ? `<em style="width:${predW}%"></em>` : ''}<span>${e.hp} / ${e.maxHp}</span></div>
         <div class="ten-bar${e.ravaged ? ' broken' : ''}"><i style="width:${(e.tenacity / e.maxTenacity) * 100}%"></i></div>
+        ${statusIconsHTML(e)}
         <div class="enemy-name">${e.name}</div>
+        <div class="enemy-hint">HOLD TO INSPECT STATUS</div>
       </div>`;
 
+    let enemyPressTimer = null, enemyLongPressed = false;
+    node.addEventListener('pointerdown', () => {
+      clearTimeout(enemyPressTimer);
+      enemyPressTimer = setTimeout(() => { enemyLongPressed = true; openEnemyDetail(e.uid); }, 380);
+    });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach((evName) => node.addEventListener(evName, () => clearTimeout(enemyPressTimer)));
+    node.addEventListener('contextmenu', (ev) => { ev.preventDefault(); openEnemyDetail(e.uid); });
     node.addEventListener('click', () => {
+      if (enemyLongPressed) { enemyLongPressed = false; return; }
       if (e.hp <= 0) return;
       sfx('click');
       battle.targetUid = e.uid;
@@ -1428,6 +1495,7 @@ function previewOf(card, battleState) {
     heal: card.heal || 0, teamHeal: card.teamHeal || 0,
     stressHeal: card.stressHeal || 0, teamStressHeal: card.teamStressHeal || 0,
     ap: card.apGain || card.maxAp || 0, draw: card.draw || 0, targets: 1,
+    poison: card.poison || 0, poisonAll: card.poisonAll || 0, poisonNextTick: (card.poison || 0) + (card.poisonAll || 0), poisonStacks: 0,
   };
 }
 
@@ -1445,11 +1513,17 @@ function fxBadge(card, p, battleState) {
       p.weak ? 'WEAK' : '',
       p.crit ? 'CRIT!' : '',
       p.burst ? 'BURST' : '',
+      p.poison ? `+${p.poison} POISON` : '',
     ].filter(Boolean).join(' · ');
     return `<div class="card-fx ${cls}${p.burst ? ' burst' : ''}${p.lethal ? ' lethal' : ''}">
       <b>${p.total}</b><span>DMG${tags ? ' · ' + tags : ''}</span>
       ${p.lethal ? '<i>LETHAL</i>' : ''}</div>`;
   }
+  if (p.poisonAll) return `<div class="card-fx poison"><b>+${p.poisonAll}</b><span>POISON · ALL ENEMIES</span></div>`;
+  if (p.poison) return `<div class="card-fx poison"><b>+${p.poison}</b><span>POISON · TICKS ${p.poisonNextTick || p.poison} AT END TURN</span></div>`;
+  if (card.doublePoison) return `<div class="card-fx poison"><b>×2</b><span>DOUBLE POISON</span></div>`;
+  if (card.detonatePoison) return `<div class="card-fx poison"><b>BOOM</b><span>DETONATE POISON NOW</span></div>`;
+  if (card.triggerPoisonTick) return `<div class="card-fx poison"><b>+${card.poison || 0}</b><span>POISON + TICK NOW</span></div>`;
   if (p.teamShield) return `<div class="card-fx shield"><b>+${p.teamShield}</b><span>SHIELD ALL</span></div>`;
   if (p.shield) return `<div class="card-fx shield"><b>+${p.shield}</b><span>SHIELD</span></div>`;
   if (p.teamHeal) return `<div class="card-fx heal"><b>+${p.teamHeal}</b><span>HEAL ALL</span></div>`;
@@ -1601,6 +1675,9 @@ function showDetailFor(card, battleState) {
     if (p.targets > 1) parts.push(`×${p.targets} enemies`);
     rows.push(`<div class="math-row dmg"><b>${p.total}</b><span>DAMAGE</span><i>${parts.join(' ')}</i></div>`);
   }
+  if (p.poison || p.poisonAll) rows.push(`<div class="math-row poison"><b>+${p.poisonAll || p.poison}</b><span>POISON${p.poisonAll ? ' / ALL' : ''}</span><i>ticks ${p.poisonNextTick || p.poison || p.poisonAll} at End Turn, then -1 stack</i></div>`);
+  if (card.doublePoison) rows.push(`<div class="math-row poison"><b>×2</b><span>DOUBLE POISON</span><i>doubles current stacks on target</i></div>`);
+  if (card.detonatePoison) rows.push(`<div class="math-row poison"><b>DETONATE</b><span>POISON NOW</span><i>consume all stacks as immediate damage + team heal per stack</i></div>`);
   if (p.shield) rows.push(`<div class="math-row shield"><b>+${p.shield}</b><span>SHIELD</span><i>absorbs damage, blocks stress</i></div>`);
   if (p.teamShield) rows.push(`<div class="math-row shield"><b>+${p.teamShield}</b><span>SHIELD / ALLY</span><i>whole team</i></div>`);
   if (p.heal) rows.push(`<div class="math-row heal"><b>+${p.heal}</b><span>HEAL</span><i>capped at max HP</i></div>`);
@@ -2094,6 +2171,7 @@ function bind() {
   }));
 
   $('detail').addEventListener('click', closeDetail);
+  $('enemy-detail').addEventListener('click', closeEnemyDetail);
   $('detail').addEventListener('pointerup', () => setTimeout(() => { longPressed = false; }, 10));
 
   document.addEventListener('keydown', (e) => {
@@ -2120,6 +2198,7 @@ showView('title');
 
 // exposed for the E2E harness
 window.__cw = {
+  CARDS, CHARACTERS, EGOS,
   get battle() { return battle; },
   get progress() { return progress; },
   get run() { return progress.run; },
@@ -2128,6 +2207,7 @@ window.__cw = {
   chooseEpiphany, setExalt(on) { exaltArmed = !!on; renderResources(); },
   showView, playFromUI, openDetail, closeDetail, openLab, openDeckModal, closeDeckModal,
   openGuide, renderGuide, openCharacter, renderCharacter, openSim, renderSimSetup, beginSimBattle, endSimTest,
+  openEnemyDetail, closeEnemyDetail, enemyStatuses,
   setTeam(ids) { progress.team = ids.slice(0, 3); saveProgress(progress); renderRoster(); },
   openMission(code) {
     const m = MISSIONS.find((x) => x.code === code);

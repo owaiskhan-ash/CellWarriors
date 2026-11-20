@@ -40,6 +40,14 @@ export const BARK_LINES = {
     break: 'BOOM! Hit it while it shakes!',
     win: 'Told you loud works!',
   },
+  yuna: {
+    select: 'Just a little dose…',
+    attack: ['Hold still — this will spread.', 'One drop is enough.', 'Let it soak in.'],
+    ego: 'Pandemic Requiem — breathe it in!',
+    hurt: 'Careful! Those vials are expensive!',
+    break: 'It cracked — poison, inside!',
+    win: 'See? It melted all by itself.',
+  },
 };
 
 export const VOICE_CLIPS = {
@@ -53,7 +61,7 @@ export const VOICE_CLIPS = {
   'bibi:ego': 'audio/bibi-ego.mp3',
 };
 
-const CHAR_PITCH = { kaito: 260, momo: 460, goro: 155, bibi: 390 };
+const CHAR_PITCH = { kaito: 260, momo: 460, goro: 155, bibi: 390, yuna: 520 };
 
 function ac() {
   if (muted) return null;

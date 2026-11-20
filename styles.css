@@ -843,3 +843,43 @@ button .ico { margin-right: 4px; }
 .enemy-sim_colossus { width: clamp(250px, 30vw, 430px); }
 .enemy-sim_colossus .enemy-art { height: clamp(190px, 38vh, 320px); }
 .enemy-sim_colossus .enemy-art img { border-radius: 14px; box-shadow: 0 18px 40px rgba(0,0,0,.65); }
+
+/* ---- enemy buff/debuff icons under HP bar + long-press inspect ---- */
+.enemy-status { display:flex; gap:4px; justify-content:center; flex-wrap:wrap; min-height:22px; margin-top:3px; }
+.enemy-status.empty span { font-size:8px; letter-spacing:.16em; color:rgba(255,255,255,.35); font-family:var(--font-display); padding-top:4px; }
+.status-icon { display:inline-flex; align-items:center; gap:3px; height:22px; padding:0 6px 0 4px; border-radius:6px; border:1.5px solid; background:rgba(0,0,0,.72); font-family:var(--font-display); }
+.status-icon .ico { width:13px; height:13px; margin:0; }
+.status-icon b { font-size:8px; letter-spacing:.08em; }
+.status-icon i { font-style:normal; font-size:10px; font-weight:800; color:#fff; }
+.status-icon.poison { color:#7dff9a; border-color:rgba(87,227,137,.85); box-shadow:0 0 10px rgba(87,227,137,.35); }
+.status-icon.bleed { color:#ff8296; border-color:rgba(255,77,109,.7); }
+.status-icon.toxin { color:#4ddc9a; border-color:rgba(77,220,154,.65); }
+.status-icon.mark { color:#e2c6ff; border-color:rgba(176,107,255,.75); }
+.status-icon.vuln { color:#ffe799; border-color:rgba(255,201,77,.7); }
+.status-icon.weaken { color:#9ecbff; border-color:rgba(77,163,255,.6); }
+.status-icon.ravaged { color:#241a00; background:var(--gold); border-color:#fff2b0; }
+.status-icon.buff { color:#8fd2ff; border-color:rgba(77,163,255,.6); }
+.status-icon.buff.charge { color:#ffb27d; border-color:rgba(255,150,60,.8); animation:lowPulse .9s infinite; }
+.enemy-hint { text-align:center; font-size:7.5px; letter-spacing:.18em; color:rgba(255,255,255,.38); font-family:var(--font-display); margin-top:2px; }
+.enemy-detail-panel { max-width:860px; }
+.enemy-detail-art { width:210px; height:280px; object-fit:contain; align-self:center; filter:drop-shadow(0 16px 28px rgba(0,0,0,.6)); }
+.enemy-bars { display:flex; flex-direction:column; gap:7px; margin:12px 0; min-width:min(480px,72vw); }
+.ed-row { display:flex; align-items:center; gap:10px; font-size:11px; color:var(--dim); }
+.ed-row > span:first-child { width:74px; font-family:var(--font-display); font-size:9px; letter-spacing:.14em; }
+.ed-bar { flex:1; height:12px; border-radius:4px; overflow:hidden; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.18); }
+.ed-bar i { display:block; height:100%; }
+.ed-bar.hp i { background:linear-gradient(180deg,#ff7a97,#d81b45); }
+.ed-bar.ten i { background:linear-gradient(90deg,#ffb43d,#ffe6a0); }
+.enemy-status-cols { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.enemy-status-cols h4, .detail-info > h4 { font-family:var(--font-display); font-size:10px; letter-spacing:.18em; margin:12px 0 7px; }
+.buff-title { color:#8fd2ff; } .debuff-title { color:#7dff9a; }
+.status-row { display:flex; gap:9px; padding:8px 9px; border:1px solid var(--line-soft); border-radius:8px; margin-bottom:6px; background:rgba(255,255,255,.04); }
+.status-row .ico { width:18px; height:18px; margin:0; flex:0 0 auto; }
+.status-row.poison { color:#7dff9a; } .status-row.bleed { color:#ff8296; } .status-row.toxin { color:#4ddc9a; }
+.status-row b { font-size:12px; color:#fff; display:block; }
+.status-row p, .detail-info p.none { font-size:11px; line-height:1.5; color:var(--dim); margin:2px 0 0; }
+.card-fx.poison b { color:#7dff9a; text-shadow:0 2px 10px rgba(0,0,0,.9),0 0 18px rgba(87,227,137,.8); }
+.math-row.poison b { color:#57e389; }
+.fx-line.poison b { color:#7dff9a; text-shadow:0 4px 18px #000,0 0 28px rgba(87,227,137,.85); }
+.roster { grid-template-columns: repeat(auto-fit, minmax(205px, 1fr)); }
+@media (max-width: 760px) { .enemy-status-cols { grid-template-columns:1fr; } .enemy-detail-art { width:150px; height:180px; } }
