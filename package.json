@@ -1,0 +1,11 @@
+{
+  "name": "cell-warriors",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Cell Warriors — a tactical card RPG inside a human body.",
+  "scripts": {
+    "dev": "python3 -m http.server 5173 --bind 0.0.0.0",
+    "sim": "node scripts/sim.mjs"
+  }
+}
