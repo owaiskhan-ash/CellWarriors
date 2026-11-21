@@ -348,9 +348,80 @@ and it is shared by every screen (`czn.css` + `src/czn.js`).
 │   (seated, 6)          (spotlit, plinth)           (6 rows, glyphs)│
 │                        name + cell/class          GIFT plate ◣     │
 │                        team chips                                  │
-└ ⬢ CHAOS EXPEDITION │ TEAM │ SIM │ CONFIG │ RESET ──────────────────┘
+└ ⬢ CHAOS EXPEDITION │ ＋CONTINUE │ TEAM │ SIM·LAB │ CONFIG │ RESET ─┘
 ```
 
 **Battle additions** — turn banner prints the number alone between two rules
 (`TURN` above, state word below); enemy/combatant readouts sit on the right edge at
 ≥1024px and are hidden on phones (the compact HUD already carries them).
+
+---
+
+## 10. Power & focus (v1.2)
+
+Two dials, one stylesheet (`power.css`, loaded last so it settles every layer above it).
+The rule they encode: **animation and labels are for the decision in front of the player,
+never for the screen the player is only looking at.**
+
+### 10.1 Heat
+
+A phone warms up from frames painted while nothing is happening. The culprits were
+measured in a real Chromium at 892×412 — every one of them is now gated:
+
+| Loop | Where | Why it was expensive | Now |
+| --- | --- | --- | --- |
+| `fxBreathe` | the damage badge on **every card in hand** | animated `text-shadow` → style recalc + layout, ~18×/s, forever | killed below ULTRA (the badge still slams in) |
+| `dustDrift` ×34 | battle stage | 34 composited layers, glowing + blurred, for the whole fight | off below ULTRA |
+| `fogDrift` / `titleFogDrift` | full-screen fog | full-surface repaint, 14–22 s loop, no information | off below ULTRA |
+| `cznDrift` | every menu key art | full-surface animation on the whole backdrop | off below ULTRA |
+| `enemyBreathe` | enemy sprites | scaled image, forever | off below ULTRA |
+| glow pulses | Ego, stress dots, CTA, cells pill, map nodes | box-shadow repaint | off below ULTRA |
+| `backdrop-filter` | headers, modals, sheets, hub chips | blurred region resampled wherever anything moves | flat veil below ULTRA |
+| `saturate()/contrast()` | full-screen key art | second pass over the whole image | removed below ULTRA |
+
+Measured result (same viewport, same screen, 3 s idle window):
+
+| Screen | before | after (default) | after (LOW POWER) |
+| --- | --- | --- | --- |
+| Hub | 5 loops, 3 ms | 0 loops, 3 ms | 0 loops |
+| Roster | 11 loops, 11 ms | 0 loops, 8 ms | 0 loops |
+| Battle | 42 loops, **57 ms** | 6 entry-only FX, **12 ms** | 0 loops |
+| Pause over battle | 43 loops, 58 ms | 0 loops, 1 ms | 0 loops |
+
+Two more guards that are not CSS:
+
+- `body.app-paused` — set from Android `onPause` *and* `visibilitychange`/`pagehide`.
+  Every animation is `animation-play-state: paused` and the dust layer is removed, so a
+  backgrounded (still-running) WebView paints nothing.
+- Story art preload keeps its `Image` handles. It used to let them be collected, so the
+  WebView re-decoded the same 1600 px JPEG on every beat — eight times per mission.
+
+`body.app-paused` also drops the lethal-hit heartbeat `setInterval`.
+
+### 10.2 Focus
+
+`body.focus-ui` is one class, toggled by **the eye in the battle HUD** (one tap,
+where the heat matters) and by Settings → FOCUS UI. It hides *repeat* information and
+nothing else:
+
+| Hidden | Because |
+| --- | --- |
+| action timeline | printed the same intent badge the enemy already carries |
+| tips row under the hand | the same hint the objective line prints |
+| BREAK banner | instructions for a rule the player is now using |
+| location under the mission name | flavour, repeated on the full-screen story beat |
+| roster HP/SK row, pips, SIM/LAB buttons | DETAILS already carries all three |
+| inspect-sheet hint lines | instructions for a control being used |
+
+Never hidden at any dial: intent badge + counter, HP/Tenacity bars, damage number,
+AP, EP, hand, objective line. The fight has to read exactly the same at LOW POWER.
+
+Permanently removed (not a setting): the arena's action-timeline column — it was the
+fourth copy of one fact, so it is gone at every quality level.
+
+### 10.3 Home
+
+Six equal-weight buttons became **one command** — `CHAOS EXPEDITION` — plus
+`CONTINUE RUN` (only when a run exists), `TEAM`, `SIM·LAB`, and two quiet entries,
+`CONFIG` (settings) and `RESET` (save). Totals are unchanged; the hierarchy is not.
+The decorative seated crew pods are hidden on phones.

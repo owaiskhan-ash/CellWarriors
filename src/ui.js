@@ -132,14 +132,42 @@ function applySimHudVisibility() {
   if (view) view.classList.toggle('is-sim', !!(isSim && simHudHidden));
 }
 /* ---------------- UI settings (minimal, game-style, persisted) ---------------- */
-let settings = { volume: 90, fxSize: 'm', shake: true, motion: true, cb: false, uiScale: 100 };
+/* `quality` is the heat dial.
+     ultra — every ambient loop: drifting key art, dust motes, breathing
+             enemies, pulsing glows, backdrop blur.
+     high  — default. One slow ambient layer per screen, no blur, no full-screen
+             filters; damage/slam animation still plays (it is what makes a hit
+             feel like a hit).
+     low   — everything ambient off, glow reduced to flat fills.
+   Nothing in the *gameplay* language is removed at any level: the enemy intent
+   badge, the counter, the HP/Tenacity bars and the damage number always read
+   the same, because that is the information the fight is fought on. */
+let settings = { volume: 90, fxSize: 'm', shake: true, motion: true, cb: false, uiScale: 100, quality: 'high' };
 try { Object.assign(settings, JSON.parse(window.localStorage.getItem('cw_settings') || '{}')); } catch { /* fresh */ }
 function saveSettings() { try { window.localStorage.setItem('cw_settings', JSON.stringify(settings)); } catch { /* ignore */ } }
+/* FOCUS / CLEAN UI. The screens carry a lot of instructional text that is
+   useful the first time and noise the twentieth: the enemy's action order is
+   printed twice, the "hold a card to read it" hint sits under the hand, every
+   roster tile carries three buttons. One class turns all of it off and gives
+   the screen back to the fight. Gameplay information (intent, counters,
+   HP/Tenacity, damage numbers, AP, hand) is never hidden by this flag. */
+let focusUi = (() => { try { return window.localStorage.getItem('cw_focus_ui') === '1'; } catch { return false; } })();
+function setFocusUi(on) {
+  focusUi = !!on;
+  try { window.localStorage.setItem('cw_focus_ui', focusUi ? '1' : '0'); } catch { /* ignore */ }
+  applySettings();
+}
 function applySettings() {
+  if (!['ultra', 'high', 'low'].includes(settings.quality)) settings.quality = 'high';
   document.body.classList.toggle('reduce-motion', !settings.motion);
   document.body.classList.toggle('cb-palette', !!settings.cb);
   document.body.classList.toggle('fx-sm', settings.fxSize === 's');
   document.body.classList.toggle('fx-lg', settings.fxSize === 'l');
+  document.body.classList.toggle('q-ultra', settings.quality === 'ultra');
+  document.body.classList.toggle('q-low', settings.quality === 'low');
+  document.body.classList.toggle('focus-ui', !!focusUi);
+  /* Everything ambient is switched in power.css off these two classes plus
+     `.app-paused`; JS owns the flags, CSS owns the loop. */
   /* UI SCALE.
      CSS `zoom` scales a subtree but leaves the element's own box at its layout
      size, which is why 110% painted the bottom of the hand strip (and the whole
@@ -164,7 +192,18 @@ function applySettings() {
   sync('set-fxsize', (n) => { n.value = settings.fxSize; });
   sync('set-shake', (n) => { n.checked = !!settings.shake; });
   sync('set-motion', (n) => { n.checked = !!settings.motion; });
+  sync('set-quality', (n) => { n.value = settings.quality; });
+  sync('set-focus', (n) => { n.checked = !!focusUi; });
   sync('set-cb', (n) => { n.checked = !!settings.cb; });
+}
+/* Background pause -----------------------------------------------------------
+   A WebView that is no longer visible still ticks timers and still paints its
+   animation timeline. `body.app-paused` (power.css) freezes every animation and
+   drops the dust layer; the lethal-hit heartbeat interval is cleared here
+   because it is JS, not CSS. */
+function setAppPaused(on) {
+  document.body.classList.toggle('app-paused', !!on);
+  if (on) badgeHeartbeatStop();
 }
 function openSettings() { applySettings(); $('settings-modal').classList.remove('hidden'); }
 function closeSettings() { $('settings-modal').classList.add('hidden'); saveSettings(); }
@@ -363,27 +402,21 @@ function renderRoster() {
           <span class="awk-pips" title="Awakenings">${pips}</span>
           <span style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end">
             <button class="lab-link detail-link" type="button">DETAILS</button>
-            <button class="lab-link sim-link" type="button">SIM</button>
-            <button class="lab-link" type="button">LAB</button>
           </span>
         </div>
-        <div style="font-size:9.5px;color:var(--ink-dim);letter-spacing:.04em">Tap card to add/remove from team · DETAILS opens cards &amp; skills</div>
       </div>`;
     card.querySelector('.detail-link').addEventListener('click', (ev) => {
       ev.stopPropagation();
       sfx('click');
       openCharacter(id, 'roster');
     });
-    card.querySelector('.sim-link').addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      sfx('click');
-      openSim(id);
-    });
-    card.querySelector('.lab-link:not(.detail-link):not(.sim-link)').addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      sfx('click');
-      openLab(id);
-    });
+    /* SIM and LAB are reachable from the DETAILS screen (it already carries
+       TEST IN SIMULATION). Keeping the bindings optional is what lets the tile
+       drop those two buttons without the roster exploding. */
+    const simLink = card.querySelector('.sim-link');
+    if (simLink) simLink.addEventListener('click', (ev) => { ev.stopPropagation(); sfx('click'); openSim(id); });
+    const labLink = card.querySelector('.lab-link:not(.detail-link):not(.sim-link)');
+    if (labLink) labLink.addEventListener('click', (ev) => { ev.stopPropagation(); sfx('click'); openLab(id); });
     card.dataset.rid = id;
     card.addEventListener('click', () => { sfx('click'); toggleTeam(id); });
     grid.appendChild(card);
@@ -910,7 +943,20 @@ function openStory(m) {
     note.classList.toggle('hidden', !heroSwapped);
   }
   // Preload every beat's art so panel swaps never flash empty.
-  m.story.forEach((s) => { const b = storyBeat(s); if (b.art && typeof Image !== 'undefined') { const im = new Image(); im.src = b.art; } });
+  // The handles are KEPT: a decoded 1600px story frame is several MB of bitmap,
+  // and an Image with no reference is collectable between beats, which made the
+  // WebView re-decode the same JPEG on the next tap — the story screen was
+  // doing that ~8 times per mission with a 2x-density device.
+  window.__cwStoryArt = window.__cwStoryArt || [];
+  m.story.forEach((s) => {
+    const b = storyBeat(s);
+    if (!b.art || typeof Image === 'undefined') return;
+    if (window.__cwStoryArt.some((im) => im.src.endsWith(b.art))) return;
+    const im = new Image();
+    im.decoding = 'async';
+    im.src = b.art;
+    window.__cwStoryArt.push(im);
+  });
   showStoryBeat();
   showView('story');
 }
@@ -3110,6 +3156,20 @@ function bind() {
     renderLog();
   });
 
+  /* FOCUS, one tap from the fight. This is the control a player reaches for
+     when the phone is hot or the HUD is busy, so it must not be buried in a
+     settings modal: it lives in the battle HUD and sets the same persisted
+     flag as Settings → FOCUS UI. */
+  const paintFocusBtn = () => {
+    const b = $('btn-focus');
+    if (!b) return;
+    b.classList.toggle('on', !!focusUi);
+    b.title = focusUi ? 'Focus mode ON — labels hidden, ambience off (tap to restore)' : 'Focus mode: hide labels and ambient motion (less heat, less noise)';
+  };
+  if ($('btn-focus')) $('btn-focus').addEventListener('click', () => { sfx('click'); setFocusUi(!focusUi); paintFocusBtn(); });
+  window.__cwPaintFocus = paintFocusBtn;
+  paintFocusBtn();
+
   $('btn-menu').addEventListener('click', () => $('pause').classList.remove('hidden'));
   $('pause-resume').addEventListener('click', () => $('pause').classList.add('hidden'));
   $('pause-restart').addEventListener('click', () => {
@@ -3136,6 +3196,8 @@ function bind() {
   if ($('set-fxsize')) $('set-fxsize').addEventListener('change', (e) => { settings.fxSize = e.target.value; applySettings(); saveSettings(); });
   if ($('set-shake')) $('set-shake').addEventListener('change', (e) => { settings.shake = e.target.checked; saveSettings(); });
   if ($('set-motion')) $('set-motion').addEventListener('change', (e) => { settings.motion = e.target.checked; applySettings(); saveSettings(); });
+  if ($('set-quality')) $('set-quality').addEventListener('change', (e) => { settings.quality = e.target.value; applySettings(); saveSettings(); });
+  if ($('set-focus')) $('set-focus').addEventListener('change', (e) => { sfx('click'); setFocusUi(e.target.checked); if (window.__cwPaintFocus) window.__cwPaintFocus(); });
   if ($('set-cb')) $('set-cb').addEventListener('change', (e) => { settings.cb = e.target.checked; applySettings(); saveSettings(); });
   if ($('btn-autoplay')) $('btn-autoplay').addEventListener('click', () => { sfx(autoplay ? 'click' : 'buff'); setAutoplay(!autoplay); });
   setAutoPlan(autoplay ? 'AUTO · THINKING…' : '');
@@ -3235,8 +3297,9 @@ function bind() {
       return backFromView();
     },
     onAppPause() {
-      // Android backgrounded us: stop audio loops and drop into pause.
-      badgeHeartbeatStop();
+      // Android backgrounded us: stop audio loops, freeze every ambient
+      // animation (a hidden WebView still burns frames) and drop into pause.
+      setAppPaused(true);
       if (currentView === 'battle' && battle && !battle.result) {
         $('pause').classList.remove('hidden');
       }
@@ -3249,6 +3312,18 @@ function bind() {
   document.addEventListener('contextmenu', (ev) => {
     if (!(ev.target.closest && ev.target.closest('input, textarea'))) ev.preventDefault();
   });
+
+  /* The browser build is backgrounded with a tab switch, not onPause.
+     `visibilitychange` is the one event every WebView fires reliably; the
+     ambient layer listens to the same flag, so a backgrounded game paints
+     nothing. */
+  document.addEventListener('visibilitychange', () => {
+    const hidden = document.visibilityState === 'hidden';
+    setAppPaused(hidden);
+    if (!hidden) badgeHeartbeatStop();
+  });
+  window.addEventListener('pagehide', () => setAppPaused(true));
+  window.addEventListener('pageshow', () => setAppPaused(false));
 
   /* Touch hardware: never let a stray double-tap zoom the canvas. */
   installDoubleTapGuard();

@@ -21,8 +21,11 @@
     <link rel="stylesheet" href="./styles.css" />
     <!-- phone / touch layer: landscape layout, safe areas, >=44px targets -->
     <link rel="stylesheet" href="./styles-mobile.css" />
-    <!-- CZN shell: hub, header strips, paper/ink plates (must load last) -->
+    <!-- CZN shell: hub, header strips, paper/ink plates -->
     <link rel="stylesheet" href="./czn.css" />
+    <!-- power + focus layer: kills ambient loops + hides repeat labels.
+         Must be the LAST sheet so it can settle every layer above it. -->
+    <link rel="stylesheet" href="./power.css" />
     <link rel="manifest" href="./manifest.webmanifest" />
   </head>
   <body>
@@ -325,6 +328,7 @@
           </div>
           <div class="hud-tools">
             <button class="icon-btn" id="btn-mute" title="Toggle sound"><svg class="ico"><use href="#i-sound"/></svg></button>
+            <button class="icon-btn" id="btn-focus" title="Focus mode: hide labels and ambient motion (less heat, less noise)"><svg class="ico"><use href="#i-eye"/></svg></button>
             <button class="icon-btn" id="log-toggle" title="Battle log"><svg class="ico"><use href="#i-log"/></svg></button>
             <button class="icon-btn" id="btn-menu" title="Menu"><svg class="ico"><use href="#i-menu"/></svg></button>
           </div>
@@ -625,6 +629,8 @@
           <div class="set-row"><label for="set-uiscale">UI SCALE</label><span><input type="range" id="set-uiscale" min="85" max="110" step="5" /><b id="set-uiscale-val">100%</b></span></div>
           <div class="set-row"><label for="set-shake">SCREEN SHAKE (BIG HITS)</label><input type="checkbox" id="set-shake" /></div>
           <div class="set-row"><label for="set-motion">ANIMATIONS / MOTION</label><input type="checkbox" id="set-motion" /></div>
+          <div class="set-row"><label for="set-quality">VISUAL QUALITY <small>lower = phone stays cool</small></label><select id="set-quality"><option value="ultra">ULTRA — all ambience</option><option value="high">HIGH — balanced</option><option value="low">LOW POWER — fastest</option></select></div>
+          <div class="set-row"><label for="set-focus">FOCUS UI <small>hide labels + clutter</small></label><input type="checkbox" id="set-focus" /></div>
           <div class="set-row"><label for="set-cb">COLORBLIND STATUS PALETTE</label><input type="checkbox" id="set-cb" /></div>
           <p class="set-keys">KEYBINDS — <b>SPACE</b> End Turn · <b>1–7</b> Play card · <b>H</b> Hide Sim HUD · <b>ESC</b> Pause · <b>HOLD</b> any card or enemy to inspect it</p>
         </div>

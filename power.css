@@ -1,0 +1,298 @@
+/* =========================================================================
+   CELL WARRIORS — POWER + FOCUS LAYER  (loaded last, on purpose)
+   -------------------------------------------------------------------------
+   Two jobs, one file, because they are the same job: *remove what is not the
+   decision*. Every rule here either
+
+     A. deletes an ambient loop that repaints the screen while the player is
+        only thinking (that is what warms a phone up), or
+     B. removes a label the player cannot act on.
+
+   Load order matters: this file must come after czn.css so it can settle the
+   shell's own motion. It never changes geometry — `scripts/battle-fit.mjs` and
+   `scripts/screen-fit.mjs` still own that, and a phone layout that fit before
+   still fits.
+
+   QUALITY DIAL  (Settings → VISUAL QUALITY, persisted in cw_settings)
+     body.q-ultra  all ambience on (the old behaviour)
+     (default)     one slow ambient layer per screen, no blur, no full-screen
+                   filters. Play feels identical.
+     body.q-low    nothing ambient at all, glows flattened
+     body.app-paused  set when the app loses focus (Android onPause /
+                      visibilitychange): a backgrounded game paints nothing
+   ========================================================================= */
+
+/* ------------------------------------------------------------------ 0. dial */
+/* The ambient loops below are gated on :not(.q-ultra) — i.e. ULTRA is the only
+   level that buys them back. Everything else in the layer is unconditional,
+   because it is deletion, not decoration. */
+
+/* ------------------------------------------------- 1. the loops that burn */
+/* Battle dust: 34 independently-translated, glowing, blurred dots. Each one is
+   its own composited layer that animates for the whole fight. One slow veil
+   over the arena gives the same "the body is alive" read for a tenth of the
+   paint cost. */
+body:not(.q-ultra) .stage-particles { display: none; }
+body.q-ultra .stage-particle { animation-duration: 40s; }
+
+/* Enemy breathing: every enemy sprite scaled forever in the background. */
+body:not(.q-ultra) .enemy.idle .enemy-art img { animation: none; }
+
+/* Key-art drift (the whole lobby/window, animated via object-position = a
+   layout-independent but still full-surface repaint). */
+body:not(.q-ultra) .czn-backdrop img { animation: none; }
+
+/* Fog. Full-screen, low-opacity, 22s loop: pure heat, no information. */
+body:not(.q-ultra) #title-fog,
+body:not(.q-ultra) .battle-fog { display: none; }
+
+/* Glows that pulse forever. A static glow still reads as "active"; a pulsing
+   one costs a repaint twice a second alongside 4 other loops. */
+body:not(.q-ultra) .ego-btn.ready,
+body:not(.q-ultra) .sdot.high,
+body:not(.q-ultra) .hand .card[data-priority='weak'],
+body:not(.q-ultra) .roster-card.selected,
+body:not(.q-ultra) .roster-xp i,
+body:not(.q-ultra) .map-node.avail,
+body:not(.q-ultra) .map-node.entered,
+body:not(.q-ultra) #view-title .cells-pill,
+body:not(.q-ultra) #view-title .btn-primary,
+body:not(.q-ultra) .czn-lv-meter i,
+body:not(.q-ultra) .czn-gift-dot,
+body:not(.q-ultra) .czn-cmd-chev,
+body:not(.q-ultra) .btn-primary::after,
+body:not(.q-ultra) .czn-cmd-main::after { animation: none; }
+
+/* Roster art / title logo: slow scale + opacity loops that keep the GPU busy
+   on a screen the player is reading. Keep the entry animation, drop the loop. */
+body:not(.q-ultra) .title-logo { animation: none; }
+
+/* The full-screen repeating-conic card cut-in: it only exists for ~0.8s, but it
+   is a full-viewport rotating gradient. Cheaper at 2x steps and off at low. */
+body:not(.q-ultra) .cutin-lines { animation-duration: 3.2s; }
+body.q-low .cutin-lines,
+body.q-low .cutin-flash { animation: none; display: none; }
+
+/* Box-shadow pulses (stress, low counter, end-turn danger) are the most
+   expensive of the lot: they force a repaint of the shadow, not just a
+   composite. They communicate real urgency, so they stay — but only once. */
+body.q-low .sdot.high,
+body.q-low .badge.counter.low,
+body.q-low .end-turn.danger,
+body.q-low .card-fx.lethal b,
+body.q-low .card-fx.crit b { animation: none !important; }
+
+/* Backdrop blur: the single worst thing a mobile GPU can be asked to do every
+   frame, because the blurred region is resampled whenever anything moves
+   underneath it. Flat veils at the same opacity read identically in motion. */
+body:not(.q-ultra) .czn-backdrop-veil,
+body:not(.q-ultra) .view-light .screen-head,
+body:not(.q-ultra) #view-title .title-inner,
+body:not(.q-ultra) .card-type-pill,
+body:not(.q-ultra) .weak-banner,
+body:not(.q-ultra) .czn-hub-thumbs,
+body:not(.q-ultra) .pause,
+body:not(.q-ultra) .overlay,
+body:not(.q-ultra) .modal,
+body:not(.q-ultra) .detail,
+body:not(.q-ultra) .touch-tut,
+body:not(.q-ultra) .inspect-sheet .sheet-scrim,
+body:not(.q-ultra) .sim-hud,
+body:not(.q-ultra) .sim-hud-pill { backdrop-filter: none; }
+
+/* Full-surface filters (saturate/contrast on a full-screen image) are a second
+   pass over the whole backdrop. */
+body:not(.q-ultra) .czn-backdrop img { filter: none; }
+body:not(.q-ultra) .battle-bg img { filter: none; }
+
+/* Everything at low: no ambient layer left at all. */
+body.q-low .czn-backdrop-scan,
+body.q-low .battle-bg::after,
+body.q-low .czn-hub::before { display: none; }
+
+/* Paused (backgrounded app): freeze the lot. A hidden WebView still ticks
+   timers, and every one of these animations keeps the renderer awake. */
+body.app-paused *,
+body.app-paused *::before,
+body.app-paused *::after {
+  animation-play-state: paused !important;
+  transition: none !important;
+}
+body.app-paused .stage-particles { display: none; }
+
+/* ------------------------------------------------------- 2. less noise */
+/* --- HOME: six equal buttons is a menu, not a game. One action, one row of
+   three destinations, everything else behind CONFIG. (src/czn.js builds the
+   hub; the legacy stack underneath is already hidden.) --- */
+.czn-cmd-main { min-width: min(46vw, 330px); }
+.czn-cmd-link {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 3px;
+  border: 1px solid rgba(133, 190, 214, 0.22);
+  background: rgba(6, 14, 24, 0.62);
+  color: #cfe9f4;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  white-space: nowrap;
+  transition: border-color 130ms ease-out, color 130ms ease-out;
+}
+.czn-cmd-link:hover { border-color: var(--czn-cyan); color: #fff; }
+.czn-cmd-link .czn-ico { width: 15px; height: 15px; color: var(--czn-cyan); }
+.czn-cmd-link.quiet {
+  background: none;
+  border-color: transparent;
+  color: rgba(206, 233, 244, 0.55);
+}
+.czn-cmd-link.quiet:hover { color: #fff; border-color: rgba(133, 190, 214, 0.3); }
+.czn-cmd-ver { margin-left: 0; }
+
+/* A row of decorative crew pods: six silhouettes that never change and are not
+   buttons. They exist on desktop as set dressing; on a phone they are just six
+   more gradients behind the character. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .czn-hub-crew { display: none; }
+  /* Rail: the subtitle under every row is a second line of small caps in a
+     36px row. The big word is the target. */
+  .czn-rail-txt small { display: none; }
+  .czn-rail-row { min-height: 36px; }
+  .czn-rail-txt b { font-size: 15px; }
+  .czn-cmd-main { min-width: min(40vw, 300px); }
+  .czn-cmd-link { height: 32px; padding: 0 10px; font-size: 9.5px; letter-spacing: 0.1em; }
+  .czn-cmd-link.quiet { padding: 0 8px; }
+}
+@media (orientation: landscape) and (max-height: 400px) {
+  .czn-cmd-link small { display: none; }
+  .czn-cmd-link { height: 30px; }
+}
+
+/* --- ROSTER: the card said the same thing four times (STRYKER chip, then
+   NEUTROPHIL, then HP/SK, then three separate DESTINY buttons). The tile keeps
+   the two facts you choose on — who it is and what it does for the team —
+   and moves DETAILS / SIM / LAB behind the tile itself. --- */
+body.focus-ui .roster-card .roster-stats,
+body.focus-ui .roster-card .roster-foot-row .lab-link.sim-link,
+body.focus-ui .roster-card .roster-foot-row .lab-link:not(.detail-link):not(.sim-link),
+body.focus-ui .roster-card .awk-pips { display: none; }
+body.focus-ui .roster-card .roster-leader {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 8.5px;
+  line-height: 1.3;
+  color: var(--ink-dim);
+}
+/* One footer action, full width, quiet: it reads as part of the tile instead of
+   a painted button competing with the art. */
+body.focus-ui .roster-card .roster-foot-row { margin-top: auto; gap: 0; }
+body.focus-ui .roster-card .roster-foot-row > span:last-child { width: 100%; }
+body.focus-ui .roster-card .roster-foot-row .lab-link {
+  flex: 1 1 auto;
+  min-height: 22px;
+  padding: 2px 4px;
+  letter-spacing: 0.14em;
+  font-size: 7px;
+  border-radius: 3px;
+  opacity: 0.8;
+}
+body.focus-ui .roster-card:hover .roster-foot-row .lab-link { opacity: 1; }
+/* the name is the scannable thing in a grid of six: give it the weight */
+body.focus-ui .roster-card .roster-name { font-size: 11.5px; letter-spacing: 0.04em; }
+
+/* Outside focus mode the tile is still a full tile — one footer action, same
+   quiet treatment, so the roster does not look like it lost a row. */
+.roster-card .roster-foot-row > span:last-child { width: 100%; }
+.roster-card .roster-foot-row .lab-link {
+  flex: 1 1 auto;
+  min-height: 22px;
+  letter-spacing: 0.14em;
+}
+
+/* --- BATTLE: one HUD, one clock.
+   The screen used to print the same enemy state four times: intent badges over
+   the sprites, the BREAK banner, the "NEXT ACTION" plate on the right, and the
+   action-timeline chips in the arena. And it printed the same hint text twice
+   (objective line + the tips row under the hand). Delete the repeats. --- */
+/* The action queue repeats, verbatim, the intent badge printed on each enemy
+   ("ENDOTOXIN 9 DMG IN 2" over the sprite AND in the right-edge column). It is
+   the fourth copy of one fact. The badge + counter IS the timer; the queue goes
+   at every quality level, not just in focus mode. */
+.action-timeline { display: none; }
+body.focus-ui .battle-tips { display: none; }
+/* The BREAK banner ("BREAK ◈ ORDER TENACITY → +1 AP") is *useful the first
+   time* and then is a permanent strip of instructions across the arena. The
+   enemy HP bar already carries the Tenacity colour. Keep it at focus OFF so a
+   new player still learns the rule; FOCUS is the "I know the game" mode. */
+body.focus-ui .weak-banner { display: none; }
+body.focus-ui .hud-title #b-place { display: none; }
+/* the enemy name already sits under its own HP bar; the plate above the arena
+   repeated it line for line */
+@media (orientation: landscape) and (max-height: 560px) {
+  body.focus-ui .objective-bar { font-size: 8.5px; letter-spacing: 0.08em; }
+  body.focus-ui #view-battle .hud-title b { font-size: 10.5px; letter-spacing: 0.16em; }
+}
+
+/* --- INSPECT sheets and modals: the hint line is instructions for a control
+   the player is already using. --- */
+body.focus-ui .detail-hint { display: none; }
+
+/* ------------------------------------------------- 3. the focus button */
+/* The battle HUD tool that flips this whole layer. "On" has to be obvious at a
+   glance from arm's length: a lit border + the cyan fill, not a text label. */
+#view-battle .hud-tools .icon-btn.on {
+  color: #04252a;
+  background: linear-gradient(180deg, #8ef4ea, #22bfb2);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 14px rgba(53, 208, 192, 0.55);
+}
+#view-battle .hud-tools .icon-btn.on:hover { color: #04252a; background: linear-gradient(180deg, #a5faf1, #2ccfc1); }
+
+/* Settings rows are one line each on a phone; the helper text on the new rows
+   is a `<small>` inside the label, so it must not wrap the row. */
+.set-row label small {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 8.5px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--dim);
+  margin-top: 1px;
+}
+
+/* The damage badge on every card breathes FOREVER (fxBreathe: a 2.2s
+   text-shadow loop). Measured in a real Chromium at 892x412 it was responsible
+   for ~18 style recalcs + layouts per second for as long as a card sat in the
+   hand — the single biggest idle cost on the battle screen, bigger than all the
+   dust and fog combined. The badge still slams in and keeps its glow (that is
+   the part that reads as a hit); it just stops pulsing after it lands. */
+body:not(.q-ultra) .card-fx b,
+body:not(.q-ultra) .card-fx.crit b,
+body:not(.q-ultra) .card-fx.lethal b,
+body:not(.q-ultra) .card-fx i,
+body:not(.q-ultra) .card-fx.burst::after { animation: none; }
+
+/* --------------------------------------- 4. settings fits one phone screen */
+/* The panel is scrollable, but a scrollbar the player cannot see is the same as
+   a missing control: the power dials are the last two rows and they were below
+   the fold at 412px. Two columns at phone height (label left, control right)
+   puts the whole list on screen without shrinking the 44px tap target. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .settings-panel { gap: 2px; }
+  .settings-modal .modal-head, .settings-panel .modal-head { padding: 8px 14px; }
+  .settings-panel .set-row { min-height: 34px; padding: 4px 0; }
+  .settings-panel .set-row label { font-size: 9.5px; line-height: 1.15; }
+  .settings-panel .set-row label small { font-size: 7.5px; }
+  .settings-panel .set-row select { padding: 4px 6px; font-size: 9px; max-width: 46vw; }
+  .settings-panel .set-row input[type="range"] { width: 120px; }
+  .settings-panel .set-row input[type="checkbox"] { width: 16px; height: 16px; }
+  /* the keybind legend is desktop-only information; on a touch build it is a
+     paragraph about keys the player does not have */
+  .settings-panel .set-keys { display: none; }
+}
