@@ -1,5 +1,13 @@
 # Cell Warriors v1.1.0 — the CZN Shell
 
+## 📱 Download
+
+**[⬇ CellWarriors-1.1.0.apk](https://github.com/owaiskhan-ash/CellWarriors/releases/download/v1.1.0/CellWarriors-1.1.0.apk)** — 15 MB, Android 7.0+
+**[sha256](https://github.com/owaiskhan-ash/CellWarriors/releases/download/v1.1.0/CellWarriors-1.1.0.apk.sha256)** — `d52e93c59721f37953b7c1a91ffac451023b37bfc9c1afc647752f1c831f266b`
+
+Installs straight over 1.0.x — same signing key (`94:f9:19:dc:…:c1:af:0`), your save and run
+are untouched.
+
 Every screen was rebuilt against Chaos Zero Nightmare's interface language: the ship-deck
 hub, paper-white menu plates, ink-black battle deck, cyan corridors and notched plates.
 No gameplay rule changed — this release is one long UI/art pass plus the panels the

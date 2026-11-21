@@ -26,7 +26,7 @@ cd "$ROOT"
 
 # ---------------------------------------------------------------- 0. settings
 VERSION="${CW_VERSION:-1.1.0}"
-VERSION_CODE="${CW_VERSION_CODE:-12}"
+VERSION_CODE="${CW_VERSION_CODE:-13}"
 MIN_SDK=24
 TARGET_SDK=34
 OUT_DIR="dist"
@@ -98,7 +98,7 @@ copy() {
   done
 }
 mkdir -p "$GAME"
-copy index.html styles.css styles-mobile.css fonts.css manifest.webmanifest
+copy index.html styles.css styles-mobile.css czn.css fonts.css manifest.webmanifest
 copy src fonts audio assets
 # images/ is packed separately so unreferenced art is dropped and big
 # illustrations are downscaled. Pillow is needed; fall back to a verbatim copy
@@ -119,7 +119,7 @@ if grep -rIl --exclude='*.map' -e 'fonts.googleapis.com' -e 'fonts.gstatic.com' 
 fi
 
 # Sanity: the offline font + stylesheet graph resolves inside the APK too.
-for f in fonts/inter-400.woff2 fonts/chakra-petch-700.woff2 styles-mobile.css src/ui.js \
+for f in fonts/inter-400.woff2 fonts/chakra-petch-700.woff2 styles-mobile.css czn.css src/ui.js src/czn.js \
          src/touch.js images/logo-transparent.png assets/icons/icon-512.png; do
   [ -f "$GAME/$f" ] || { echo "!! bundle missing $f"; exit 1; }
 done
@@ -287,8 +287,8 @@ verify_apk() {
 
   # the whole offline web app must be there
   local f
-  for f in assets/index.html assets/styles.css assets/styles-mobile.css assets/fonts.css \
-           assets/src/ui.js assets/src/touch.js assets/manifest.webmanifest \
+  for f in assets/index.html assets/styles.css assets/styles-mobile.css assets/czn.css assets/fonts.css \
+           assets/src/ui.js assets/src/czn.js assets/src/touch.js assets/manifest.webmanifest \
            assets/fonts/inter-400.woff2 assets/fonts/chakra-petch-700.woff2 \
            assets/images/logo-transparent.png assets/assets/icons/icon-512.png \
            classes.dex resources.arsc AndroidManifest.xml; do

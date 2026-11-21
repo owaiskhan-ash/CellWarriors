@@ -10,7 +10,7 @@ Ego skills, Epiphany, Stress breakdowns, Sands of Time.
 ### 📱 Play on your phone
 
 **[⬇ Download the Android APK](https://github.com/owaiskhan-ash/CellWarriors/releases/latest)** —
-landscape, offline, ~14 MB, Android 7.0+. Sideload it (allow "install unknown apps" for your
+landscape, offline, ~15 MB, Android 7.0+, now with the **CZN shell** (v1.1.0). Sideload it (allow "install unknown apps" for your
 browser/file manager once) and it runs standalone: no network, no ads, no analytics.
 
 > **Coming from 1.0.0?** That build could not install on Android 11+ at all, and its signing
