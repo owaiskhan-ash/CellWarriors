@@ -21,6 +21,8 @@
     <link rel="stylesheet" href="./styles.css" />
     <!-- phone / touch layer: landscape layout, safe areas, >=44px targets -->
     <link rel="stylesheet" href="./styles-mobile.css" />
+    <!-- CZN shell: hub, header strips, paper/ink plates (must load last) -->
+    <link rel="stylesheet" href="./czn.css" />
     <link rel="manifest" href="./manifest.webmanifest" />
   </head>
   <body>
@@ -82,7 +84,7 @@
               <button class="btn-ghost tiny" id="btn-reset">reset save</button>
             </div>
           </div>
-          <p class="title-ver">CELL WARRIORS v1.0.4 · BUILD 12A · © IMMUNE COMMAND</p>
+          <p class="title-ver">CELL WARRIORS v1.1.0 · BUILD 13A · © IMMUNE COMMAND</p>
         </div>
       </section>
 
@@ -297,7 +299,7 @@
           </div>
           <div class="objective-bar" id="objective-bar"></div>
         </div>
-        <div class="turn-banner hidden" id="turn-banner"><span id="turn-banner-text">TURN 1</span><span class="turn-banner-sub" id="turn-banner-sub">ENGAGE</span></div>
+        <div class="turn-banner hidden" id="turn-banner"><span class="czn-turn-label">TURN</span><span id="turn-banner-text">1</span><span class="turn-banner-sub" id="turn-banner-sub">ENGAGE</span></div>
         <div class="breakdown-overlay hidden" id="breakdown-overlay"><span>MENTAL BREAKDOWN</span><small id="breakdown-name">—</small></div>
         <svg class="target-line hidden" id="target-line"><line id="target-line-el" x1="0" y1="0" x2="0" y2="0" /></svg>
 
@@ -390,6 +392,11 @@
           <div class="battle-tips" id="battle-tips"></div>
         </footer>
 
+                <!-- CZN side plates: enemy HP readout + active combatant card -->
+        <aside class="czn-battle-right" id="czn-battle-right" aria-live="polite">
+          <div class="czn-enemy-readout" id="czn-enemy-readout"></div>
+          <div class="czn-combatant-card" id="czn-combatant-card"></div>
+        </aside>
         <div class="battle-log hidden" id="battle-log"></div>
         <div class="dmg-rail" id="dmg-rail"></div>
         <div class="bark-toast hidden" id="bark-toast"></div>
@@ -665,5 +672,6 @@
       </div>
     </main>
     <script type="module" src="./src/ui.js"></script>
+    <script type="module" src="./src/czn.js"></script>
   </body>
 </html>

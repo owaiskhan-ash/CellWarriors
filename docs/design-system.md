@@ -313,3 +313,44 @@ actual game when you open it:
 New icons: `i-hp` (roster cards) + `i-pulse` (turn plate) — 24px line icons, drawn inline in `index.html` per §8 iconography rules.
 
 Generated artwork: `images/bg-title-v2.jpg`, `images/bg-battle-v2.jpg`, `images/bg-roster-v2.jpg`, `images/icons/i-hp.png`, `images/icons/i-pulse.png` (via `generate_image`).
+
+---
+
+## 9. CZN shell (v1.1.0)
+
+Everything above still applies to *components*. The shell is the layer that places them,
+and it is shared by every screen (`czn.css` + `src/czn.js`).
+
+**Two surfaces, one language**
+
+| Surface | Where | Plate | Type |
+| --- | --- | --- | --- |
+| Paper | Roster, Missions, Character, Shop, Rest, Guide | `#F4F6F8 → #E7EDF2` gradient, 1px `rgba(22,32,46,.13)` edge, white key-art veil | ink `#141A24` |
+| Ink | Hub, Battle, Map, Sim, Event | `#08121E → #040A12`, 1px `rgba(133,190,214,.24)` rim, inner top highlight | ice `#E9F4FA` |
+
+**Furniture**
+
+- **Currency strip** — 34px row above every menu header: hex energy plate
+  (`240/240+` + a bare `+`), then square icon cells (Lab · Codex · Settings · Menu),
+  the `ID-07A` tick. Never carries layout duties.
+- **Corner notch** — 10px, 1px current-colour, opacity .35. Cards use a 3–5px radius;
+  buttons and chips use 3–4px. Nothing is a 12px pill except the hub's team chips.
+- **Sheen** — one `skewX(-18deg)` light band crossing primary buttons every 4.6s. No bounce.
+- **Corridor rule** — the 1px gradient line under a header and above the command ribbon:
+  `transparent → rgba(53,208,192,.55) → transparent`.
+
+**Hub composition** (the canonical screen)
+
+```
+┌ LV plate ──── task card ───────────────────── energy + icon cells ┐
+│                                                                   │
+│   crew pods            standing character          mission rail    │
+│   (seated, 6)          (spotlit, plinth)           (6 rows, glyphs)│
+│                        name + cell/class          GIFT plate ◣     │
+│                        team chips                                  │
+└ ⬢ CHAOS EXPEDITION │ TEAM │ SIM │ CONFIG │ RESET ──────────────────┘
+```
+
+**Battle additions** — turn banner prints the number alone between two rules
+(`TURN` above, state word below); enemy/combatant readouts sit on the right edge at
+≥1024px and are hidden on phones (the compact HUD already carries them).

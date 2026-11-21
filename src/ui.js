@@ -199,6 +199,10 @@ const isPhoneLayout = () => {
 let currentView = 'title';
 const showView = (name) => {
   VIEWS.forEach((v) => $('view-' + v).classList.toggle('hidden', v !== name));
+  // Screens that paint from save data must repaint on entry, or a direct
+  // showView('missions') presents an empty list (the hub jumps straight here).
+  if (name === 'missions' && typeof renderMissions === 'function') renderMissions();
+  if (name === 'roster' && typeof renderRoster === 'function') renderRoster();
   // Belt-and-braces: leaving the battle view always dismisses the
   // body-level result overlay so it can never strand the player.
   if (name !== 'battle') { const ov = $('overlay'); if (ov) ov.classList.add('hidden'); }
@@ -539,35 +543,59 @@ function renderCharacter() {
     return `<div class="char-card-slot"><div class="${className}" style="--rot:0deg;--lift:0px" data-char-card="${c.id}">${html}</div><span class="char-card-where">${slot}</span></div>`;
   }).join('');
 
+  const starPct = Math.round((ch.hp + st.hp) / 2);
   $('char-main').innerHTML = `
-    <div class="char-hero" style="--skin:${ch.skin}">
-      <div class="char-hero-art"><img src="${ch.art}" alt="${ch.name}" /></div>
-      <div class="char-hero-info">
-        <span class="czn-id">COMBATANT FILE // ${ch.id.toUpperCase()} · SAVE DATA</span>
-        <h2 style="color:${ch.skin}">${ch.name}</h2>
-        <div class="char-classline">
-          <span class="cls-chip">${CLASSES[ch.cls].name}</span>
-          <span class="attr-tag" style="color:${a.color}">${a.glyph} ${a.name}</span>
-          <span class="attr-tag">${ROLES[ch.cls] || ''}</span>
-          <span class="attr-tag">LV ${lv} · ${xpIntoLevel(rec.xp)}/100 XP</span>
-        </div>
-        <p class="char-blurb"><b>${ch.full}.</b> ${ch.blurb}</p>
-        <p class="char-blurb"><b>Core mechanic —</b> ${guide.core || ''}</p>
-        <div class="char-statgrid">
-          <div><b>${ch.hp + st.hp}</b><span>MAX HP (WITH LAB)</span></div>
-          <div><b>+${st.atk}</b><span>BONUS ATTACK</span></div>
-          <div><b>+${st.skillLv}</b><span>SKILL POTENCY</span></div>
-          <div><b>-${st.egoDiscount} EP</b><span>EGO DISCOUNT</span></div>
-        </div>
-        <div class="char-hpbar"><i style="width:${Math.min(100, ((ch.hp + st.hp) / 140) * 100)}%"></i><span>HP ${ch.hp + st.hp}</span></div>
-        <div class="char-leader"><b>LEADER SKILL — ${ch.leader ? ch.leader.name : ''}.</b> ${ch.leader ? ch.leader.desc : ''}<br/><span style="color:var(--ink-dim)">Only active when ${ch.name} is in team Slot 1. Class: ${CLASSES[ch.cls].desc}</span></div>
-        <div class="char-actions">
-          <button class="btn-primary" id="char-sim">${ico('i-target')} TEST SOLO IN SIMULATION</button>
-          <button class="btn-ghost" id="char-team">${inTeam ? 'REMOVE FROM TEAM' : 'ADD TO TEAM'}</button>
-          <button class="btn-ghost" id="char-lab">${ico('i-flask')} OPEN IN LAB</button>
-          <button class="btn-ghost" id="char-guide-btn">${ico('i-book')} MECHANICS GUIDE</button>
-        </div>
+    <div class="czn-showcase" style="--skin:${ch.skin}">
+      <div class="czn-show-stage">
+        <span class="czn-show-slab"></span>
+        <span class="czn-show-arc"></span>
+        <span class="czn-show-grid"></span>
+        <img class="czn-show-art" src="${ch.art}" alt="${ch.name}" />
+        <span class="czn-show-floor"></span>
+        <span class="czn-show-tag">COMBATANT FILE // ${ch.id.toUpperCase()}</span>
+        <span class="czn-show-stamp">${CLASSES[ch.cls].name.toUpperCase()}</span>
       </div>
+      <aside class="czn-show-rail">
+        <div class="czn-show-title">
+          <h2 style="--skin:${ch.skin}">${ch.name}</h2>
+          <span class="czn-show-cell">${ROLES[ch.cls] || ''} · ${ch.full.split(/[\u2014-] /).pop() || ''}</span>
+          <i class="czn-show-affinity" style="color:${a.color}" title="Affinity ${a.name}">${a.glyph}</i>
+          <i class="czn-show-affinity alt" title="Weakness: ${a.name}">${a.glyph}</i>
+          <span class="czn-show-heart" title="Bond">♥ 1</span>
+        </div>
+        <div class="czn-show-lv">
+          <span>LV ${lv} / 10</span>
+          <i class="czn-show-lvbtn" title="Level">◇</i>
+        </div>
+        <div class="czn-show-stats">
+          <div class="czn-show-stats-head"><b>STATS</b><i>i</i></div>
+          <dl>
+            <div><dt>ATTACK</dt><dd>${Math.round((ch.hp + st.hp) * 2.36) + st.atk}</dd></div>
+            <div><dt>DEFENSE</dt><dd>${Math.round((ch.hp + st.hp) * 0.66)}</dd></div>
+            <div><dt>HP</dt><dd>${ch.hp + st.hp}</dd></div>
+            <div><dt>CRIT RATE</dt><dd>3.0%</dd></div>
+            <div><dt>CRIT DMG</dt><dd>125.0%</dd></div>
+          </dl>
+        </div>
+        <div class="czn-show-power">
+          <span class="czn-show-power-tab">EGO</span>
+          <b>${String(15000 + (ch.hp + st.hp) * 12)}<i>TB</i></b>
+          <span class="czn-show-power-grid"></span>
+        </div>
+        <button class="czn-show-ascend" id="char-ascend" type="button">ASCEND</button>
+        <div class="czn-show-quick">
+          <button class="btn-primary czn-show-cta" id="char-sim">${ico('i-target')} TEST SOLO</button>
+          <button class="btn-ghost" id="char-team">${inTeam ? 'REMOVE' : 'ADD'}</button>
+          <button class="btn-ghost" id="char-lab" title="Open in Cell Lab">${ico('i-flask')}</button>
+          <button class="btn-ghost" id="char-guide-btn" title="Mechanics guide">${ico('i-book')}</button>
+        </div>
+      </aside>
+    </div>
+
+    <div class="czn-show-sub">
+      <span class="czn-show-chipline"><span class="cls-chip">${CLASSES[ch.cls].name}</span><span class="attr-tag" style="color:${a.color}">${a.glyph} ${a.name}</span><span class="attr-tag">LV ${lv} · ${xpIntoLevel(rec.xp)}/100 XP</span></span>
+      <p class="char-blurb"><b>${ch.full}.</b> ${ch.blurb} <b>Core mechanic —</b> ${guide.core || ''}</p>
+      <div class="char-leader"><b>LEADER SKILL — ${ch.leader ? ch.leader.name : ''}.</b> ${ch.leader ? ch.leader.desc : ''}<br/><span style="color:var(--ink-dim)">Only active in team Slot 1. Class: ${CLASSES[ch.cls].desc}</span></div>
     </div>
 
     <div class="char-tabs"><button data-sec="char-sec-play">PLAYBOOK</button><button data-sec="char-sec-cards">CARDS</button><button data-sec="char-sec-ego">EGO — TAP TO PREVIEW</button></div>
@@ -609,6 +637,8 @@ function renderCharacter() {
   $('char-lab').addEventListener('click', () => { sfx('click'); openLab(detailCharId); });
   $('char-guide-btn').addEventListener('click', () => { sfx('click'); openGuide('scaling'); });
   $('char-team').addEventListener('click', () => { sfx('click'); toggleTeam(detailCharId); renderCharacter(); renderRoster(); });
+  const asc = $('char-ascend');
+  if (asc) asc.addEventListener('click', () => { sfx('click'); openLab(detailCharId); });
 }
 
 let egoPreviewTimer = null;
@@ -1310,7 +1340,15 @@ let lastBreakdownShown = '';
 function showTurnBanner(turn) {
   const b = $('turn-banner');
   if (!b) return;
-  $('turn-banner-text').textContent = `TURN ${turn}`;
+  // CZN prints the number alone, huge, between two rules - "TURN" is the label
+  // above it. Word and number are separate nodes so the number can be scaled.
+  const label = b.querySelector('.czn-turn-label');
+  if (label) {
+    $('turn-banner-text').textContent = String(turn);
+    label.textContent = 'TURN';
+  } else {
+    $('turn-banner-text').textContent = `TURN ${turn}`;
+  }
   $('turn-banner-sub').textContent = turn === 1 ? 'ENGAGE' : 'YOUR MOVE';
   b.classList.remove('hidden');
   const tp = $('turn-plate');
@@ -1368,6 +1406,7 @@ function renderBattle() {
   renderResources();
   renderTopBar();
   renderLog();
+  renderCznBattlePanels();
   if (battleCtx && battleCtx.kind === 'sim') renderSimHud();
   $('b-turn').textContent = battle.turn;
   const w = attr(battle.enemies[0] ? battle.enemies[0].weakness : null);
@@ -1839,6 +1878,82 @@ function renderEnemies() {
 }
 
 /* --- boss HP bar, objective tracker, action timeline, end-turn danger --- */
+/* ------------------------------------------------------------------ *
+ * CZN BATTLE PANELS
+ * ------------------------------------------------------------------
+ * Chaos Zero Nightmare keeps two readouts on the right edge of the arena:
+ * a stack of enemy name/HP bars (name on top, thin bar under it) and the
+ * active combatant's portrait/egg readout. They are *information only* —
+ * the existing enemy nodes stay the tap targets, so nothing about targeting
+ * or the layout guards changes. On phones the stack is hidden by CSS.
+ * ------------------------------------------------------------------ */
+function renderCznBattlePanels() {
+  const right = $('czn-battle-right');
+  if (!right || !battle) return;
+  const live = battle.enemies.filter((e) => e.hp > 0);
+  const pick = live.find((e) => e.uid === battle.targetUid) || live[0] || battle.enemies[0];
+
+  const readout = $('czn-enemy-readout');
+  if (readout) {
+    const sel = pick && pick.uid === battle.targetUid;
+    const w = pick ? Math.max(0, Math.min(100, (pick.hp / pick.maxHp) * 100)) : 0;
+    const aw = pick ? Math.max(0, Math.min(100, (pick.tenacity / (pick.maxTenacity || 1)) * 100)) : 0;
+    const a = pick ? attr(pick.weakness) : attr(null);
+    readout.innerHTML = `
+      <div class="czn-readout-head">
+        <b>${pick ? pick.name.toUpperCase() : 'NO HOSTILE'}</b>
+        <i>${pick ? `${pick.hp} / ${pick.maxHp}` : '—'}</i>
+      </div>
+      <div class="czn-readout-bar"><i style="width:${w}%"></i></div>
+      <div class="czn-readout-sub">
+        <span style="color:${a.color}">${a.glyph} ${a.name.toUpperCase()}</span>
+        ${pick ? `<span>ACTION IN <b>${pick.counter}</b></span>` : ''}
+      </div>
+      <div class="czn-readout-ten"><i style="width:${aw}%"></i></div>
+      <div class="czn-readout-list">
+        ${battle.enemies.map((e) => `
+          <button class="czn-readout-row${e.uid === battle.targetUid ? ' on' : ''}${e.hp <= 0 ? ' dead' : ''}" data-czn-uid="${e.uid}" type="button">
+            <span class="czn-readout-name">${e.name}</span>
+            <span class="czn-readout-mini"><i style="width:${Math.max(0, (e.hp / e.maxHp) * 100)}%"></i></span>
+          </button>`).join('')}
+      </div>
+      ${sel ? '' : ''}`;
+    readout.querySelectorAll('[data-czn-uid]').forEach((b) => b.addEventListener('click', () => {
+      const uid = Number(b.dataset.cznUid);
+      const target = battle.enemies.find((e) => e.uid === uid);
+      if (!target || target.hp <= 0) return;
+      sfx('click');
+      battle.targetUid = uid;
+      renderBattle();
+    }));
+  }
+
+  const card = $('czn-combatant-card');
+  if (card) {
+    const chars = battle.characters || [];
+    const broken = chars.find((c) => c.broken);
+    const focus = broken || chars[0];
+    if (!focus) { card.innerHTML = ''; return; }
+    const hpPct = Math.max(0, Math.min(100, (focus.hp / focus.maxHp) * 100));
+    const stress = Math.max(0, Math.min(100, focus.stress || 0));
+    card.innerHTML = `
+      <div class="czn-cc-head">
+        <img src="${focus.art || (CHARACTERS[focus.id] && CHARACTERS[focus.id].art) || ''}" alt="" />
+        <span class="czn-cc-id">
+          <b>${focus.name}</b>
+          <small>${(CLASSES[(CHARACTERS[focus.id] || {}).cls] || {}).name || ''}</small>
+        </span>
+      </div>
+      <div class="czn-cc-bar"><i style="width:${hpPct}%"></i><span>${focus.hp} / ${focus.maxHp}</span></div>
+      <div class="czn-cc-stress"><i style="width:${stress}%"></i></div>
+      <div class="czn-cc-foot">
+        <span>STRESS <b>${Math.round(stress)}</b></span>
+        <span>AP <b>${battle.ap}</b></span>
+        <span>EP <b>${battle.ep}</b></span>
+      </div>`;
+  }
+}
+
 function renderTopBar() {
   const bar = $('boss-bar'); if (!bar || !battle) return;
   const alive = battle.enemies.filter((e) => e.hp > 0);
@@ -2785,6 +2900,7 @@ function bind() {
   $('btn-start').addEventListener('click', () => {
     sfx('click');
     setMode('chaos');
+    renderRoster();
     renderRoster();
     showView('roster');
   });

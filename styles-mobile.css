@@ -621,15 +621,13 @@ html, body { overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
   .char-rail button { width: 44px; min-height: 44px; }
   .char-rail button img { height: 34px; }
   .char-main { padding: 10px 12px calc(var(--safe-b) + 10px); }
-  .char-hero { grid-template-columns: 150px minmax(0, 1fr); gap: 12px; }
-  .char-hero-art { min-height: 0; }
-  .char-hero-art img { height: 40vh; }
-  .char-hero-info { padding: 12px 12px 12px 0; }
-  .char-hero-info h2 { font-size: 22px; }
+  /* the hero is now the CZN showcase (czn.css); these keep the old grid
+     sane if a fallback ever renders it */
+  .czn-showcase { grid-template-columns: minmax(0, 1fr) minmax(190px, 32%); gap: 8px; }
+  .czn-show-stage { min-height: 170px; }
   .char-blurb { font-size: 11.5px; }
-  .char-statgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 8px 0; }
-  .char-statgrid div { padding: 6px 8px; }
-  .char-statgrid b { font-size: 14px; }
+  .czn-show-stats dl { gap: 0; }
+  .czn-show-stats dl > div { padding: 0; }
   .char-playbook { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .char-cards { gap: 8px; }
   .char-cards .card, .char-cards [data-char-card] .card { width: clamp(84px, 14vh, 112px); height: auto; aspect-ratio: 0.74; }

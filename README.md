@@ -3,8 +3,9 @@
 A tactical card RPG fought inside a seventeen-year-old's immune system. Anime squad battler:
 pick 3 of 6 combatants, then fight with the cards those characters own.
 
-**Status:** playable on desktop and **on Android** — CZN-style battle system, roster, 5 missions,
-30 cards (6 lean kits), Ego skills, Epiphany, Stress breakdowns, Sands of Time.
+**Status:** playable on desktop and **on Android** — full CZN shell (ship-deck hub, combatant
+showcase, CZN battle plates), CZN-style battle system, roster, 5 missions, 30 cards (6 lean kits),
+Ego skills, Epiphany, Stress breakdowns, Sands of Time.
 
 ### 📱 Play on your phone
 
@@ -36,6 +37,21 @@ how: **[docs/czn-systems.md](docs/czn-systems.md)** · Cast and art:
 **[docs/character-bible.md](docs/character-bible.md)**
 
 ---
+
+## The CZN shell (v1.1.0)
+
+The interface is one layer, applied everywhere — not per-screen styling:
+
+- **`czn.css`** — the design language: paper plates for menus, ink plates for battle, cyan
+  corridor rules, notched corners, `240/240+` currency strip, sheen on primary actions.
+- **`src/czn.js`** — the furniture: builds the **hub** (level plate, mission rail, standing
+  character, crew pods, GIFT slot, command ribbon), the currency strip above every menu
+  header, and swaps the key art (`images/czn/*`).
+- Screens keep their own logic; the shell only supplies the frame. `battle-fit.mjs` still owns
+  the battle geometry, and the shell never adds a node inside `.battle-stage`.
+
+Reference screens: ship-deck hub, combatant showcase with a STATS rail + ASCEND, and the
+`TURN n` battle banner between two rules.
 
 ## Flow
 

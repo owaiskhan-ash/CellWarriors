@@ -127,3 +127,21 @@ Three hourglasses per fight (ours refreshes each fight, CZN refreshes daily):
 | Upgrade cards that persist for the fight | ✅ |
 | Curse / Status cards | ✅ |
 | Chaos map, shops, partners, gacha | ❌ (out of scope) |
+
+---
+
+## 13. Interface fidelity (v1.1.0 — the CZN shell)
+
+Battle mechanics were already matched in §1–11. The **interface** now matches too.
+
+| CZN screen | Ours | Where |
+| --- | --- | --- |
+| Ship-deck main menu: energy hex, icon cells, LV 25 plate, mission rail, standing character, seated crew, GIFT plate, bottom command ribbon | Same composition, rebuilt from scratch | `src/czn.js` → `.czn-hub`, `czn.css` §3 |
+| Character detail page: pale geometric stage, standing art, right stat rail (Attack / Defense / HP / Crit Rate / Crit DMG), `n TB` power readout, orange ASCEND | Same, with real values from the Lab | `renderCharacter()` → `.czn-showcase` |
+| Battle: `TURN / n / state` banner between two rules, cards on an arc over the stage, enemy readouts at the right edge | Same | `showTurnBanner()`, `renderCznBattlePanels()`, `czn.css` §6 |
+| Paper-white menus with notched plates and cyan rules | Same | `czn.css` §2, §4, §5 |
+| Chaos map: dark starfield, floating node islands, teal links | Same (our own node art) | `czn.css` map block |
+
+**Deliberately not copied:** the live-service chrome — banners, gacha, stamina timers,
+partner weapons, shop currencies. The hub's energy plate is bound to the run currency
+(Cells) so the number on screen is always a number the player can spend.
