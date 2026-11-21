@@ -1828,17 +1828,27 @@
 #view-missions .mission-tile.locked .m-place,
 #view-missions .mission-tile.locked .m-hero { color: #8d9caa; }
 #view-missions .mission-tile.locked .m-weak { opacity: 0.6; }
+#view-missions .mission-tile { position: relative; }
 #view-missions .mission-tile.locked::after {
   content: "LOCKED";
   position: absolute;
-  right: 10px; top: 50%;
+  right: 8px;
+  top: 50%;
   transform: translateY(-50%);
-  font-size: 7px;
-  letter-spacing: 0.24em;
-  color: #8d9caa;
+  padding: 2px 5px;
+  border: 1px solid rgba(22,32,46,0.18);
+  border-radius: 2px;
+  background: rgba(255,255,255,0.55);
+  color: #6d7f90;
+  font-size: 6.5px;
+  letter-spacing: 0.2em;
+  line-height: 1.4;
   font-family: var(--font-display);
 }
-#view-missions .mission-tile { position: relative; }
+/* A locked row is not clickable: the chevron is a lie, so the stamp takes its slot. */
+#view-missions .mission-tile.locked .m-right > span:last-child { display: none; }
+#view-missions .mission-tile.locked .m-right { padding-right: 54px; }
+#view-missions .mission-tile.locked .m-weak { opacity: 0.62; }
 
 /* ---- CZN combatant strip: portraits on plates, bar above them ---- */
 #view-battle .team-parts { gap: 5px; align-items: center; }
@@ -2198,4 +2208,11 @@
   background: rgba(3,8,14,0.55);
   border: 1px solid rgba(133,190,214,0.18);
   backdrop-filter: blur(3px);
+}
+
+/* The energy plate must not butt into the first icon cell: its plus badge
+   overhangs the right edge, so the strip needs a reserved gutter. */
+.czn-hub-hud .czn-hud-meter { margin-right: 8px; }
+@media (orientation: landscape) and (max-height: 560px) {
+  .czn-hub-hud .czn-hud-meter { margin-right: 7px; }
 }
