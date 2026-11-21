@@ -3,7 +3,7 @@
 ## 📱 Download
 
 **[⬇ CellWarriors-1.1.0.apk](https://github.com/owaiskhan-ash/CellWarriors/releases/download/v1.1.0/CellWarriors-1.1.0.apk)** — 15 MB, Android 7.0+
-**[sha256](https://github.com/owaiskhan-ash/CellWarriors/releases/download/v1.1.0/CellWarriors-1.1.0.apk.sha256)** — `d52e93c59721f37953b7c1a91ffac451023b37bfc9c1afc647752f1c831f266b`
+**[sha256](https://github.com/owaiskhan-ash/CellWarriors/releases/download/v1.1.0/CellWarriors-1.1.0.apk.sha256)** — `aa614aa4c02bf8b9dc7bd58ccb6acb4ea6a15c519110044ba755a66698ca601b`
 
 Installs straight over 1.0.x — same signing key (`94:f9:19:dc:…:c1:af:0`), your save and run
 are untouched.
