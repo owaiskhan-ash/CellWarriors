@@ -22,6 +22,11 @@ import {
 } from './progress.js';
 import { sfx, bark, isMuted, toggleMute, setSfxVolume, sfxDamage, sfxMajor, sfxBadgeHover, badgeHeartbeatStop, duckMix } from './audio.js';
 import { installPlatformBridge, installDoubleTapGuard, syncRootVars, setUiScaleFactor, updateAdaptiveUI, storageGet, storageSet, isAndroidApp } from './touch.js';
+/* The animation engine. Owns every pose the player's own hand causes (card
+   throws, hit reactions, death, turn hand-over); ui.js owns *when* to call it.
+   Kept separate because it is pure choreography and must stay testable in
+   jsdom — see the design contract at the top of that file. */
+import * as fx from './fx.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, html) => {
@@ -166,6 +171,11 @@ function applySettings() {
   document.body.classList.toggle('q-ultra', settings.quality === 'ultra');
   document.body.classList.toggle('q-low', settings.quality === 'low');
   document.body.classList.toggle('focus-ui', !!focusUi);
+  /* Tell the animation engine the same three facts the CSS just learned, so a
+     pose is never started that the stylesheet would then have to flatten. */
+  fx.setQuality(settings.quality);
+  fx.setFocus(!!focusUi);
+  fx.setPaused(!!document.body.classList.contains('app-paused'));
   /* Everything ambient is switched in power.css off these two classes plus
      `.app-paused`; JS owns the flags, CSS owns the loop. */
   /* UI SCALE.
@@ -204,6 +214,9 @@ function applySettings() {
 function setAppPaused(on) {
   document.body.classList.toggle('app-paused', !!on);
   if (on) badgeHeartbeatStop();
+  // A backgrounded tab stops painting, so a half-finished pose would resume
+  // hours later on the wrong node. Snap the board back to rest instead.
+  fx.setPaused(!!on);
 }
 function openSettings() { applySettings(); $('settings-modal').classList.remove('hidden'); }
 function closeSettings() { $('settings-modal').classList.add('hidden'); saveSettings(); }
@@ -244,7 +257,13 @@ const showView = (name) => {
   if (name === 'roster' && typeof renderRoster === 'function') renderRoster();
   // Belt-and-braces: leaving the battle view always dismisses the
   // body-level result overlay so it can never strand the player.
-  if (name !== 'battle') { const ov = $('overlay'); if (ov) ov.classList.add('hidden'); }
+  if (name !== 'battle') {
+    const ov = $('overlay'); if (ov) ov.classList.add('hidden');
+    /* ...and the film goes with it. A hit ring or a thrown card belongs to the
+       fight that spawned it: leaving one scaling in the background of the map
+       screen is exactly the kind of stray that keeps a phone awake. */
+    fx.settle();
+  }
   currentView = name;
   syncMeta();
   if (name === 'map') raf(drawMapLines);
@@ -1367,6 +1386,11 @@ function enterBattleView(title, place) {
   $('sands-menu').classList.add('hidden');
   $('bark-toast').classList.add('hidden');
   $('dmg-rail').innerHTML = '';
+  /* Nothing from the last fight may leak into this one: a ring still scaling, a
+     card mid-air, a sprite left leaning. settle() snaps every pose back and
+     deletes the film layers; enterBattle() then plays the arrival. */
+  fx.settle();
+  fx.enterBattle(battle);
   showView('battle');
   $('overlay').classList.add('hidden');
   $('pause').classList.add('hidden');
@@ -1399,8 +1423,12 @@ function showTurnBanner(turn) {
   b.classList.remove('hidden');
   const tp = $('turn-plate');
   if (tp) { tp.classList.add('just-changed'); clearTimeout(tp._tp); tp._tp = setTimeout(() => tp.classList.remove('just-changed'), 800); }
+  fx.turnCrash();
   clearTimeout(b._t);
-  b._t = setTimeout(() => b.classList.add('hidden'), 1200);
+  /* 950ms, not 1200: the banner is the largest type on the screen and it sits
+     over the arena. Long enough to read "TURN 3 — YOUR MOVE", short enough that
+     it is gone before the player's thumb is back on the hand. */
+  b._t = setTimeout(() => b.classList.add('hidden'), 950);
 }
 function showBreakdownOverlay(name) {
   const o = $('breakdown-overlay');
@@ -1477,8 +1505,21 @@ function renderBattle() {
   if (battle.pendingEpiphany && !battle.result) showEpiphanyModal();
   else $('epiphany-modal').classList.add('hidden');
 
-  if (battle.result) resolveBattleOutcome();
-  else $('overlay').classList.add('hidden');
+  /* Last: the reactions. Everything above only *writes* state to the DOM, so
+     the animation pass runs once at the end and compares it with what was on
+     screen before this render — that is what makes AP spending, EP gaining,
+     resonance charging and the team bar dropping read as events instead of
+     numbers that happen to have changed. Two class toggles, no layout. */
+  fx.hudReact(battle);
+  fx.syncReticles(battle);
+
+  if (battle.result) {
+    /* The killing blow was thrown, hit and replayed before this render — so the
+       result card can arrive with the same weight instead of appearing under
+       a still-flying card. */
+    fx.resultSlam(battle.result === 'win');
+    resolveBattleOutcome();
+  } else $('overlay').classList.add('hidden');
 }
 
 function showEpiphanyModal() {
@@ -1916,6 +1957,9 @@ function renderEnemies() {
       sfx('click');
       battle.targetUid = e.uid;
       renderBattle();
+      // The latch: a bracket snaps onto the body every card will now hit, so
+      // the tap has a visible answer even when the sprite already glowed.
+      fx.targetLock(e.uid);
       // Touch has no hover to explain what the tap did — say it out loud once.
       if (isPhoneLayout()) toastTarget(e.name);
     });
@@ -1971,6 +2015,7 @@ function renderCznBattlePanels() {
       sfx('click');
       battle.targetUid = uid;
       renderBattle();
+      fx.targetLock(uid);
     }));
   }
 
@@ -2144,6 +2189,12 @@ function dragMoveNode(ev, node, i) {
   node.classList.toggle('drag-fast', !!overEnemy);
   if (ev && overEnemy) {
     node.style.transform = `translate(${ev.clientX - rect.left - rect.width / 2}px, ${ev.clientY - rect.top - rect.height / 2}px)`;
+    // The drop bracket is the promise: "release here and THIS body takes it".
+    // It follows the enemy under the finger, and it is the same node the
+    // engine will resolve the damage against, so the preview can never lie.
+    fx.dragTarget(overEnemy);
+  } else if (!overEnemy) {
+    fx.clearDragTarget();
   }
   // ALT GESTURE — Attack Draw: Alt + hover enemy during drag
   node._altDraw = !!(ev && overEnemy && ev.altKey);
@@ -2305,6 +2356,7 @@ function renderHand() {
     node._placed = false;
     node.addEventListener('pointerdown', (ev) => {
       startX = ev.clientX; startY = ev.clientY; upHandled = false;
+      fx.cardLift(node, true);
       // A touch pointer is one-shot: if we ignore its follow-up click the card
       // can only be played by dragging, which is not discoverable with a thumb.
       node._touch = ev.pointerType === 'touch';
@@ -2333,6 +2385,8 @@ function renderHand() {
     node.addEventListener('pointerup', (ev) => {
       clearTimeout(pressTimer);
       hideTargetLine();
+      fx.clearDragTarget();
+      fx.cardLift(node, false);
       const wasTouch = node._touch;
       const dragged = !!node._dragging;
       node._dragging = false;
@@ -2357,7 +2411,7 @@ function renderHand() {
       upHandled = false;
     });
     node.addEventListener('pointerleave', () => { clearTimeout(pressTimer); hideTargetLine(); node._dragging = false; });
-    node.addEventListener('pointercancel', () => { clearTimeout(pressTimer); hideTargetLine(); node._dragging = false; });
+    node.addEventListener('pointercancel', () => { clearTimeout(pressTimer); hideTargetLine(); node._dragging = false; fx.clearDragTarget(); fx.cardLift(node, false); });
     node.addEventListener('mouseenter', () => {
       if (node.classList.contains('hoverable')) node.classList.add('hovering');
       // Side-badge audio: charge whine pitched by the previewed number,
@@ -2476,54 +2530,175 @@ function closeDetail() {
   longPressed = false;
 }
 
-/* --- play --- */
+/* --- end turn -------------------------------------------------------------
+   THE HAND-OVER. Ending a turn is the moment the player gives the board away,
+   and it used to be one silent re-render. Now it is a sequence:
+
+     1. LOCK       the button swallows the tap and stamps (no double turns)
+     2. HAND DOWN  the strip dips and dims — you cannot act for a beat
+     3. CLOCKS     every living enemy's counter ticks, earliest actor first, so
+                   the player *sees* who is about to hit them and in what order
+     4. RESOLVE    endTurn() runs; the fx stream (poison ticks, counters, hits,
+                   deaths) is replayed as choreography on the new state
+     5. HAND OVER  the plate flips, the banner crash-lands, the new hand is
+                   dealt card by card out of the draw pile
+
+   The engine call happens at step 4, i.e. ~200ms after the tap; that delay is
+   the only place the UI owns a game-state transition, and it is guarded by
+   `turnBusy` so a second tap can never land two turns.
+   Total: ~380ms at HIGH, instant at LOW / reduced motion. */
+let turnBusy = false;
+function endTurnWithMotion() {
+  if (turnBusy || cutBusy || !battle || battle.result) return;
+  /* No geometry to animate on (headless harness, hidden view, LOW POWER, or
+     reduced motion) means the hand-over resolves inline: the state machine
+     must never wait on a frame clock that is not running. */
+  const instant = !fx.animatable();
+  const btn = $('end-turn');
+  if (btn) {
+    btn.classList.add('sparkle');
+    clearTimeout(btn._sp); btn._sp = setTimeout(() => btn.classList.remove('sparkle'), 560);
+    btn.disabled = true;                       // the button is the only door
+  }
+  turnBusy = true;
+  exaltArmed = false;
+  sfx('turn');
+
+  const finish = () => {
+    turnBusy = false;
+    if (btn && battle && !battle.result) btn.disabled = false;
+  };
+
+  if (instant) {
+    resolveTurn();
+    finish();
+    return;
+  }
+
+  // 2 + 3: the strip drops and the enemy clocks tick, in counter order.
+  fx.endTurnSequence(battle).then((stillMine) => {
+    if (!stillMine || !battle) { finish(); return; }
+    resolveTurn();
+    finish();
+  });
+}
+
+/* Run the turn once, in the right order, and hand the events it produced to the
+   replay pass. `battle.fx` is a queue that renderBattle() drains (flushFx), so
+   the events are copied out between the engine call and the render — that copy
+   is what the choreography replays, and the rail still gets to print them. */
+function resolveTurn() {
+  if (!battle) return;
+  const deckBefore = battle.drawPile.length + battle.discard.length;
+  const fxBefore = battle.fx.length;
+  endTurn(battle);
+  battle._turnEvents = battle.fx.slice(fxBefore);
+  renderBattle();
+  animateTurnResolution(deckBefore);
+}
+
+/* The half of the hand-over that happens *after* the new state exists: replay
+   the events the enemy turn produced, deal the new hand, and let the banner and
+   the plate land. Split out so autoplay and the keyboard shortcut both use it. */
+function animateTurnResolution(deckSizeBefore = 0) {
+  if (!battle) return;
+  // enemy attacks / poison ticks / deaths, in the order the engine logged them
+  fx.replay(battle._turnEvents || [], battle);
+  const drew = (battle.drawPile.length + battle.discard.length) !== deckSizeBefore;
+  fx.dealHand(battle.hand.length, { piles: drew });
+  fx.turnCrash();
+  if (battle.result) fx.resultSlam(battle.result === 'win');
+  setTimeout(() => {
+    if (!battle || battle.result) return;
+    fx.hudReact(battle);
+    fx.syncReticles(battle);
+  }, 40);
+}
+
+/* --- play ----------------------------------------------------------------
+   THE PLAY, IN FIVE BEATS. A card leaving your hand is the single most
+   repeated action in the game, so it gets the most care:
+
+     1. LIFT      the card rises out of the fan, its neighbours dim, and the
+                  hand closes the gap it leaves                        (~90ms)
+     2. WIND-UP   it noses up and back on a bezier, the throw glows      (~90ms)
+     3. THROW     it accelerates onto the enemy that will ACTUALLY be hit,
+                  rotating flat, growing a shadow                       (~230ms)
+     4. IMPACT    the card lands: wedge, ring, sprite recoil, stage shove,
+                  damage number — all queued from the engine's fx stream
+     5. SETTLE    the next render is already underneath it, so nothing on the
+                  board has to "catch up"
+
+   The card is cloned into a throw layer (fx.playCardIn), so the real hand can
+   be re-rendered at any point without the in-flight card jumping. Damage is
+   computed by the engine *before* the throw starts (the model must not wait on
+   an animation), and the fx stream is replayed as a timeline so the numbers
+   arrive with the hit rather than all at once.
+
+   Nothing here blocks the next tap: a second card played mid-throw simply
+   takes over the sequence token, and the first throw's clone is cleaned up by
+   its own frame loop. */
 function playFromUI(index, ev) {
   if (cutBusy || !battle || battle.result) return;
   const card = battle.hand[index];
   if (!card || !canPlay(battle, card)) return;
-  const cardNode = ev && ev.target ? ev.target.closest('.card') : null;
-  const rect = cardNode ? cardNode.getBoundingClientRect() : null;
+  /* Where the card physically is. The pointerdown/pointerup path on touch calls
+     this with NO event (the gesture already knows the index), and so does the
+     keyboard — which is why the old code fell back to "no arc" for every thumb
+     press and the flight was a desktop-only flourish. Resolve it from the hand
+     when the event does not carry it. */
+  const cardNode = (ev && ev.target && ev.target.closest ? ev.target.closest('.card') : null)
+    || $('hand').querySelectorAll('.card')[index]
+    || null;
+  /* Captured BEFORE the play: playCard() removes the card from the model and
+     renderBattle() rebuilds the hand, so by the time the throw starts the node
+     is detached and measureless. The start box and the slot width have to be
+     taken while they still exist. */
+  const startRect = cardNode ? cardNode.getBoundingClientRect() : null;
+  const handEl = $('hand');
+  // jsdom has no getComputedStyle on the global: every measurement here is
+  // optional, so a harness without styles must not be able to break a play.
+  const cssVar = (name) => {
+    if (!handEl || typeof getComputedStyle !== 'function') return 0;
+    const v = parseFloat(getComputedStyle(handEl).getPropertyValue(name));
+    return Number.isFinite(v) ? v : 0;
+  };
+  const slotW = cssVar('--card-w') || (startRect ? startRect.width : 0);
+  const slotM = cssVar('--card-m');
+  const gapPx = Math.max(0, slotW + 2 * slotM);
   // Major-card stingers: rares riser-boom, finishers get signatures, glint sings.
   if (card.glint) sfxMajor('epiphany', { owner: card.owner, cardId: card.defId || card.id });
   else if (card.rare) sfxMajor('rare', { owner: card.owner, cardId: card.defId || card.id });
   else if (card.cost >= 3 || card.finale || (card.tags || []).includes('Finale')) sfxMajor('finisher', { owner: card.owner, cardId: card.defId || card.id });
-  const res = playCard(battle, index, card.dmg > 0 && !card.aoe ? battle.targetUid : undefined);
+
+  // Which body will this card hit? Attack cards hit the selected target; every
+  // other card is an action on your own side, so it is thrown at the arena
+  // centre instead of at an enemy (the old arc always flew at enemy #1, which
+  // could disagree with the damage once multi-enemy fights started).
+  const targetUid = card.dmg > 0 && !card.aoe ? battle.targetUid : undefined;
+  const res = playCard(battle, index, targetUid);
   if (!res.ok) return;
   // The card's own voice line: same character, different utterance per card.
   if (card.owner) showBark(card.owner, 'attack', card.defId || card.id);
   else if (card.type === 'attack') sfx('slash');
+
+  // The engine has already written its fx events; take a copy of the ones this
+  // card produced so they can be replayed as choreography *after* the throw.
+  const owned = battle.fx.slice();
   renderBattle();
-  if (cardNode && rect) launchPlayArc(cardNode, rect, card);
+  if (cardNode) {
+    // Beat 1+2+3: the throw itself, thrown from the box the card occupied.
+    // Awaiting is optional — the impact below is timed on the same clock, so
+    // skipping the await costs overlap, not damage.
+    fx.playCardIn(cardNode, card, battle, startRect);
+    // ...and the rest of the hand closes the gap it left behind.
+    fx.handSettle(index, gapPx);
+  }
+  fx.replay(owned, battle, { owner: card.owner });
   apFlash(battle.ap);
   touchFlash();
-  // No character cut-in on card plays (removed by request) — the play arc,
-  // barks, damage numbers and SFX carry the moment. Ego cut-ins remain.
-}
-
-/* Game-feel: the played card arcs off the hand onto its target. */
-function launchPlayArc(cardNode, rect, card) {
-  const stage = $('battle-stage');
-  const target = battle && battle.enemies.find((e) => e.hp > 0);
-  if (!stage || !target || !target._dom) return;
-  const arc = cardNode.cloneNode(true);
-  arc.className = `${arc.className || ''} arc-card`;
-  arc.style.position = 'absolute';
-  arc.style.margin = '0';
-  arc.style.left = `${rect.left}px`;
-  arc.style.top = `${rect.top}px`;
-  arc.style.width = `${rect.width}px`;
-  arc.style.height = `${rect.height}px`;
-  stage.appendChild(arc);
-  const t = target._dom.getBoundingClientRect();
-  const endX = t.left + t.width / 2 - rect.width / 2;
-  const endY = t.top + t.height * 0.35 - rect.height / 2;
-  arc.style.transitionProperty = 'transform';
-  arc.style.transitionDuration = '650ms';
-  arc.style.transitionTimingFunction = 'cubic-bezier(0.16,0.9,0.3,1)';
-  raf(() => {
-    arc.style.transform = `translate(${endX - rect.left}px, ${endY - rect.top}px)`;
-  });
-  setTimeout(() => arc.remove(), 850);
+  // No character cut-in on card plays (removed by request) — the throw, the
+  // impact, the barks and the damage numbers carry the moment. Ego cut-ins stay.
 }
 
 /* ============================================================ AUTOPLAY
@@ -2714,14 +2889,23 @@ function autoStepOnce() {
     const res = playCard(battle, bestIdx, best.target ? best.target.uid : undefined);
     if (res && res.ok) {
       setAutoPlan(`AUTO · T${battle.turn} ${best.why} — ${card.name.toUpperCase()}`);
+      // Same choreography as a human play — AUTO must not look like a
+      // different game. There is no hand node to throw from, so the card is
+      // thrown from its slot in the rendered hand when one matches.
+      const owned = battle.fx.slice();
+      const node = $('hand').querySelectorAll('.card')[bestIdx] || null;
       renderBattle();
+      if (node) fx.playCardIn(node, card, battle);
+      fx.replay(owned, battle, { owner: card.owner });
       return 'card';
     }
   }
   setAutoPlan(`AUTO · END TURN ${battle.turn} — STACKS TICKING`);
   exaltArmed = false;
-  endTurn(battle);
-  renderBattle();
+  /* Autoplay drives the same hand-over the player does — hand down, clocks
+     tick, replay — just on its own clock. Skipping it made AUTO look like a
+     different game (and the buttons stayed lit while the state changed). */
+  endTurnWithMotion();
   return 'endturn';
 }
 
@@ -2767,8 +2951,17 @@ function renderResources() {
       exaltArmed = false;
       sfxMajor(res.exalt ? 'exalt' : 'ego', { owner: ego.owner, cardId: ego.id });
       showBark(ego.owner, 'ego');
+      const owned = battle.fx.slice();
       renderBattle();
-      if (!battle.result) showEgoCutIn(ego, owner, res.exalt);
+      /* An Ego used to resolve entirely behind its cut-in: the numbers printed
+         and were gone before the art cleared. Replay them after it, so the
+         screen the player comes back to is the one taking the hit. */
+      if (!battle.result) {
+        showEgoCutIn(ego, owner, res.exalt);
+        setTimeout(() => fx.replay(owned, battle, { owner: ego.owner }), 620);
+      } else {
+        fx.replay(owned, battle, { owner: ego.owner });
+      }
     });
     list.appendChild(b);
   });
@@ -3122,13 +3315,7 @@ function bind() {
 
   $('end-turn').addEventListener('click', () => {
     if (cutBusy || !battle || battle.result) return;
-    const btn = $('end-turn');
-    btn.classList.add('sparkle');
-    clearTimeout(btn._sp); btn._sp = setTimeout(() => btn.classList.remove('sparkle'), 560);
-    exaltArmed = false;
-    sfx('turn');
-    endTurn(battle);
-    renderBattle();
+    endTurnWithMotion();
   });
 
   if ($('btn-exalt')) {
@@ -3232,7 +3419,7 @@ function bind() {
     if ((e.key === 'a' || e.key === 'A') && !/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')) { setAutoplay(!autoplay); return; }
     if ((e.key === 'h' || e.key === 'H') && battleCtx && battleCtx.kind === 'sim' && !/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')) { setSimHudHidden(!simHudHidden); return; }
     if (battle.result || cutBusy) return;
-    if (e.key === ' ') { e.preventDefault(); sfx('turn'); endTurn(battle); renderBattle(); return; }
+    if (e.key === ' ') { e.preventDefault(); endTurnWithMotion(); return; }
     const n = Number(e.key);
     if (n >= 1 && n <= battle.hand.length) playFromUI(n - 1);
   });
@@ -3362,6 +3549,9 @@ showView('title');
 
 // exposed for the E2E harness
 window.__cw = {
+  /* The animation engine, for the motion probe: it has to be able to ask the
+     engine what it thinks the time scale is and to drive a pose directly. */
+  fx,
   CARDS, CHARACTERS, EGOS,
   get battle() { return battle; },
   get progress() { return progress; },

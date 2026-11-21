@@ -44,6 +44,7 @@ npm run test:apk        # simulates the shipped APK in a WebView
 npm run test:run        # plays a full 11-floor run through the UI
 npm run test:ui         # battle-fit + screen-fit (real Chromium, 8 phone sizes)
 npm run test:reach      # CONFIG / FOCUS reachable at 892x412 over HTTP
+npm run test:motion     # card throws, hits, turn hand-over + idle-cost budget
 npm run sim:missions    # bot win rate per mission
 npm run apk             # build + sign + verify dist/CellWarriors-<ver>.apk
 ```
@@ -141,7 +142,9 @@ pass once the lean kit feels good.
 | `src/ui.js` | roster, missions, story, battle rendering |
 | `src/progress.js` | save (`cellwarriors.save.v5`): cleared missions, team, run, lab progress |
 | `styles.css` | the visual system |
-| `power.css` | heat + focus layer: kills ambient loops, hides repeat labels (loaded last) |
+| `power.css` | heat + focus layer: kills ambient loops, hides repeat labels |
+| `src/fx.js` | animation engine: card throws, hits, deaths, turn hand-overs (event-driven, zero idle cost) |
+| `motion.css` | the visuals for it (loaded last; every rule is a class for one moment) |
 | `scripts/e2e.mjs` | jsdom end-to-end test |
 | `scripts/sim-missions.mjs` | balance bot |
 | `scripts/cutout.py` | transparent-background character art pipeline |

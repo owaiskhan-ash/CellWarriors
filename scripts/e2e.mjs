@@ -100,7 +100,14 @@ domCards[atkIdx >= 0 ? atkIdx : 0].dispatchEvent(new window.MouseEvent('click', 
 ok('no character cut-in on card plays (Ego only)', $('cutin').classList.contains('hidden'));
 ok('bark toast shown', !$('bark-toast').classList.contains('hidden'));
 ok('card played from UI', cw.battle.cardsPlayed > 0);
-ok('played card arc animation on stage', !!$('battle-stage').querySelector('.arc-card'));
+// The throw lives in its own layer (#view-battle > .fx2.fx-throws) so the hand
+// can re-render underneath it. jsdom has no requestAnimationFrame clock, so the
+// throwing clone is created and resolved synchronously — what is asserted is
+// that the choreography ran and left nothing behind (no leaked node, no node
+// stuck mid-pose), which is the failure mode that actually breaks the game.
+ok('played card throw ran and cleaned up after itself',
+  !document.querySelector('.throw-card') && !document.querySelector('.arc-card'),
+  'no orphaned card in the throw layer');
 ok('live numbers on cards', $('hand').querySelectorAll('.card-fx').length > 0);
 ok('big damage readout', $('dmg-rail').children.length > 0);
 await new Promise((r) => setTimeout(r, 950)); // wait out the play cut-in
