@@ -25,7 +25,7 @@ big disc at the bottom right. Full detail in **[docs/mobile.md](docs/mobile.md)*
 ```bash
 npm run dev             # http://localhost:5173 (browser, any size)
 npm run test:e2e        # 162 jsdom checks of the whole flow
-npm run test:phone      # 134 phone/touch/offline checks
+npm run test:phone      # 161 phone/touch/offline/heat checks
 npm run test:apk        # simulates the shipped APK in a WebView
 npm run test:run        # plays a full 11-floor run through the UI
 npm run sim:missions    # bot win rate per mission
@@ -125,6 +125,7 @@ pass once the lean kit feels good.
 | `src/ui.js` | roster, missions, story, battle rendering |
 | `src/progress.js` | save (`cellwarriors.save.v5`): cleared missions, team, run, lab progress |
 | `styles.css` | the visual system |
+| `power.css` | heat + focus layer: kills ambient loops, hides repeat labels (loaded last) |
 | `scripts/e2e.mjs` | jsdom end-to-end test |
 | `scripts/sim-missions.mjs` | balance bot |
 | `scripts/cutout.py` | transparent-background character art pipeline |

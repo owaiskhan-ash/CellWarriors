@@ -226,6 +226,49 @@ ok('manifest icons exist', (manifest.icons || []).every((i) => fs.existsSync(pat
 ok('maskable icon declared', (manifest.icons || []).some((i) => (i.purpose || '').includes('maskable')));
 ok('theme colour matches the game background', /theme-color" content="#050203"/.test(index));
 
+/* --- A9. HEAT: the power layer must actually switch the ambient loops off ---
+   A phone gets hot from one thing: frames that are still being painted while
+   the player is only thinking. Every loop that repaints by itself is listed
+   here; the power sheet has to gate all of them on .ambient-on (quality dial)
+   and .app-paused (backgrounded app), or the phone keeps warming up. */
+group('A9 · heat: ambient loops are gated');
+const power = fs.existsSync(path.join(ROOT, 'power.css')) ? read('power.css') : '';
+ok('power sheet exists', power.length > 0);
+ok('power sheet loads last in index.html',
+  index.indexOf('power.css') > index.indexOf('czn.css') && index.indexOf('power.css') !== -1, 'after czn.css');
+const AMBIENT = [
+  ['battle dust', 'stage-particles'],
+  ['enemy breathing', 'enemy.idle .enemy-art img'],
+  ['key-art drift', 'czn-backdrop img'],
+  ['title fog', '#title-fog'],
+  ['card damage badge', '.card-fx b'],
+  ['Ego glow', '.ego-btn.ready'],
+  ['title glow', '#view-title .btn-primary'],
+];
+for (const [name, sel] of AMBIENT) {
+  // find every rule whose selector list mentions `sel`, then require that it is
+  // scoped to body:not(.q-ultra) and kills either the animation or the layer
+  const re = new RegExp(`([^{}]*${sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^{}]*)\\{([^}]*)\\}`, 'g');
+  let hit = null;
+  let mt;
+  while ((mt = re.exec(power))) {
+    if (/body:not\(\s*\.q-ultra\s*\)/.test(mt[1]) && /(animation:\s*none|display:\s*none)/.test(mt[2])) { hit = mt; break; }
+  }
+  ok(`${name} is gated on the ambient switch`, !!hit, hit ? '' : sel);
+}
+ok('backgrounded app freezes animation', /body\.app-paused \*[\s\S]{0,200}animation-play-state:\s*paused/.test(power));
+/* Every blur in the sheet must be scoped: an unscoped backdrop-filter below
+   ULTRA is the most expensive thing on the page and the easiest to reintroduce
+   by copy-paste. */
+ok('backdrop blur stays removed below ULTRA (no blur rule in the power sheet)', (() => {
+  const offenders = power.split('}').filter((b) => /backdrop-filter:\s*blur/.test(b) && !/q-ultra|q-low/.test(b.split('{')[0]));
+  return offenders.length === 0;
+})(), 'flat veils are used instead');
+ok('settings exposes the quality dial', /id="set-quality"/.test(index) && /value="low"/.test(index));
+ok('settings exposes focus ui', /id="set-focus"/.test(index));
+ok('battle HUD exposes focus mode (one tap, not buried)', /id="btn-focus"/.test(index));
+ok('the plain-English copy tells the player it is about heat', /phone stays cool|less heat/i.test(index));
+
 /* ========================================================================
    PART B — behavioural run at 892x412
    ======================================================================== */

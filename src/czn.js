@@ -183,15 +183,19 @@ function cznBuildHub() {
     '  <span class="czn-gift-txt"><small>CORONOVIRIDAE</small><b>GIFT</b><i>Awaiting signal</i></span>',
     '  <span class="czn-gift-dot"></span>',
     '</div>',
+    /* HOME: one primary action and three destinations. TEAM is the fourth
+       (it is where CONTINUE RUN lives when a run is in progress), SIM/LAB is
+       one entry, and CONFIG holds settings + reset. Same controls as before,
+       a third of the chrome. */
     '<div class="czn-hub-cmd">',
     '  <button class="czn-cmd-main" id="czn-cmd-expedition" type="button">',
     '    <span class="czn-cmd-chev">', cznIco(CZN_ICONS.chevron), '</span><b>CHAOS EXPEDITION</b><small>Elite route - 11 floors</small>',
     '  </button>',
-    '  <button class="czn-cmd-side" id="czn-cmd-deck" type="button"><b>TEAM</b><small>Pick 3</small></button>',
-    '  <button class="czn-cmd-side" id="czn-cmd-sim" type="button"><b>SIM</b><small>Lab</small></button>',
-    '  <button class="czn-cmd-side" id="czn-cmd-settings" type="button"><b>CONFIG</b><small>Sound - scale</small></button>',
-    '  <button class="czn-cmd-side ghost" id="czn-cmd-reset" type="button"><b>RESET</b><small>save</small></button>',
-    '  <span class="czn-cmd-ver">v1.1.0 - CZN SHELL</span>',
+    '  <button class="czn-cmd-link" id="czn-cmd-resume" type="button"><b>CONTINUE RUN</b></button>',
+    '  <button class="czn-cmd-link" id="czn-cmd-deck" type="button">', cznIco(CZN_ICONS.layers), 'TEAM</button>',
+    '  <button class="czn-cmd-link" id="czn-cmd-sim" type="button">', cznIco(CZN_ICONS.diamond), 'SIM - LAB</button>',
+    '  <button class="czn-cmd-link quiet" id="czn-cmd-settings" type="button">', cznIco(CZN_ICONS.gear), 'CONFIG</button>',
+    '  <button class="czn-cmd-link quiet" id="czn-cmd-reset" type="button">RESET</button>',
     '</div>',
   ].join('');
   title.appendChild(layer);
@@ -271,6 +275,7 @@ function cznBuildHub() {
     window.__cw && window.__cw.showView && window.__cw.showView('roster');
   });
   layer.querySelector('#czn-cmd-sim').addEventListener('click', () => window.__cw && window.__cw.openSim && window.__cw.openSim());
+  layer.querySelector('#czn-cmd-resume').addEventListener('click', () => document.getElementById('btn-resume-run').click());
   layer.querySelector('#czn-cmd-settings').addEventListener('click', () => document.getElementById('btn-open-settings-title').click());
   layer.querySelector('#czn-cmd-reset').addEventListener('click', () => document.getElementById('btn-reset').click());
 
@@ -300,6 +305,9 @@ function cznSyncHub() {
   const cells = document.getElementById('title-cells');
   const en = document.querySelector('.czn-hub [data-czn="energy"]');
   if (en && cells) en.textContent = (cells.textContent || 0) + ' / 240+';
+  /* CONTINUE only exists when there is a run to continue. */
+  const resume = hub.layer && hub.layer.querySelector('#czn-cmd-resume');
+  if (resume) resume.classList.toggle('hidden', !(cw.progress && cw.progress.run && !cw.progress.run.finished));
 }
 
 /* ------------------------------------------------------------------ */

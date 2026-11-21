@@ -39,7 +39,7 @@ DQ = 80   # JPEG quality
 PQ = 78   # PNG quantisation target
 
 # html/css/js that decide which assets are live
-SCAN = ['index.html', 'styles.css', 'styles-mobile.css', 'czn.css', 'fonts.css',
+SCAN = ['index.html', 'styles.css', 'styles-mobile.css', 'czn.css', 'power.css', 'fonts.css',
         'manifest.webmanifest', 'src', 'scripts']
 
 
