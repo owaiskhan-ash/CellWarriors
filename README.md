@@ -22,12 +22,28 @@ On a phone it is designed **for landscape** and played with thumbs: tap a card t
 enemy to target it, drag a card onto an enemy, hold a card or enemy to inspect it, END TURN is the
 big disc at the bottom right. Full detail in **[docs/mobile.md](docs/mobile.md)**.
 
+### 📱 If the phone gets warm
+
+Two dials, both saved on the device:
+
+- **Settings → VISUAL QUALITY → LOW POWER** — no ambient loops, no backdrop blur, no
+  full-screen filters. The fight reads exactly the same; it just stops repainting while you
+  think. (`HIGH` is the default, `ULTRA` restores the old all-ambience look.)
+- **The eye button in the battle HUD** (or Settings → FOCUS UI) — hides the labels that repeat
+  information the HUD already shows. Intent, counters, HP/Tenacity, damage numbers, AP and the
+  hand stay at every setting.
+
+Backgrounding the app freezes every animation and drops the draw loop, so a paused game is not
+quietly burning battery. Numbers and rules: **[docs/design-system.md](docs/design-system.md) §10**.
+
 ```bash
-npm run dev             # http://localhost:5173 (browser, any size)
+npm run dev             # http://localhost:5173 (no-store: edits show up on reload)
 npm run test:e2e        # 162 jsdom checks of the whole flow
 npm run test:phone      # 161 phone/touch/offline/heat checks
 npm run test:apk        # simulates the shipped APK in a WebView
 npm run test:run        # plays a full 11-floor run through the UI
+npm run test:ui         # battle-fit + screen-fit (real Chromium, 8 phone sizes)
+npm run test:reach      # CONFIG / FOCUS reachable at 892x412 over HTTP
 npm run sim:missions    # bot win rate per mission
 npm run apk             # build + sign + verify dist/CellWarriors-<ver>.apk
 ```
