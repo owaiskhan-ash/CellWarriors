@@ -26,6 +26,10 @@
     <!-- power + focus layer: kills ambient loops + hides repeat labels.
          Must be the LAST sheet so it can settle every layer above it. -->
     <link rel="stylesheet" href="./power.css" />
+    <!-- MOTION layer: the choreography behind the player's own hand (card
+         throws, hits, death, turn hand-over). Every rule is triggered by a
+         class for one specific moment, so it costs nothing while idle. -->
+    <link rel="stylesheet" href="./motion.css" />
     <link rel="manifest" href="./manifest.webmanifest" />
   </head>
   <body>

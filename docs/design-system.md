@@ -419,6 +419,63 @@ AP, EP, hand, objective line. The fight has to read exactly the same at LOW POWE
 Permanently removed (not a setting): the arena's action-timeline column — it was the
 fourth copy of one fact, so it is gone at every quality level.
 
+### 10.3 Motion — the choreography of your own hand (v1.3)
+
+`src/fx.js` + `motion.css` (loaded after `power.css`: additive motion, no geometry).
+The rule this layer encodes: **the heat budget is spent on what the player did, never
+on what the player is looking at.** Every animation here is triggered by a class for
+one specific event, so the idle cost of the whole sheet is zero — which is why it can
+sit on top of the heat work without giving the phone back.
+
+The five beats of a played card (the most repeated action in the game):
+
+| Beat | What happens | Where |
+| --- | --- | --- |
+| **Lift** | the card rises under the thumb, neighbours dim, the fan holds | `.card.lifting`, `.hand.has-lift` |
+| **Wind-up** | it noses up and back on a bezier, the frame glows | `.throw-card` keyframes |
+| **Throw** | it accelerates to the body that will actually be hit | WAAPI, 16 sampled offsets, 420 ms |
+| **Impact** | wedge + ring + sprite recoil + stage shove + damage number | `.impact-wedge`, `.hit-ring`, `.enemy-art.on-hit`, `.float-num` |
+| **Settle** | the hand closes the gap; the next render is already underneath | `.card.hand-close` |
+
+Two decisions worth keeping:
+
+- **The flight is a compositor animation.** The bezier is sampled into 16 keyframe
+  offsets and handed to the Web Animations API, so the main thread paints nothing
+  while a card is in the air (the earlier version wrote an inline transform every
+  frame — a style write plus a layout read, 60×/s, per throw).
+- **The arc cannot lie.** An Attack flies at the enemy the engine just resolved
+  (`targetUid`); everything else — Skill, Upgrade, Shield, Heal — is *cast into the
+  caster's portrait* and absorbed there. Damage math and flight path are the same
+  piece of state.
+
+End turn is a sequence, not a jump: hand down → enemy counters tick in action order →
+`endTurn()` → the fx stream is replayed (poison ticks, counters, hits, deaths) → plate
+flip → banner crash → new hand dealt card by card. The button is locked for the whole
+hand-over, so a double-tap can never resolve two turns.
+
+The engine's fx stream, replayed. `flushFx()` still owns the right-edge log and the
+audio; `fx.replay()` reads the same events and turns them into motion: diegetic damage
+numbers at the body that was hit, status glyphs, portrait recoil for incoming hits,
+heal/shield beams, tracers, tenacity shatter, phase bloom, death collapse and a
+particle burst, summon drops, and Mark/Vulnerable/Ravaged reticles that persist while
+the condition does.
+
+Budget, at 892×412 DPR2:
+
+| Dial | Idle loops added by this layer | Card throw | Film |
+| --- | --- | --- | --- |
+| ULTRA | 0 (reticle turns, 18 s, opt-in only) | 420 ms | rings, shards, speed lines, dust |
+| HIGH (default) | 0 | 420 ms | rings, shards, numbers |
+| FOCUS | 0 | 273 ms (timeScale 0.65) | no shards/lines/reticles, every hit beat kept |
+| LOW POWER | 0 | none (state still resolves) | none — film layers hidden, essentials capped at 120 ms |
+| MOTION off / OS reduced-motion | 0 | none | none (`timeScale() === 0`) |
+
+`scripts/motion-probe.mjs` (31 checks in `npm test`) is the contract: it measures the
+throw path from the animation object, proves the hit lands on the *selected* body,
+walks the end-turn sequence, asserts the dial only changes travel and never outcome,
+proves no node is left mid-pose or holding a stuck class, that leaving a battle wipes
+the film, and that HIGH still has zero infinite loops while the player thinks.
+
 ### 10.3 Home
 
 Six equal-weight buttons became **one command** — `CHAOS EXPEDITION` — plus
