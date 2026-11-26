@@ -388,6 +388,35 @@ The characters are being built for a video, so the guide carries the production 
 **Video negative:** morphing face, changing hair colour, changing haori pattern, flickering
 line art, warped hands, extra fingers, camera shake, text, watermark, logo.
 
+### Built: "Hotaru walks the stairs" (shot 02)
+
+`images/design/video/hotaru-walks-the-stairs.mp4` — 1920×1080, 24 fps, 8 s, seamless loop,
+plus a 640 px GIF preview. Reproduce with `node scripts/walk-video.mjs`.
+
+No video model was used. It is a 2.5D rig, which is why the design cannot drift:
+
+| Layer | How it is made |
+| --- | --- |
+| Character | three generated walk poses on chroma green → keyed to RGBA with green-spill removal → scaled to 800 px body height → 4-phase cycle contact(a) → passing(d) → contact(b) → passing(d), 16 frames |
+| Staircase | procedural, **true perspective**: steps rise with distance, so each step's top projects to `y = HORIZON + K·(CAM_H − h)/z`. 16 steps scroll per loop, which makes the loop frame-exact |
+| Rock | the corridor is the frame minus the stair's screen polygon (even-odd fill), with strata keyed off step indices so it scrolls with the stairs |
+| Torii | drawn in screen space at the vanishing point — a correctly-projected 4 m gate on a 20° stair lands above the top of frame |
+| Canopy | generated wisteria keyed from black, centre-bottom faded out so it frames rather than covers, composited **behind** the character |
+| Air | embers rising off the blade, three parallax petal layers, warm foot-pool, contact shadow, vignette + teal/magenta grade |
+
+**What to check when re-running:** the loop seam. Frame 0 and the last frame must differ by no
+more than one normal frame-to-frame step (measured: 10.3 vs a 7.1 baseline). If it is larger,
+`CYCLE` no longer divides `FRAMES`.
+
+### Known limitations of this rig
+
+- The character translates in place against a scrolling stair; she holds a constant screen
+  position. That is correct for a treadmill-style loop, but it means she never actually
+  recedes up the stairs.
+- Legs are a 4-pose swap, not skeletal animation — at 24 fps it reads as a stylised,
+  limited-animation walk (which is period-appropriate for cel animation), not fluid.
+- The blade is rigid with the hand; there is no secondary motion on the sword arm.
+
 Run `node scripts/kimetsu-prompt.mjs shotlist` to print this from the lock file.
 
 ---
