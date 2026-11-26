@@ -53,6 +53,12 @@ Rules: **[docs/mechanics.md](docs/mechanics.md)** — what was copied from Chaos
 how: **[docs/czn-systems.md](docs/czn-systems.md)** · Cast and art:
 **[docs/character-bible.md](docs/character-bible.md)**
 
+Style study (not game canon): **Demon Slayer–style character + nature design** —
+three character directions and three environment states, all locked and promptable:
+**[images/design/00-design-options-sheet.jpg](images/design/00-design-options-sheet.jpg)** ·
+write-up **[docs/kimetsu-bible.md](docs/kimetsu-bible.md)** · locks
+`docs/kimetsu.json` · `node scripts/kimetsu-prompt.mjs --list`
+
 ---
 
 ## The CZN shell (v1.1.0)

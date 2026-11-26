@@ -1,0 +1,94 @@
+{
+  "version": "2.0.0-vibrant",
+  "status": "STAGED — do not lock until the owner says save",
+  "note": "Vibrancy pass. Palette saturation raised across hair, haori, blade and breathing effects. v1 locks live in git history if anything needs to be compared. Reference technique, never output kanji.",
+  "style": {
+    "art": "Extremely vibrant shonen anime key visual, cel-shaded, ukiyo-e-inspired Taisho fantasy, high saturation, glossy modern anime rendering: soft rounded facial structure, very large layered eyes with multi-tone gradient irises, star-shaped catchlights and a hard specular glint, bold gradient hair (dark roots exploding into a saturated tip colour), thick even black line weight, flat two-tone cel shading with one hard highlight per surface.",
+    "palette": "Punchy complementary palette, deep true blacks, at least two saturated accents per design (hair tips + haori or blade), coloured rim light always present, glow bloom on the blade and breathing effect only.",
+    "effect": "Every character carries a visible breathing-style effect: sumi-ink calligraphic strokes plus that style's particle palette, wrapping the sword arm and lighting the face from below.",
+    "grade": "Cinematic high-contrast grade: teal shadows against magenta/violet highlights in night scenes, warm amber rim light on hair, luminous particulate drifting through every frame.",
+    "negative": "photorealistic, 3d render, western cartoon, chibi, moe blush, pastel, washed out, desaturated, grey filter, airbrush gradients, soft-focus skin, plastic skin, generic fantasy armour, gun, modern clothing, text, letters, kanji signage, watermark, signature, logo, ui, frame, border, extra limbs, extra fingers, deformed hands, duplicate figure, crowd, existing franchise characters, off-model haori, wrong blade colour, gore, blood spray",
+    "uniform": "Demon Slayer Corps base: dark high-collar gakuran jacket buttoned to the collar, tattsuke-hakama trousers gathered below the knee, kyahan cloth wraps on the calves, zori sandals with white tabi, rank engraved on the back of the hand, tear- and fire-resistant fibre (never shredded), personal haori worn open over it (never supplied by the Corps), kasugai crow assigned."
+  },
+  "shots": {
+    "full": "Vertical 9:16 splash composition, full body head to feet, single character centered with the top third kept as negative space, dramatic low camera.",
+    "portrait": "Vertical 3:4 chest-up portrait, subject in the upper two-thirds, the glowing blade visible across the lower third, background defocused.",
+    "card": "Vertical 3:4 card art, subject from the waist up in the upper two-thirds, the lower third held darker and simpler for UI text overlay.",
+    "action": "Horizontal 16:9 action frame, mid-motion, breathing-form ink strokes wrapping the sword arc, particles at full density, hair and haori caught mid-swing.",
+    "video-still": "Horizontal 16:9 cinematic film still, shallow depth of field, film grain, subtle anamorphic light streaks, composed for camera movement with a clear foreground/midground/background."
+  },
+  "characters": {
+    "hotaru": {
+      "name": "Kōgetsu Hotaru",
+      "tagline": "The firefly who carries the fallen — Flame lineage bruiser-turned-duelist.",
+      "identity": "Female, apparent age 17, 158 cm, light wiry build. Hair: jet-black #0B0910 roots exploding into hot vermillion-orange #FF4F1F tips, chin-length blunt bob with a fringe cut straight above the brows, one longer strand at the right temple. Eyes: huge sparkling golden-amber irises #FFC93C with a molten #FF7A18 ring and star catchlights, thick lashes. Skin: warm peach #F5C6A5 with vivid blush and a burn scar on the left collarbone. Small pale welding scars across the hands.",
+      "costume": "Deep charcoal #23202B high-collar gakuran with sleeves rolled to the elbow; #2E2A38 tattsuke-hakama, calf wraps, sandals and white tabi. Over it an oversized inherited haori: near-black #14121C ground with a bold scattered field of bright gold fireflies #FFC53D and a blazing orange #FF6A2B lining that catches every light, hem scorched, sleeves falling past her fingertips. Rank engraved on the back of the right hand. A kasugai crow with a singed tail feather behind her.",
+      "prop": "Nichirin katana with a glowing crimson blade #FF2E1F emitting heat shimmer and rising embers, circular pierced cast-iron tsuba, dark grey grip with one ember-orange cord wrapped twice, matte black scabbard with a thin gold band.",
+      "effect": "Breathing effect: swirling ink-wash flame strokes and orange ember particles wrapping the sword arm, warm glow lighting her face from below.",
+      "pose": "Standing three-quarter, blade held low and back in the right hand, left hand loose inside the oversized sleeve, chin down, looking up through the fringe at the viewer.",
+      "never": "smug, cruel, winking, desaturated hair, tidy haori, missing firefly pattern, dull blade, different blade colour"
+    },
+    "satsuki": {
+      "name": "Kōgetsu Satsuki",
+      "tagline": "The calm river that cuts stone — Water Breathing defender.",
+      "identity": "Female, apparent age 19, 165 cm, slim with very straight posture. Hair: deep marine-black #0A1A24 roots flowing into bright turquoise-aqua #35E6E0 tips, very long, tied low at the nape with one white cord, a single loose strand at the left temple. Eyes: huge luminous cyan irises #45D8F5 with layered gradient and brilliant catchlights, level-set, looking straight at the viewer. Skin: cool porcelain #F3E4D8 with soft pink blush.",
+      "costume": "Black #1B2028 high-collar gakuran buttoned to the top, full-length sleeves; #232A33 tattsuke-hakama, calf wraps, sandals and white tabi. Over it her own haori split exactly half and half vertically: left half vivid cobalt blue #1250C8, right half brilliant white #F7F5EE printed with bold turquoise seigaiha wave arcs #35E6E0. A folding fan tucked in the obi, not a weapon. Rank on the back of the left hand. Black kasugai crow perched in silhouette.",
+      "prop": "Nichirin katana with a luminous water-blue blade #29C8FF trailing flowing water ribbons, round engraved tsuba of three concentric broken wave lines, pale grey grip, deep blue-black scabbard.",
+      "effect": "Breathing effect: arcs of translucent blue water and white foam curling around her from the blade, glowing droplets suspended mid-air, cool light on her face.",
+      "pose": "Standing, blade vertical in front of her with the point down, both hands on the hilt at chest height, eyes level, haori completely still.",
+      "never": "shouting, panic, wide-eye shock, patterned left half, desaturated turquoise, missing seigaiha, different blade colour"
+    },
+    "tobi": {
+      "name": "Sarashina Tobi",
+      "tagline": "The boy who fell from the mountain — Mist Breathing assassin.",
+      "identity": "Male, apparent age 16, 160 cm, slight build, always slightly crouched as if listening. Hair: pale silver #E4E1DA roots fading into vivid mint-green #4FE6B2 tips, messy self-cut shag, one lock over the left eye. Eyes: huge luminous jade irises #7CE0C8 with bright catchlights and no lower lash line, unsettlingly cheerful. Skin: warm tan #E0B98F with dirt smudges and a rope-burn scar across the throat. Split knuckles, dirty knees, bare toes in straw sandals.",
+      "costume": "Charcoal #24262B high-collar gakuran with one button open and sleeves hacked raggedly at the elbow; #2E3236 tattsuke-hakama with one repaired knee, loose kyahan, sandals. Over it a bright seafoam-green #8EF0C4 haori with a bold dark pine-green #1F6E52 asanoha hemp-leaf lattice, sleeves ending mid-forearm, hem dipped in mud. Rank on the back of the left hand, half-worn. Kasugai crow with a chipped beak.",
+      "prop": "Nichirin katana with a pale luminous bone-white blade #F2F7F3 fading to mint #8FF5CC at the edge, a small oval tsuba sunk almost hidden against the guard, uneven hand-sharpened edge, undyed fraying hemp grip, pale unfinished wooden scabbard with no lacquer so the draw is silent.",
+      "effect": "Breathing effect: curling ribbons of silver-white mist and drifting mint particles swallowing his lower body, half the frame fading into fog.",
+      "pose": "Crouched low on one leg, blade held out to the side and half-hidden behind his own haori, head tilted, smiling at the viewer with wide gleaming eyes.",
+      "never": "tears, screaming, dull hair, tidy hair, missing asanoha lattice, lacquered scabbard, different blade colour"
+    }
+  },
+  "environments": {
+    "fujikasane": {
+      "name": "Mount Fujikasane — Vibrant Full Bloom, Night",
+      "tagline": "Violet and magenta wisteria line at frame centre, black torii, wet stair, cyan lantern flame.",
+      "lock": "An immense wisteria mountain at night. The wisteria begins at the mountain's foot and stops dead at a hard horizontal flower-line across frame-centre; above that line no purple at all, only a near-black mountain shoulder, dead cedar trunks and a dark summit against a deep indigo #1A1638 sky with a bright crescent moon and scattered stars. Middle ground: a wet stone stair rising in one-point perspective under enormous hanging racemes in electric purple #B76BFF and hot magenta-pink #FF7BD5 with near-white glowing highlights, and a black torii gate silhouetted against the flower canopy. Foreground left: two gnarled trunks over a wooden trellis, racemes almost touching the ground, a stone lantern burning a cold cyan flame; path lanterns glow warm gold. Rich teal shadows, magenta-violet rim lighting, bloom only on the flowers, drifting luminous pollen.",
+      "camera": "Eye-level, one-point perspective up the stair, 35 mm look, foreground trellis framing the left third.",
+      "use": "title plate, hub background, hero key visual"
+    },
+    "ember-dusk": {
+      "name": "Mount Fujikasane — Vibrant Ember Dusk",
+      "tagline": "Backlit coral-violet racemes, seven lanterns, two unlit, glassy sunset.",
+      "lock": "The wisteria mountain at the last twenty minutes of dusk. Sky a vertical gradient from #2A1140 through #E04A22 to #FFB347, with a few blazing magenta clouds. The wisteria is lit from below and behind so every raceme glows translucent coral-violet #FF9BD8 into #9B5BE0 with hot rim light on every trunk. Seven paper lanterns hang in a loose string along a dark trellis, warm #FFB45E, two unlit; ground mist banks rolled against the mountain, ember motes rising. The flower-line still cuts hard across the frame at 55 percent height. Human trace with no figure: one abandoned straw sandal on the steps and a dropped white cloth.",
+      "camera": "Wide and low to the ground, foreground grass blades in silhouette, horizon kept low.",
+      "use": "story beat, chapter end, battle background"
+    },
+    "grey-dawn": {
+      "name": "Mount Fujikasane — Grey Dawn, After the Flowers",
+      "tagline": "Desaturated aftermath — the one deliberate exception to the vibrancy rule.",
+      "lock": "The same mountain after the flowers are over, at false dawn with no sun visible and flat cool light, sky #9AA8B8 into #E8DCC0. In frame only bare twisted vines with a few wilted brown racemes and drifts of spent pale petals on a wet ridge path; cedar roots crossing the foreground and a split wooden signpost with no legible characters; three ridgelines of cedar in atmospheric perspective from #5F7480 to #C4CED2, and on the far summit a thin column of smoke. Cold, quiet, aftermath: the only environment in this set allowed to be near-monochrome.",
+      "camera": "High angle looking down a ridge path, 50 mm with slight telephoto compression.",
+      "use": "interlude, post-battle, the contrast beat in a video edit"
+    }
+  },
+  "backgrounds": {
+    "blur": "Background: night wisteria mountain, deep violet-to-black bokeh discs, teal-to-magenta rim light on the subject's hair and haori, cold mist.",
+    "vessel": "Background: dark vertical sumi-ink strokes suggesting a cedar grove, one shaft of cold moonlight, drifting embers, saturated teal shadows.",
+    "paper": "Background: flat pale washi #EFE8DA with a faint ink wash and a single red brush stroke; no lettering."
+  },
+  "video": {
+    "format": "16:9, 1920x1080 minimum, 24 fps, 4–6 second shots joined on motion.",
+    "method": "Generate each shot as a still first (video-still shot preset), lock the character sheet as the reference image, then animate image-to-video so the design cannot drift. Never text-to-video a character cold.",
+    "motion": "Slow push-ins and lateral trucking only; the blade effects carry the motion. Wisteria petals drift toward camera in every exterior. Hold the silhouette for the first 8 frames of every shot.",
+    "consistency": "One seed per character across all shots. Reference image = the chosen character sheet, plus the previous shot's final frame for continuity.",
+    "shotList": [
+      "01 · establishing: wisteria line at centre, torii silhouette, slow push up the wet stair",
+      "02 · character reveal: back view walking up the stair, blade trailing embers, rim light ignites",
+      "03 · face: chest-up portrait, breathing effect lights the face from below, eyes open to camera",
+      "04 · action: mid-swing, breathing-form ink strokes wrap the arc, particles at full density",
+      "05 · aftermath: grey dawn ridge, spent petals, silhouette only, no purple"
+    ],
+    "negative": "morphing face, changing hair colour, changing haori pattern, flickering line art, warped hands, extra fingers, camera shake, text, watermark, logo"
+  }
+}
