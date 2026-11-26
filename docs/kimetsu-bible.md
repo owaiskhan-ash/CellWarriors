@@ -1,8 +1,13 @@
-# KIMETSU BIBLE v1.0 — Demon Slayer–style character & nature design
+# KIMETSU BIBLE v2.0 — Demon Slayer–style character & nature design
 *sibling to `docs/character-bible.md`. That file stays locked. This one is additive.*
 
-**Status:** first pass. Two things are designed here: **one character** and **one nature
-environment**, each in three directions so the owner can pick.
+**Status: STAGED — NOT LOCKED.** v2 is the vibrancy pass: hair gradients, haori and blades
+pushed to saturated shonen key-visual colours, plus a visible breathing effect on every
+character and a cinematic video chapter (§6). Nothing here is canon for the game yet; it is
+saved as final **only when the owner says so**, at which point this header flips to `LOCKED`
+and §6 becomes the production guide.
+
+v1 (muted palette) is in git history if anything needs comparing.
 
 **How to use this file:** never write a prompt from imagination. Use the **Style DNA**
 (PART 0), then the lock block of whichever option was picked (PART 2 / PART 3), then the
@@ -34,24 +39,34 @@ Two legitimate reference points, and prompts must name the *technique*, never
 | Backgrounds | Taishō-era Japan, painted like ukiyo-e | cedar and bamboo groves, wisteria out of season, lantern-lit towns, mist between mountain ridges |
 | Effects | sumi ink wash + woodblock | Breathing forms read as calligraphic ink strokes wrapping the body, not generic VFX |
 
+### v2 vibrancy rule (this supersedes v1's "one accent only")
+
+v1 said *one* saturated accent. That read too restrained on a screen. v2 allows — and
+requires — **two saturated accents per design** (hair tips + haori, or hair tips + blade),
+plus a coloured rim light and a visible breathing effect. Deep blacks are still mandatory:
+the colour has to sit against true black or it turns to mush.
+
 ### Style DNA block (paste verbatim into every prompt)
 
 ```
-Anime cel-shaded key visual in the manner of Taisho-era demon-slayer manga:
-soft rounded facial structure, very large layered eyes with multi-tone gradient irises
-and a hard specular glint, gradient hair (dark roots, saturated tips),
-thick even black line weight (~3px at 1080 wide), flat two-tone cel shading,
-one hard highlight per surface, zero airbrush gradients on skin,
-muted Taisho base palette with exactly one saturated accent (haori or breathing effect),
-sumi-ink calligraphic brush strokes used as the breathing-form energy,
-ufotable-style compositing: painted background, atmospheric haze, controlled bloom
-only on the blade and particles, shadows held close to true black for woodblock contrast.
+Extremely vibrant shonen anime key visual, cel-shaded, ukiyo-e-inspired Taisho fantasy,
+high saturation, glossy modern anime rendering: soft rounded facial structure, very large
+layered eyes with multi-tone gradient irises, star-shaped catchlights and a hard specular
+glint, bold gradient hair (dark roots exploding into a saturated tip colour), thick even
+black line weight, flat two-tone cel shading with one hard highlight per surface.
+Punchy complementary palette, deep true blacks, at least two saturated accents per design,
+coloured rim light always present, glow bloom on the blade and breathing effect only.
+Every character carries a visible breathing-style effect: sumi-ink calligraphic strokes
+plus that style's particle palette, wrapping the sword arm and lighting the face from below.
+Cinematic high-contrast grade: teal shadows against magenta/violet highlights at night,
+warm amber rim light on hair, luminous particulate drifting through every frame.
 ```
 
 ### Universal negative
 
 ```
-photorealistic, 3d render, western cartoon, chibi, moe blush, airbrush gradients,
+photorealistic, 3d render, western cartoon, chibi, moe blush, pastel, washed out,
+desaturated, grey filter, airbrush gradients,
 soft-focus skin, plastic skin, generic fantasy armour, gun, modern clothing,
 text, letters, kanji signage, watermark, signature, logo, ui, frame, border,
 extra limbs, extra fingers, deformed hands, duplicate figure, crowd,
@@ -110,27 +125,27 @@ slayer she has carried home.
 
 **Locked identity**
 - Female, apparent age 17, 158 cm, light wiry build.
-- Hair: `#171417` near-black at the roots fading to `#FF8A3D` ember orange in the last
-  third, chin-length bob, blunt fringe cut **straight across above the brows**, one longer
+- Hair: `#0B0910` jet-black at the roots exploding into `#FF4F1F` hot vermillion-orange in the
+  last third, chin-length bob, blunt fringe cut **straight across above the brows**, one longer
   strand on the right that is *never tucked behind the ear*.
-- Eyes: `#FFB34D` amber with a `#C2401E` rust ring around the pupil; large, heavy-lidded,
+- Eyes: `#FFC93C` golden amber with a `#FF7A18` molten ring around the pupil and star catchlights; large, heavy-lidded,
   always slightly wet-looking (she has been crying and will not admit it).
-- Skin: `#F0D6C4` warm pale; a small **burn scar on the left collarbone**, always visible
+- Skin: `#F5C6A5` warm peach, vivid blush; a small **burn scar on the left collarbone**, always visible
   at the collar.
 - Build detail: hands covered in small pale welding scars, nails short.
 
 **Locked costume**
 1. Standard dark brown-black gakuran, high collar, sleeves **rolled to the elbow**.
-2. Haori — **inherited, too big for her**, sleeves past her fingertips, `#1B1B22` ground
-   with a sparse field of **gold fireflies** (`#E8B44A` dots with a 2 px halo) and an
-   ember-orange lining. The hem is scorched and re-stitched in a visible, slightly ugly seam.
+2. Haori — **inherited, too big for her**, sleeves past her fingertips, `#14121C` ground
+   with a bold field of **bright gold fireflies** (`#FFC53D` dots with a 2 px halo) and a
+   blazing orange `#FF6A2B` lining. The hem is scorched and re-stitched in a visible, slightly ugly seam.
 3. `滅` on the back (back views only).
 4. `#2A2A31` tattsuke-hakama, kyahan wraps, zōri, white tabi.
 5. Rank engraved on the back of the right hand.
 6. **Kasugai crow** with a singed tail feather, usually on a branch behind her.
 
 **Locked prop**
-- Nichirin katana, blade **deep crimson `#B3261E`** with a faint ember-grain in the steel
+- Nichirin katana, blade **glowing crimson `#FF2E1F`** with a faint ember-grain in the steel
   (Flame lineage), *not* the temporary true-red state.
 - Tsuba: **circular, cast-iron, pierced with a firefly-lantern silhouette** — small, worn,
   the only ornate thing she owns.
@@ -164,25 +179,25 @@ to the point where the water stops moving — because the stillest water drowns 
 
 **Locked identity**
 - Female, apparent age 19, 165 cm, slim and straight-shouldered.
-- Hair: `#1A2430` near-black blue, fading to `#7FD3E0` pale river-cyan at the tips, long,
+- Hair: `#0A1A24` marine-black, flowing into `#35E6E0` bright turquoise-aqua at the tips, long,
   tied **low at the nape** with one white cord; a single loose strand at the left temple.
-- Eyes: `#6FC8D8` clear cyan, narrow, calm-set; the only character who looks *level* at
+- Eyes: `#45D8F5` luminous cyan, narrow, calm-set; the only character who looks *level* at
   the viewer rather than up or down.
 - Skin: `#EFE2D8` cool pale. No visible scars.
 - Build detail: very straight posture, hands with long fingers, deliberately still.
 
 **Locked costume**
 1. Standard gakuran, collar closed to the top button. Sleeves full length.
-2. Haori — **her own**, exactly half and half vertically: left panel `#2F6F8F` deep
-   river-blue **plain**, right panel `#F2EFE6` bone white with **seigaiha** (overlapping
-   wave arcs) in `#8FCBE0`. Left half is plain on purpose: one side earned, one side inherited.
+2. Haori — **her own**, exactly half and half vertically: left panel `#1250C8` vivid
+   cobalt-blue **plain**, right panel `#F2EFE6` bone white with **seigaiha** (overlapping
+   wave arcs) in `#35E6E0`. Left half is plain on purpose: one side earned, one side inherited.
 3. `#242830` tattsuke-hakama, kyahan, zōri, white tabi.
 4. Rank on the back of the left hand.
 5. A folding fan tucked in the obi — **not a weapon**, she just holds it when thinking.
 6. Kasugai crow, black, well-groomed, perches in silhouette.
 
 **Locked prop**
-- Nichirin katana, blade **`#3D9BD8`** water-blue with a faint rippling grain.
+- Nichirin katana, blade **`#29C8FF`** luminous water-blue with a faint rippling grain.
 - Tsuba: **round, kin-tsuba, engraved with three concentric broken wave lines**.
 - Grip: pale grey ito over black same; scabbard deep blue-black.
 
@@ -213,18 +228,18 @@ before the demon sees it.
 
 **Locked identity**
 - Male, apparent age 16, 160 cm, slight build, always slightly crouched as if listening.
-- Hair: `#C9C6C0` ash-grey with a single `#7FBFB5` mint strand through the fringe,
+- Hair: `#E4E1DA` pale silver with `#4FE6B2` vivid mint tips through the fringe,
   uneven self-cut bob, one lock falling over the **left** eye.
-- Eyes: `#8FB7AE` pale sage, half-lidded, **no lower lash**; the expression never quite
+- Eyes: `#7CE0C8` luminous jade, half-lidded, **no lower lash**; the expression never quite
   matches the mouth.
-- Skin: `#E9D9C8` warmer than he looks; a thin **rope burn scar across the throat**.
+- Skin: `#E0B98F` warm tan; a thin **rope burn scar across the throat**.
 - Build detail: bare feet in straw sandals, split knuckles, dirty knees.
 
 **Locked costume**
 1. Gakuran worn **one button open at the collar**, sleeves hacked off **raggedly at the
    elbow** with uneven thread.
-2. Haori — **stolen from nobody: the last thing on the line**, `#BFD9D2` pale seafoam
-   ground with **asanoha** (hemp-leaf star lattice) in `#4E7A73`, sleeves ending mid-forearm,
+2. Haori — **stolen from nobody: the last thing on the line**, `#8EF0C4` bright seafoam
+   ground with **asanoha** (hemp-leaf star lattice) in `#1F6E52`, sleeves ending mid-forearm,
    hem dipped in mud. He never mentions where it came from.
 3. `滅` on the back (back views).
 4. `#2E3438` tattsuke-hakama with one repaired knee, kyahan loose, sandals.
@@ -232,7 +247,7 @@ before the demon sees it.
 6. Kasugai crow with a chipped beak — his only friend.
 
 **Locked prop**
-- Nichirin katana, blade **`#E7ECE8` bone-white** with a faint grey cloud-grain (Mist).
+- Nichirin katana, blade **`#F2F7F3` luminous bone-white** with a faint grey cloud-grain (Mist).
 - Tsuba: **small, oval, sunk deep — almost hidden** against the guard, no ornament. He
   sharpened the edge himself and it is slightly uneven.
 - Grip: undyed hemp wrap, fraying. Scabbard: pale unfinished wood — no lacquer, so it
@@ -283,8 +298,11 @@ one structural idea: **the wisteria line**.
   flower-line across the composition.
 - Above the line: no purple at all, only rock, dead cedar, and the summit.
 - Below the line: dense, over-saturated, beautiful, and safe.
-- Palette base `#120E1A` near-black violet; wisteria `#B79BE8` / `#8C6BC4` / `#E7DAFF`
-  highlights; cedar `#1F3328`; mist `#6B7A8F`; lantern/ember accent `#FF9E4A`.
+- **v2 palette:** base `#0D0A18` near-black violet; wisteria **electric purple `#B76BFF` and
+  hot magenta-pink `#FF7BD5`** with near-white glowing highlights; cedar `#1B3A2E`; teal
+  shadows `#0E3A44`; lantern gold `#FFB45E`; one **cold cyan lantern flame `#6FE9E0`**.
+- Saturation is allowed to go loud here — the environment is what makes the character's
+  silhouette read. Only *Grey Dawn* stays desaturated, on purpose.
 
 ### Option 1 — *Full Bloom, Night* (the default key visual)
 
@@ -345,6 +363,35 @@ daytime mobile background without murdering battery on bloom.
 
 ---
 
+## PART 6 — VIDEO CHAPTER (staged)
+
+The characters are being built for a video, so the guide carries the production rules too.
+
+| | |
+| --- | --- |
+| Format | 16:9, 1920×1080 minimum, 24 fps, 4–6 second shots joined on motion |
+| Method | **Still first.** Generate the `video-still` shot preset, approve it, then animate image-to-video with the character sheet as the reference. Never text-to-video a character cold — that is how the haori and hair drift |
+| Consistency | one seed per character for the whole film; reference image = chosen sheet + previous shot's last frame |
+| Motion | slow push-ins and lateral trucking only; the blade effect carries the movement; wisteria petals drift toward camera in every exterior; hold the silhouette for the first 8 frames |
+| Grade | same cinematic grade across every shot — teal shadows, magenta/violet highlights, warm amber rim on hair |
+
+**Shot list**
+
+| # | Shot | Reads as |
+| --- | --- | --- |
+| 01 | Wisteria line at centre, torii silhouette, slow push up the wet stair | world, scale |
+| 02 | Back view walking up the stair, blade trailing embers, rim light ignites | the slayer arrives |
+| 03 | Chest-up portrait, breathing effect lighting the face from below, eyes to camera | character beat |
+| 04 | Mid-swing, ink strokes wrapping the arc, particles at full density | the money shot |
+| 05 | Grey dawn ridge, spent petals, silhouette only, no purple | aftermath / title card |
+
+**Video negative:** morphing face, changing hair colour, changing haori pattern, flickering
+line art, warped hands, extra fingers, camera shake, text, watermark, logo.
+
+Run `node scripts/kimetsu-prompt.mjs shotlist` to print this from the lock file.
+
+---
+
 ## PART 4 — PROMPT RECIPES
 
 Run `node scripts/kimetsu-prompt.mjs <id> [--pose=] [--camera=]` to get these assembled
@@ -377,3 +424,8 @@ frame height, scale reference only, no facial detail`.
 6. Reserve a darker lower third on anything that will sit under UI text.
 7. Never generate 滅 or any kanji into the image — lettering comes back wrong. The back
    mark is described in the bible for completeness, and rendered by the game, not the model.
+8. **Saturation check before approving:** the frame must have a saturated hair tip, a
+   saturated second accent (haori or blade), and a rim light. If any of the three is missing,
+   regenerate — do not fix it in post.
+9. For video, approve the still at full size first. A drifting haori costs a re-render of
+   every shot that follows it.

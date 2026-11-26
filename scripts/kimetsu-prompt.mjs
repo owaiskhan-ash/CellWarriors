@@ -6,7 +6,9 @@
 //   node scripts/kimetsu-prompt.mjs --list
 //   node scripts/kimetsu-prompt.mjs hotaru [--shot=full|portrait|card|action] [--pose="..."]
 //                                     [--bg=blur|vessel|paper|fujikasane|ember-dusk|grey-dawn]
-//   node scripts/kimetsu-prompt.mjs fujikasane [--camera="..."]
+//   node scripts/kimetsu-prompt.mjs fujikasane [--camera="..."] [--figure]
+//   node scripts/kimetsu-prompt.mjs shotlist            # video shot list + rules
+//   node scripts/kimetsu-prompt.mjs hotaru --shot=video-still
 //   node scripts/kimetsu-prompt.mjs all [--json] [--shot=card]
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -30,10 +32,22 @@ if (!id || args.includes('--list')) {
   console.log('Environments:', envKeys.join(', '));
   console.log('Shots:       ', Object.keys(bible.shots).join(', '));
   console.log('Backgrounds: ', Object.keys(bible.backgrounds).join(', '));
+  console.log('Extras:       shotlist');
   process.exit(0);
 }
 
-const stylePreamble = () => `${bible.style.art} ${bible.style.palette} ${bible.style.effect}`;
+const stylePreamble = () =>
+  `${bible.style.art} ${bible.style.palette} ${bible.style.effect} ${bible.style.grade || ''}`.trim();
+
+if (id === 'shotlist') {
+  const v = bible.video;
+  console.log(`\n=== VIDEO: ${v.format} ===`);
+  console.log(`METHOD: ${v.method}\n`);
+  v.shotList.forEach((line) => console.log(`  ${line}`));
+  console.log(`\nMOTION: ${v.motion}\nCONSISTENCY: ${v.consistency}\n`);
+  console.log(`NEGATIVE: ${v.negative}\n`);
+  process.exit(0);
+}
 
 function characterPrompt(key, shot, pose, bg) {
   const c = bible.characters[key];
@@ -47,11 +61,12 @@ function characterPrompt(key, shot, pose, bg) {
     `CHARACTER: ${c.identity}`,
     `COSTUME: ${c.costume}`,
     `WEAPON/PROP: ${c.prop}`,
+    c.effect ? `SIGNATURE EFFECT: ${c.effect}` : '',
     `POSITION: ${pose || c.pose}`,
     shot,
     background,
     'Strictly on-model: same hair, hair gradient, eye colour, haori pattern and blade colour as specified — only pose, expression and camera may vary.',
-  ].join(' ');
+  ].filter(Boolean).join(' ');
 }
 
 function environmentPrompt(key, camera, withFigure) {
